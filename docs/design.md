@@ -1,191 +1,306 @@
-# Moria: a data-mining system for IP Australia's strategic foresight
+# Moria: a signal-detection and validation engine for IP Australia's strategic foresight
 
-**Design v0.1, 2026-10-09. Status: proposed. The owner decides whether to adopt it (D-001).** Nothing is built yet.
+**Design v0.2, 2026-10-09. Status: proposed. It supersedes v0.1 (D-001); the owner decides whether to adopt it
+(D-002).** Nothing is built yet.
 
-Moria mines public data about the world around Australia's IP system. It turns what it finds into three
-strategy products: a **PESTLE** scan, a **SWOT** (with TOWS options) and a **Futures Cone**. Every statement in them
-traces back to the evidence behind it. It runs as a quarterly cycle based on CRISP-DM, the standard data-mining
-process. It uses scikit-learn for the mining, **Jev** for high-volume typed judgements, and a generative model for the
-writing. Storage is Cloudflare R2 and compute is the Google Compute Engine free tier.
+Moria mines public data for signs of change around Australia's IP system. It is built around **strategic questions**
+and six **intelligence domains**, not around frameworks. Its core is a signal engine:
+1. It detects trends, accelerations, anomalies and weak signals.
+2. It rules out artefacts: changes in source coverage, ingestion failures, news cycles and duplicates.
+3. It assembles the evidence behind each candidate into a dossier.
+4. Analysts validate each candidate before anyone interprets it.
 
-This document follows the owner's SOP (`sop-agent-construction-v2.md`) and reuses the source catalogue and provenance
+PESTLE, SWOT, TOWS and the Futures Cone are then **lenses** over the validated signals. Each finding traces back
+through three separate layers: evidence (what was observed), interpretation (what it might mean) and decision (what
+IP Australia does about it).
+
+The system uses scikit-learn for the mining, **Jev** for high-volume typed tagging, and a generative model for the
+writing. Storage is Cloudflare R2 and compute is the Google Compute Engine free tier. The first step is a
+**six-week proof of concept**.
+
+This document follows the owner's SOP (`sop-agent-construction-v2.md`). It reuses the source catalogue and provenance
 model in `Access-architecture-and-reusable-adapters.md`.
 
 ---
 
 ## Contents
 
-0. [Summary](#0-summary) · 1. [Assumptions and scope](#1-assumptions-and-scope) ·
-2. [Method: CRISP-DM as the scan cycle](#2-method-crisp-dm-as-the-scan-cycle) ·
-3. [Architecture](#3-architecture) · 4. [Sources, by PESTLE dimension](#4-sources-by-pestle-dimension) ·
-5. [Data model](#5-data-model) · 6. [Pipeline stages](#6-pipeline-stages) ·
-7. [The mining layer (scikit-learn)](#7-the-mining-layer-scikit-learn) ·
-8. [Jev and the generative models](#8-jev-and-the-generative-models) ·
-9. [The three frameworks](#9-the-three-frameworks) · 10. [How we know: evaluation](#10-how-we-know-evaluation) ·
-11. [Security, privacy and governance](#11-security-privacy-and-governance) · 12. [Build order](#12-build-order) ·
-13. [Flags](#13-flags) · 14. [For the owner](#14-for-the-owner) · 15. [References](#15-references)
+0. [Summary](#0-summary) · 0.1 [What changed in v0.2](#01-what-changed-in-v02-and-why) ·
+1. [Purpose, assumptions and scope](#1-purpose-assumptions-and-scope) ·
+2. [Questions and intelligence domains](#2-questions-and-intelligence-domains) ·
+3. [Method: CRISP-DM, three layers](#3-method-crisp-dm-in-three-layers) · 4. [Architecture](#4-architecture) ·
+5. [Sources](#5-sources-a-portfolio-by-domain) · 6. [Data model](#6-data-model) ·
+7. [Pipeline stages](#7-pipeline-stages) · 8. [The mining layer](#8-the-mining-layer) ·
+9. [Jev and the generative models](#9-jev-and-the-generative-models) ·
+10. [The frameworks as lenses](#10-the-frameworks-as-lenses) · 11. [How we know](#11-how-we-know-evaluation) ·
+12. [Security, privacy and governance](#12-security-privacy-and-governance) ·
+13. [The six-week proof of concept](#13-the-six-week-proof-of-concept) · 14. [Flags](#14-flags) ·
+15. [For the owner](#15-for-the-owner) · 16. [References](#16-references)
 
 ---
 
 ## 0. Summary
 
-**What it produces.** Each quarter a *scan* answers one or more strategic questions, such as "How could AI change
-the demand for, and the administration of, IP rights in Australia between 2026 and 2036?" A scan has three outputs:
+**What it produces.** The proof of concept answers 5 to 8 strategic questions (§2.2). Each later quarterly cycle
+answers the same set, revised. The outputs:
 
-| Product | What the data contributes | What people contribute |
+| Output | What the data contributes | What people contribute |
 |---|---|---|
-| **PESTLE** | Themes found by mining each dimension, with their trends, momentum, breadth across sources, and evidence | Reviewing and merging the drivers, and naming them |
-| **SWOT + TOWS** | Strengths and weaknesses measured from IP Australia's own open data against peer offices; opportunities and threats from the PESTLE drivers; candidate pairings | Confirming each quadrant and choosing the strategic options |
-| **Futures Cone** | *Projected* and *probable* futures from backtested forecasts with intervals; *plausible* scenarios built on data-selected critical uncertainties; *possible* futures from weak signals | The *preferable* future, which is a leadership choice and is never mined |
+| **Signal register** (the core product) | Candidate trends, accelerations, anomalies and weak signals, each with its detectors' numbers, an artefact check and an evidence dossier | Validation: is it real, what else explains it, does it matter for Australia; then tracking over time |
+| **PESTLE** | Validated *external* signals grouped into drivers, with their trends, breadth across sources and evidence | Merging, naming and adopting the drivers |
+| **SWOT + TOWS** | Strengths and weaknesses measured from IP Australia's open data against peer offices; opportunities and threats from the drivers; candidate pairings | Confirming each quadrant and choosing options |
+| **Futures Cone and scenarios** | *Projected* and *probable* bands from backtested baseline forecasts; scenario axes chosen from data; *possible* futures from weak signals | The scenarios developed (2 to 3 in the PoC); the *preferable* future, which is never mined; **the robustness of each option across the scenarios** |
+| **Decision log** | Links from each decision to the interpretations and evidence behind it | The decisions: monitor, investigate, experiment, invest, or deliberately decline |
 
-**The shape, in five lines:**
-1. Collectors on a free-tier VM pull public sources through a handful of protocol adapters.
-2. Raw responses go into an immutable store on R2, with their provenance.
-3. A security sweep runs, then normalisation turns everything into one evidence schema (documents, observations,
-   IP-rights records) in Parquet.
-4. scikit-learn mines it: it classifies, clusters, finds topics, flags anomalies, tests trends and forecasts.
-   Jev answers typed questions per item (relevance, PESTLE dimension, opportunity or threat, impact, horizon), with
-   calibrated probabilities.
-5. Framework engines assemble the PESTLE, SWOT and cone. A generative model writes them up, and a deterministic check
+**The shape, in six lines:**
+1. Collectors on a free-tier VM pull a portfolio of public sources through six protocol adapters. Each source has a
+   card recording its coverage, cadence, lag, depth of history and biases.
+2. Raw responses go into an immutable store on R2. Each item keeps its event date and the date it became observable.
+3. A security sweep runs, then normalisation and de-duplication build one temporal corpus.
+4. scikit-learn and DuckDB mine it in seven analytical layers (§8). The PoC prioritises four: temporal, semantic,
+   anomaly and relationship mining. Jev tags each item with its relevance, domain and PESTLE dimension.
+5. Detectors raise candidate signals. Each candidate passes artefact checks and gets an evidence dossier: the original
+   evidence, the nearest historical analogues, and the alternative explanations to test. Analysts then validate or
+   reject it in the register.
+6. The framework lenses run on validated signals only. A generative model writes them up, and a deterministic check
    proves every claim and number against the evidence.
 
-**It fits the free tiers. This was measured, not assumed** (§3.2). On this session's CPU, every planned workload
-peaked at 206 to 462 MB of memory, within the e2-micro's 1 GB, provided jobs run one at a time. One topic-model
-setting (hashed features) peaked at 844 MB, so the design caps vocabularies. Year-1 storage is an estimated 4 to 6 GB,
-inside R2's 10 GB free.
+**It fits the free tiers. This was measured, not assumed** (§4.2). On this session's CPU, every planned workload
+peaked at 206 to 489 MB of memory. That is within the e2-micro's 1 GB, provided jobs run one at a time. The workloads
+include BM25 search for analysts and nearest-neighbour lookup.
 
-**Expected running cost:** about $0 to $4 a month for infrastructure; about $10 to $25 of model APIs per quarterly
-scan; about $50 one-off for the historical backfill and the first scan (§3.5). All are estimates: every paid command
-does a dry run before it spends.
+**Expected cost:**
+- infrastructure: about $0 to $4 a month;
+- the proof of concept: about $20 to $40 of model APIs;
+- each quarterly cycle after that: about $10 to $25.
 
-**I recommend** building a thin slice first: one strategic question (AI and the IP system), with Tier 1 sources only,
-through to one complete scan. After that, broaden the sources and questions. The build order is in §12, and the seven
-decisions I need from you are in §14.
+Every paid command does a dry run before it spends (§4.5).
+
+**I recommend:**
+- running the six-week proof of concept (§13) for whole-of-agency strategy;
+- making its success test whether Moria finds validated signals that a good analyst's conventional scan, done blind,
+  missed.
+
+The eight decisions I need from you are in §15. The first is the purpose: whole-of-agency strategy, IPAVentures
+opportunities, or both.
 
 ---
 
-## 1. Assumptions and scope
+## 0.1 What changed in v0.2, and why
+
+An alternative view was reviewed against v0.1. Most of it improves the design and is adopted. A few points v0.1 already
+covered, and three are adapted to the owner's constraints.
+
+| Point in the alternative view | v0.1 | v0.2 |
+|---|---|---|
+| Build around questions, not frameworks; six intelligence domains as the collection and analysis structure | Questions existed (a pilot question), but sources and engines were organised by PESTLE, and internal factors were mixed into PESTLE columns | **Adopted.** Domains structure the sources, the questions and the register (§2). PESTLE tags *external* drivers only; SWOT combines internal and external. |
+| Signal-first: candidate queue → analyst validation → interpretation; monitor whether signals persist | Mined themes went straight to drivers; analysts reviewed only at the end | **Adopted.** A signal register with a lifecycle, a validation step in week 4, and weekly tracking (§6.3, §8.4). |
+| Trend ≠ acceleration ≠ anomaly ≠ weak signal ≠ wild card; weak-signal indicators | Signal types existed, but loosely defined | **Adopted,** with an operational definition and a detector for each (§8.2). |
+| A spike may be a news cycle, a coverage change or an ingestion failure; an anomaly triggers investigation, not a conclusion | Not covered | **Adopted:** artefact checks on every candidate, and ingestion monitors per source (§8.3). |
+| Source cards: coverage, cadence, lag, history, biases | Licence and provenance per item, but no per-source card | **Adopted.** Trend claims are limited by a source's stable history (§5.1). |
+| Event date ≠ the date it became observable | Published, updated, retrieved and first-seen dates, but no event date | **Adopted:** `event_at` and `observable_at`. Point-in-time logic uses `observable_at`; patents, for example, publish about 18 months after filing (§6.1). |
+| Retrieve the original evidence and historical analogues; never explain a score | The write-up check covered quotes and numbers, but explanations could start from scores | **Adopted:** evidence dossiers with nearest analogues and an alternative-explanations checklist (§8.4). |
+| Separate observation from judgement: evidence, interpretation and decision layers | Jev's stance and impact sat beside measurements, in "drivers" | **Adopted.** Three layers of tables. Jev's stance and impact are *machine interpretations* at signal level, not facts about items (§3.2, §9.1). |
+| Evaluate the intelligence: recovery, novelty, precision, lead time, diversity, usefulness; log misses; beware hindsight leakage | Hindsight test, precision@20 and a usefulness rating | **Adopted:** the full set, a missed-signal register, a blind conventional scan as the baseline, and stricter leakage rules. A new rule: pretrained models "know" later events (§11). |
+| A six-week proof of concept with named deliverables | Phases with no calendar, and a heavy 600-item gold set up front | **Adopted** (§13). The gold set shrinks to 300 items for the per-item tags; stance and impact are judged against analysts' validations. |
+| Options robust across multiple futures | TOWS options were not tested against scenarios | **Adopted:** an option × scenario robustness matrix, classifying each option as no-regret, hedge or bet (§10.4). |
+| Prioritise temporal, semantic, anomaly and relationship mining; avoid sophisticated forecasting early | Quantile gradient boosting was a forecasting candidate | **Adopted.** The PoC uses baseline forecasts only. Change points, keyphrases, co-occurrence and BM25 search are added (§8.1). |
+| The primary purpose: whole-of-agency strategy, IPAVentures, or both | Assumed whole-of-agency | **Adopted as owner decision 1** (§1, §15). Ranking criteria become a configurable *lens*. |
+| Customer and societal signals (enquiries, feedback, search behaviour) | Absent | **Adapted:** public proxies only. Domain 4 is marked *low coverage* in every output, because its best data is internal (§5.3). |
+| Stack: GitHub Actions, SQLite, Sentence Transformers, spaCy, notebooks | — | **Adapted to the owner's constraints:** GCE and R2 as specified; DuckDB and Parquet over SQLite for scans; fastembed, which runs the same embedding models without PyTorch, measured at 462 MB. GitHub Actions is the fallback for heavy one-off jobs. spaCy only if n-gram keyphrases prove poor. Notebooks for analysts. |
+| No graph database, multi-agent system or sophisticated forecasting at the start | None planned | **Kept.** Co-occurrence edges are DuckDB tables; there are no agents. |
+
+---
+
+## 1. Purpose, assumptions and scope
+
+**Purpose: the owner decides (decision 1 in §15).** The architecture is shared either way. What differs is the
+*lens*: the source priorities, the signal-ranking criteria and what counts as strategic value.
+
+| Lens | Serves | Ranks signals by | Data it needs most |
+|---|---|---|---|
+| **Agency strategy** (recommended for the PoC) | The Strategic Corporate Plan and executive strategy | Expected impact on the agency's objectives (Impact, Customer, Capability, Innovation); breadth; lead time; uncertainty | All six domains; public data covers five of them well |
+| **IPAVentures** (the agency's in-house innovation lab, since 2021) | Its stage-gated venture pipeline (for example, IP First Response) | Unmet customer need × IP Australia's right to play × feasibility × time to a first test | Domain 4 (customer needs), which public data covers poorly |
+
+I recommend the agency-strategy lens for the PoC. An IPAVentures lens is worth adding once internal customer data
+(enquiries, search logs, service feedback) can be used, in an agency-approved environment.
 
 **Assumptions** (tell me if any is wrong):
-- **"Jev" is TypeSafe's Jev.** It is a transformer *decision* model, released in mid-September 2026. It takes a text
-  and typed questions (yes/no, choice, score) and returns answers with probabilities and a confidence value. It
-  cannot generate text, so the writing needs a separate generative model (§8).
-- **The users are people:** IP Australia's strategy and policy analysts, and the executives who read their products.
-  Other agents may call it later. The outputs are structured JSON first, so that later use stays open.
-- **Public data only.** Everything Moria touches is published open data or public web content. This is what makes a
-  US-hosted free tier acceptable (§11).
-- **Horizon:** now to 2036, in three bands: H1 = 0 to 2 years, H2 = 2 to 5 years, H3 = 5 to 10 years and beyond.
-
-**In scope:** collection, storage, mining, the three frameworks, the reports, and the evaluation that shows how far each
-output can be trusted.
+- **"Jev" is TypeSafe's Jev,** a transformer *decision* model released in mid-September 2026. It takes a text and typed
+  questions (yes/no, choice, score) and returns answers with probabilities. It cannot write, so the writing needs a
+  generative model.
+- **The users are people:** strategy and policy analysts, and the executives who read their products. Outputs are
+  structured JSON first.
+- **Public data only,** which is what makes a US-hosted free tier acceptable (§12).
+- **Horizon:** now to 2036. H1 = 0 to 2 years, H2 = 2 to 5 years, H3 = 5 to 10 years and beyond.
 
 **Not in scope:**
-- IP Australia's internal or non-public data.
-- Any decision about an individual application or applicant.
-- Replacing the human parts of foresight: workshops, stakeholder input, judgement on values.
-- Choosing the preferable future.
-- A web application. Reports are files; a dashboard can come later.
+- internal or non-public data;
+- any decision about an individual application or applicant;
+- replacing workshops, stakeholder input or judgement on values;
+- choosing the preferable future;
+- a web application, a graph database, or agents.
 
 ---
 
-## 2. Method: CRISP-DM as the scan cycle
+## 2. Questions and intelligence domains
 
-CRISP-DM (the Cross-Industry Standard Process for Data Mining) has six phases. Each scan runs all six. Each phase ends
-in an artefact, and some phases end in a gate where a person approves before the next phase uses the result.
+### 2.1 The six domains
 
-| CRISP-DM phase | What Moria does | Artefact | Gate |
+The domains are the collection and analysis structure. Every source, question and signal belongs to one or more of
+them.
+
+| # | Domain | The standing question | Kinds of evidence |
 |---|---|---|---|
-| 1. Business understanding | Fixes the strategic questions, IP Australia's objectives (from the Strategic Corporate Plan 2026–27: Impact, Customer, Capability, Innovation), the PESTLE codebook, and what a useful answer looks like | `config/questions.yaml`, `config/codebook.yaml`, the Jev question set | **Owner** approves the questions and the codebook |
-| 2. Data understanding | Takes an inventory and a census of each source: counts, fields, dates, licences, gaps. Profiles data quality | `reports/sources/*.md` | — |
-| 3. Data preparation | Collects, sweeps, normalises, resolves entities, builds features (TF-IDF, embeddings, indicator series) | Parquet in `lake/` and `features/`, with manifests | — |
-| 4. Modelling | Mines the data: classification, clustering and topics, trend tests, anomaly and novelty detection, association rules, lead–lag analysis, forecasting | Model cards, labels, topics, signals | Measured choices go to the **owner** for adoption (§10) |
-| 5. Evaluation | Checks each model against a yardstick fixed in advance: a gold set, backtests, a hindsight test, and analyst review of samples | `reports/eval/*.md` | — |
-| 6. Deployment | Runs the framework engines and the write-up with its check, publishes the scan, and monitors for drift until the next cycle | `scans/<scan_id>/` (PESTLE, SWOT, cone: JSON, Markdown, charts) | **Analysts** review drivers, the SWOT and the scenarios in a workshop |
+| D1 | **The IP system and its operating environment** | What is changing in IP law, litigation, regulation, treaties, enforcement and administrative practice? | Legislation, judgments, consultations, treaties, examination guidance |
+| D2 | **The Australian economy and innovation system** | Which industries, business models and innovation activities are growing, shrinking or changing character? | ABS data, business counts, filings by sector, research output |
+| D3 | **Technology and new forms of IP** | Which technologies are creating new IP assets, new infringement risks or new demands on IP administration? | Patent titles and classes, papers, preprints, technology reporting |
+| D4 | **Customer needs and behaviour** | Where are businesses struggling to understand, obtain, protect or commercialise their IP? | Public proxies only (§5.3): filing behaviour, disputes, published service results, public discussion |
+| D5 | **Geopolitics and international developments** | How are global competition, trade policy, supply chains and foreign IP offices changing the environment? | Foreign-office statistics and publications, trade developments, global filing patterns |
+| D6 | **Institutional capability and business models** | What capabilities will IP Australia need, and where could its services, operating model or role evolve? | Peer-office strategies and annual reports, IP Australia's own performance, public-sector capability reports |
 
-**The classic data-mining tasks, and the framework each one feeds:**
+**How the frameworks relate:**
+- **PESTLE** is an external-environment framework. It tags external drivers, which come from D1, D2, D3 and D5. It
+  never tags IP Australia itself.
+- **SWOT** combines the internal (D4 and D6, plus IP Australia's own data) with the external drivers.
+- **The Futures Cone** takes the drivers' uncertainty and the weak signals.
 
-| Task | Technique | Feeds |
-|---|---|---|
-| Classification | Jev typed questions; scikit-learn linear models, distilled from Jev and gold labels | Relevance; PESTLE dimension; opportunity or threat; impact, horizon, uncertainty |
-| Clustering and topics | Embeddings with MiniBatchKMeans or HDBSCAN; NMF on TF-IDF | PESTLE themes and drivers |
-| Trend analysis | Theil–Sen slope with its confidence interval, Mann–Kendall test, Holm adjustment | Trend strength; *probable* future |
-| Anomaly and novelty detection | IsolationForest and LocalOutlierFactor on embeddings against a trailing reference window | Weak signals: the *possible* future |
-| Association rules | Support, confidence and lift on co-classification (IPC pairs, Nice-class sets), in SQL | Technology convergence and new business-model signals |
-| Sequential patterns | Cross-correlation lags between source families (papers → patents → news → policy) | Leading indicators; signposts |
-| Regression and forecasting | Seasonal-naive and ETS baselines; quantile gradient boosting; rolling-origin backtests | *Projected* and *probable* bands; scenario ranges |
-| Benchmarking | Peer-office clustering, percentile ranks, trend tests on KPIs | Strengths and weaknesses |
+None of these frameworks is a data-mining algorithm. They are ways of reading the register.
+
+### 2.2 Starter questions for the PoC
+
+These are drafts for the owner to edit. There are seven, and each names the domains it draws on.
+
+1. How could AI change the demand for, and the administration of, IP rights in Australia, 2026–2036? (D3, D1, D6,
+   D4)
+2. Which changes in IP law, courts, treaties and examination practice could most alter how Australian rights are
+   obtained or enforced by 2030? (D1, D5)
+3. Which Australian industries and business models are changing their use of IP rights, and in which direction?
+   (D2, D3)
+4. Which emerging technologies are creating new kinds of IP assets, new infringement risks or new examination
+   demands? (D3)
+5. Where do businesses, especially SMEs, show signs of struggling to obtain, protect or enforce IP? (D4; low
+   coverage)
+6. How are trade policy, technology competition and foreign IP offices changing who files in Australia, and why? (D5,
+   D2)
+7. What capabilities and service models are peer IP offices investing in, and what does that imply for IP Australia?
+   (D6, D5)
+
+### 2.3 Written down in week 1, before any mining
+
+- **The known-issues baseline.** These are the issues IP Australia already names in the Strategic Corporate Plan
+  2026–27, the Australian IP Report and other recent strategy documents. They are extracted with citations and
+  confirmed by analysts. A validated signal outside this list counts as *novel* (§11).
+- **What counts as a meaningful signal.** It must meet all four tests:
+  1. it survives the artefact checks;
+  2. it appears in at least one credible family beyond news, or in news with a confirmed primary source;
+  3. an analyst can state a plausible mechanism linking it to one of the questions;
+  4. its Australian relevance is assessed.
+- **The hindsight set and its pass rules** (§11). Analysts choose them blind to Moria's output.
 
 ---
 
-## 3. Architecture
+## 3. Method: CRISP-DM in three layers
+
+### 3.1 The cycle
+
+CRISP-DM (the Cross-Industry Standard Process for Data Mining) is the outer cycle. v0.2 adds an explicit
+**validation** step between mining and interpretation, as part of CRISP-DM's evaluation phase.
+
+| Phase | What Moria does | Artefact | Gate |
+|---|---|---|---|
+| 1. Business understanding | Questions, domains, the lens, the known-issues baseline, the definition of a meaningful signal, the hindsight set | `config/questions.yaml`, `config/lens.yaml`, `config/codebook.yaml`, `eval/hindsight.yaml` | **Owner** approves |
+| 2. Data understanding | Source cards; a census of each source (counts, fields, dates, gaps); ingestion monitors | `config/sources/*.yaml`, `reports/sources/*.md` | — |
+| 3. Data preparation | Collect, sweep, normalise, de-duplicate, resolve entities, build features | Parquet in `lake/` and `features/`, with manifests | — |
+| 4. Modelling | The seven analytical layers (§8.1) and the detectors (§8.2) | Candidate signals with metrics | Measured method choices go to the **owner** |
+| 5a. Evaluation of methods | Component yardsticks (§11.2) | `reports/eval/*.md` | — |
+| **5b. Validation of signals** | Artefact checks, dossiers, analyst review, alternative explanations | Signal-register events | **Analysts** validate or reject |
+| 6. Deployment | Lenses (PESTLE, SWOT and TOWS, the cone and scenarios, robustness), the write-up with its check, the decision log, tracking | `scans/<scan_id>/` | **Analysts** review in a workshop; **decision-makers** log decisions |
+
+### 3.2 Three layers, kept apart
+
+| Layer | Holds | Who writes it | Rule |
+|---|---|---|---|
+| **Evidence** | Raw and normalised items; measurements (counts, rates, slopes, change points, anomaly scores, co-occurrence lifts); per-item *descriptive* tags (relevant, domain, PESTLE, rights affected) | The pipeline, reproducibly | A label that says **what an item is about** is a feature, so it belongs here. Nothing here says what anything means for IP Australia. |
+| **Interpretation** | Signals and their lifecycle; alternative explanations; Australian relevance; stance, impact, horizon and uncertainty; drivers; framework placements; scenarios | Analysts, and models labelled as such (backend, version, probabilities) | A label that judges **what it means** belongs here. Several interpretations of the same evidence can coexist, each versioned and attributed. |
+| **Decision** | Monitor, investigate, experiment, invest, or deliberately decline; options and their robustness; owners; review dates; outcomes | Decision-makers | Each decision links to the interpretations, and through them to the evidence. |
+
+That lets a decision-maker challenge the reasoning (the interpretation) without rebuilding the pipeline (the evidence).
+
+---
+
+## 4. Architecture
 
 ```mermaid
 flowchart LR
-  subgraph SRC["Public sources (Tier 1 in §4)"]
-    S1["IP RAPID weekly"]
-    S2["ABS SDMX"]
-    S3["OpenAlex · arXiv"]
-    S4["GDELT · gov RSS"]
-    S5["Legislation · Hansard"]
-    S6["WIPO statistics"]
+  SRC[["Public sources, by domain (§5):<br/>IP RAPID · ABS · OpenAlex<br/>Google Patents (BigQuery)<br/>Legislation · Hansard<br/>WIPO · peer offices<br/>GDELT titles"]]
+  subgraph EV["Evidence layer, on the e2-micro"]
+    C["Collect<br/>(6 adapters)"] --> SW["Sweep"]
+    SW --> N["Normalise · de-duplicate<br/>event vs observable dates"]
+    N --> F["Features: TF-IDF, keyphrases,<br/>embeddings, Jev tags"]
+    F --> D["Detectors:<br/>trend · acceleration · anomaly ·<br/>weak signal"]
+    D --> A["Artefact checks +<br/>evidence dossiers"]
   end
-  BQ[("BigQuery:<br/>Google Patents<br/>public data")]
-  subgraph VM["GCE e2-micro, us-west1: one job at a time"]
-    C["Collectors<br/>(protocol adapters)"] --> SW["Security sweep"]
-    SW --> N["Normalise +<br/>entity resolution"]
-    N --> F["Features:<br/>TF-IDF, local embeddings,<br/>indicator series"]
-    F --> M["Mining:<br/>scikit-learn"]
-    M --> E["Framework engines:<br/>PESTLE · SWOT · Cone"]
-    E --> W["Write-up +<br/>deterministic check"]
+  subgraph IN["Interpretation layer"]
+    R["Signal register<br/>(lifecycle)"]
+    L["Lenses: PESTLE · SWOT/TOWS ·<br/>cone · scenarios"]
+    W["Write-up +<br/>deterministic check"]
   end
-  subgraph R2["Cloudflare R2: system of record"]
-    RAW[("raw/<br/>immutable")]
-    LAKE[("lake/ · features/<br/>Parquet")]
-    LAB[("labels/ · models/<br/>caches")]
-    SC[("scans/<br/>reports")]
+  subgraph DE["Decision layer"]
+    O["Options × scenarios<br/>robustness"]
+    DL["Decision log"]
   end
-  J["Jev API:<br/>typed decisions"]
+  AN(("Analysts"))
+  R2[("Cloudflare R2:<br/>system of record")]
+  J["Jev API"]
   G["Generative LLMs:<br/>OpenAI writes,<br/>Gemini judges"]
-  LF["Langfuse:<br/>traces"]
   SRC --> C
-  BQ -->|"aggregates only,<br/>capped bytes"| C
-  C --> RAW
-  N --> LAKE
-  F --> LAKE
-  M <--> LAB
-  M <--> J
+  A --> R
+  AN -->|"validate · reject ·<br/>interpret"| R
+  R -->|"validated only"| L
+  L --> W
+  W --> O
+  O --> DL
+  AN --> DL
+  F <--> J
+  R <-->|"machine<br/>interpretations"| J
   W <--> G
-  W --> SC
-  J -.-> LF
-  G -.-> LF
+  EV <--> R2
+  IN <--> R2
+  DE <--> R2
 ```
 
-### 3.1 Where things run
+### 4.1 Where things run
 
 | Component | Where | Why |
 |---|---|---|
-| Scheduler, collectors, sweep, normalisation, mining, engines, write-up | **GCE e2-micro** (2 shared vCPUs at 0.25 vCPU sustained, 1 GB RAM, 30 GB standard disk), **us-west1** (Oregon) | It is the free tier. Of the three free regions, Oregon is the closest to Australia. |
-| System of record: raw, lake, labels, models, scans, manifests | **Cloudflare R2**, one bucket `moria`, with a token scoped to it | Free egress means the VM, analysts and later tools read it at no cost. The VM's disk is only a cache, so the VM can be rebuilt at any time. |
-| Global patent aggregates | **BigQuery** (Google Patents Public Datasets) | 1 TiB of queries a month is free. Moria only runs aggregate queries, each capped by `maximum_bytes_billed` and estimated by a dry run first. |
-| Typed decisions | **Jev API** (`POST https://api.typesafe.ai/v1/systemone`, as reported by third parties; to confirm) | Calibrated probabilities at about $0.042 per million input tokens, with free output (reported price) |
+| Scheduler and every pipeline job | **GCE e2-micro** (2 shared vCPUs at 0.25 vCPU sustained, 1 GB RAM, 30 GB standard disk), **us-west1** (Oregon) | The free tier. Of the three free regions, Oregon is the closest to Australia. |
+| System of record: raw, lake, register events, decisions, models, scans, manifests | **Cloudflare R2**, one bucket `moria`, with a token scoped to it | Free egress means the VM, analysts and later tools read it at no cost. The VM's disk is only a cache, so the VM can be rebuilt at any time. |
+| Global patent aggregates | **BigQuery** (Google Patents Public Datasets) | 1 TiB of queries a month is free. Aggregate queries only; each is dry-run first and capped by `maximum_bytes_billed`. |
+| Typed tags and machine interpretations | **Jev API** (`POST https://api.typesafe.ai/v1/systemone`, as reported; to confirm) | Calibrated probabilities at about $0.042 per million input tokens, with free output (reported) |
 | Writing and judging | **OpenAI** writes; **Gemini** judges (or the reverse) | A judge never shares the writer's model family (SOP §12) |
-| Tracing | **Langfuse** | SOP convention D-045/D-056. Jev calls are traced per batch, and per-item labels go in Moria's own store. |
-| Secrets | GCP Secret Manager (inside its free tier), or a root-only `.env` | SOP §22 |
+| Tracing | **Langfuse** | SOP D-045/D-056. Jev batches are traced per batch, and per-item tags go in Moria's own store. |
+| Analyst workspace | Notebooks against R2 (DuckDB), and register exports as spreadsheets | Analysts need to search and read, not to run the pipeline |
+| Heavy one-off jobs (backfill), if needed | A GitHub Actions runner or a temporary larger VM | Only if the backfill estimate exceeds about 3 days on the e2-micro (§14) |
 
 **Software:** one Python 3.11 package, `moria`, managed with uv (lockfile committed), with a typer CLI named `moria`.
 Config is YAML validated by pydantic, and unknown keys are errors. Main libraries: scikit-learn, scipy, statsmodels,
-DuckDB, pyarrow, httpx, the pinned provider SDKs, and langfuse. fastembed is an optional extra.
+ruptures (change points), DuckDB (with its `fts` extension), pyarrow, httpx, the pinned provider SDKs, and langfuse.
+fastembed is an optional extra.
 
-**Deployment:** a startup script installs uv, checks out a pinned git tag, runs `uv sync --frozen`, and installs the
-systemd units. No inbound ports are open. SSH goes through IAP TCP forwarding with OS Login. OS patches install
-unattended.
+**Deployment:**
+- a startup script installs uv, checks out a pinned tag, runs `uv sync --frozen`, and installs the systemd units;
+- no inbound ports are open, and SSH goes through IAP with OS Login;
+- OS patches install unattended.
 
-### 3.2 Fitting the free tiers (measured)
+### 4.2 Fitting the free tiers (measured)
 
-`scripts/memprobe.py` measures peak memory for each planned workload, each in its own process. These are the numbers
-from this session's machine (Xeon at 2.8 GHz, BLAS limited to 2 threads, Python 3.11.17, scikit-learn 1.9.1, DuckDB
-1.5.6, pandas 3.0.6, pyarrow 26.0.0, fastembed 0.9.0). The data is synthetic, at the planned scale. Each workload
-imports only what its real job would (numpy, pyarrow and its own tools); the first row loads the whole stack at once:
+`scripts/memprobe.py` measures each planned workload's peak memory, each in its own process. The data is synthetic,
+at the planned scale. Each workload imports only what its real job would.
+
+These are the numbers from this session's machine:
+- Xeon at 2.8 GHz, BLAS limited to 2 threads;
+- Python 3.11.17, scikit-learn 1.9.1, DuckDB 1.5.6, pandas 3.0.6, pyarrow 26.0.0, fastembed 0.9.0.
 
 | Workload | Peak memory | Time here |
 |---|---|---|
@@ -196,610 +311,729 @@ imports only what its real job would (numpy, pyarrow and its own tools); the fir
 | Topics: the same with 2^18 hashed features | **844 MB** | 244 s |
 | DuckDB: a 20M-row Parquet file, group-by and median, `memory_limit = 300MB` | 286 MB | 6.1 s |
 | `HDBSCAN` on 20k points after PCA to 20 dimensions | 257 MB | 34.5 s |
+| **Analyst search:** DuckDB full-text index over 100k documents of 150 words, BM25 query | 484–489 MB | 59–78 s (index build) |
+| **Nearest neighbours and near-duplicates:** cosine top-10 for 500 queries over 200k float16 vectors, in chunks of 20k | 341 MB | 5.7 s |
 | Local embeddings: `bge-small-en-v1.5` (ONNX through fastembed), texts of about 80 tokens | 462 MB | 18.1 texts/s on 1 thread |
 
-Repeat runs varied by about 10%: DuckDB peaked at 261 to 286 MB, and embedding ran at 18.1 to 19.4 texts/s.
+Repeat runs varied by about 10%.
 
 **Rules that follow from these numbers:**
 - **One job at a time.** Jobs are serialised with `flock`, and each systemd unit has `MemoryMax=700M`. The OS takes
-  about 200 to 300 MB of the 1 GB.
-- **A 2 GB swap file is a safety net, not working memory.** A job that swaps is a bug, and it is reported.
-- **Stream in batches of 10k or fewer.** Use the `partial_fit` estimators: SGD, MiniBatchKMeans, MiniBatchNMF, online
-  LDA, IncrementalPCA.
-- **Cap vocabularies at 20k terms**, fitted on a sample. Never fit a dense model over a hashed feature space. That was
-  the one failure above.
-- **DuckDB runs with `memory_limit='300MB'`**, spills to disk, and reads Parquet straight from R2 through
-  `CREATE SECRET (TYPE r2, …)` and `r2://` paths.
-- **HDBSCAN on samples of 20k or fewer;** the remaining points are assigned to the nearest cluster centre.
-  Vectors are stored as float16 and computed in float32.
+  about 200 to 300 MB.
+- **A 2 GB swap file is a safety net only.** A job that swaps is reported as a bug.
+- **Streaming:** batches of 10k or fewer, through the `partial_fit` estimators.
+- **Vocabularies capped at 20k terms.** Never fit a dense model over hashed features: that was the one failure above.
+- **DuckDB** runs with `memory_limit='300MB'` and reads Parquet from R2 with `CREATE SECRET (TYPE r2, …)`.
+- **Full-text indexes** hold 100k documents or fewer each, partitioned by family and year.
+- **HDBSCAN and neighbour search** run on chunks or samples of 20k. Vectors are stored as float16.
 
-**CPU caveat:** the e2-micro sustains 0.25 vCPU, against the 2 dedicated threads here. Expect jobs to take roughly
-4 to 8 times as long. Weekly embedding of about 5k items is about 20 minutes, which is acceptable for batch work. Phase 0
-re-runs the probe on the real VM, because that machine's numbers are the ones that count (SOP §24).
+**CPU caveat:** the e2-micro sustains 0.25 vCPU, so expect jobs to take 4 to 8 times as long as here. Phase 0
+re-runs the probe on the real VM (SOP §24).
 
 **Where the other free-tier limits bite:**
 
 | Limit | Moria's load (estimate) | How the design stays inside it |
 |---|---|---|
-| R2: 10 GB-month | 4 to 6 GB in year 1 (IP RAPID base about 1.5 GB plus weekly deltas about 1 GB a year; documents 0.5 to 1 GB; embeddings about 0.2 GB; raw envelopes 1 to 2 GB) | **Aggregate at the source**: counts by topic × year × country from OpenAlex, BigQuery and GDELT, plus capped samples of records, never mirrors. Parquet with zstd. IP RAPID kept as one base snapshot plus weekly change-sets. |
-| R2: 1M Class A (writes) and 10M Class B (reads) a month | About 3k writes and under 1M reads | Responses are bundled into one compressed JSONL object per source per run, never one object per response. Caches are Parquet segments. |
-| GCP egress: 1 GB a month free, from North America, **excluding Australia** | 0.3 to 1 GB a month of uploads to R2 | Upload only compressed, derived data and deltas. Meter bytes per job in its manifest. Reports are served from R2, never from the VM, so readers in Australia cost nothing. |
-| BigQuery: 1 TiB of queries a month | A few aggregate queries a quarter | Select only the needed columns, dry-run every query, and set a hard `maximum_bytes_billed` per query in config |
+| R2: 10 GB-month | 4 to 6 GB in year 1 | **Aggregate at the source** (counts from OpenAlex, BigQuery and GDELT, plus capped samples, never mirrors); Parquet with zstd; IP RAPID as one base snapshot plus weekly change-sets |
+| R2: 1M Class A (writes) and 10M Class B (reads) a month | About 3k writes and under 1M reads | One compressed JSONL object per source per run; caches as Parquet segments |
+| GCP egress: 1 GB a month free, **excluding Australia** | 0.3 to 1 GB a month of uploads to R2 | Compressed, derived data and deltas only; bytes metered per job; reports served from R2, never from the VM |
+| BigQuery: 1 TiB of queries a month | A few aggregate queries a quarter | Only the needed columns; every query dry-run first; a hard `maximum_bytes_billed` in config |
 
-### 3.3 Storage layout on R2
+### 4.3 Storage layout on R2
 
 ```text
 moria/
-  raw/<source>/<yyyy>/<mm>/<dd>/<run_id>.jsonl.zst     # request/response envelopes; immutable (bucket-lock rule if the plan allows)
-  raw/ip_rapid/<release_date>/manifest.json             # SHA-256 of each weekly zip and member; base snapshot quarterly
+  raw/<source>/<yyyy>/<mm>/<dd>/<run_id>.jsonl.zst        # request/response envelopes; immutable
+  raw/ip_rapid/<release_date>/manifest.json                # hashes of each weekly zip; base snapshot quarterly
+  lake/evidence/part-*.parquet                             # provenance envelope for every item (§6.1)
   lake/documents/family=<f>/month=<yyyy-mm>/part-*.parquet
-  lake/observations/series=<id>/vintage=<date>/part.parquet   # vintages kept: statistics get revised
-  lake/ip_rapid/base=<date>/<table>.parquet  +  lake/ip_rapid/delta=<date>/<table>.parquet
-  lake/evidence/part-*.parquet                          # the provenance envelope for every item (§5)
-  features/embeddings/model=<m>/month=<yyyy-mm>/part.parquet
-  labels/<backend>/<question_set_version>/part-*.parquet   # Jev, scikit-learn, LLM and human labels; caches by key
-  models/<name>/<version>/{model.joblib, card.json}     # loaded only if the SHA-256 matches the manifest
-  scans/<scan_id>/{pestle,swot,cone}.json  report.md  report.html  charts/
+  lake/observations/series=<id>/vintage=<date>/part.parquet
+  lake/ip_rapid/base=<date>/<table>.parquet  +  delta=<date>/<table>.parquet
+  features/{tfidf,keyphrases,embeddings,tags}/...          # tags = Jev, scikit-learn and human labels (evidence layer)
+  measures/{rates,trends,changepoints,anomalies,cooccurrence}/run=<id>/...
+  monitors/ingestion/source=<s>/part.parquet               # expected vs actual volumes, per source per period
+  interpretation/register/events/part-*.parquet            # append-only signal-register events (§6.3)
+  interpretation/dossiers/<signal_id>/<version>.md
+  interpretation/{drivers,placements,scenarios}/...
+  decision/log/events/part-*.parquet
+  models/<name>/<version>/{model.joblib, card.json}        # loaded only if the SHA-256 matches the manifest
+  scans/<scan_id>/{register,pestle,swot,cone,robustness}.json  report.md  report.html  charts/
   manifests/<command>/<run_id>.json
 ```
 
-### 3.4 Scheduling (systemd timers; UTC)
+### 4.4 Scheduling (systemd timers; UTC)
 
 | Cadence | Jobs |
 |---|---|
-| Daily | Feeds and incremental APIs (GDELT, government RSS, OpenAlex and arXiv new works, legislation and Hansard changes), then the sweep and normalisation |
-| Weekly | IP RAPID refresh, unzipped one member at a time and converted to Parquet; ABS releases; Jev labelling of the week's new items; embeddings; a signals digest |
-| Monthly | Incremental topic update, trend statistics, forecast refresh, drift checks on label and topic distributions |
-| Quarterly | The scan: framework engines, write-up, check, judge, report, then the analyst workshop. The April–June scan is timed to feed the Corporate Plan, which is published around September. |
+| Daily | Feeds and incremental APIs; sweep; normalise; de-duplicate; ingestion monitors |
+| Weekly | IP RAPID refresh; ABS releases; Jev tags for new items; embeddings; detectors; artefact checks; **the register digest** (new candidates, and changes to tracked signals) |
+| Monthly | Trend and change-point statistics; baseline forecasts; drift checks |
+| Quarterly (after the PoC) | The scan: lenses, write-up, check, judge, robustness, workshop. The April–June scan feeds the Corporate Plan, which is published around September. |
 
-### 3.5 Costs
+### 4.5 Costs
 
-| Item | Monthly, steady state | Notes |
+| Item | Estimate | Notes |
 |---|---|---|
-| e2-micro VM and 30 GB standard disk | $0 | Free tier, us-west1 |
-| External IPv4 address | about $3.65 *(unverified)* | In-use external IPv4 is billed at $0.005 an hour, and I found no statement that the free tier waives it. Check the SKU on the first bill. |
-| GCP egress | $0 to $0.20 | 1 GB free; uploads to R2 |
-| R2 | $0 | Under 10 GB and well under the operation limits in year 1. Beyond that, $0.015 per GB-month. |
-| BigQuery, Secret Manager | $0 | Inside their free tiers, with caps |
-| Model APIs | **$10 to $25 per quarterly scan** | See below |
-| One-off: backfill and the first scan | **about $50** | 2 to 3 years of text, 10+ years of counts |
-
-**Model volumes per quarterly scan** (prices to be confirmed on the providers' pages before anything is configured,
-SOP §14.1):
-- **Items:** about 60k new text items: mostly titles and abstracts, about 300 tokens each, so about 18M tokens.
-- **scikit-learn relevance pre-screen:** about $0. It removes most of the high-volume news before Jev sees it.
-- **Jev:** a two-stage question set (§8.1) of about 600 to 1,100 billed tokens per item, so 20 to 66M tokens, which is
-  **about $1 to $3** at the reported price. Whether the state text is billed once per request or once per question is
-  not confirmed, and the dry run will show it.
-- **Embeddings:** local, so $0. The API fallback would be well under $5.
-- **Generative models:** topic naming about 1.5M input tokens; write-ups about 3M input and 0.3M output; judging about
-  2M input. That is **$5 to $20**, depending on the models chosen (SOP §14.3 heuristics).
+| e2-micro VM and 30 GB disk | $0 a month | Free tier, us-west1 |
+| External IPv4 address | about $3.65 a month *(unverified)* | In-use external IPv4 is billed at $0.005 an hour; I found no statement that the free tier waives it |
+| GCP egress | $0 to $0.20 a month | 1 GB free |
+| R2, BigQuery, Secret Manager | $0 | Inside their free tiers, with caps |
+| **The proof of concept** | **$20 to $40 in total** | Jev tags for 2–3 years of pre-screened text (100k–150k items) $5 to $7; the tagger measurement about $3; signal-level Jev interpretations, cents; write-ups and judging $5 to $20; embeddings local, $0; backfill of counts, $0 |
+| Each quarterly cycle after the PoC | $10 to $25 | About 60k new items at about 1,150 billed tokens each (17 short questions), so about 70M tokens, which is about $3 of Jev at the reported price. Whether the state is billed once per request is not confirmed; the dry run will show it. Write-ups and judging cost $5 to $20. |
 
 **Money rules (SOP §14.1):**
-- Every paid command has `--dry-run`, `--confirm`, and `--limit N --confirm` for a smoke test.
+- Every paid command has `--dry-run`, `--confirm`, and `--limit N --confirm`.
 - Budgets live in config and the code enforces them.
-- Every paid response is cached under a key covering the text hash, the question-set or prompt version, and the model.
-- Billing alerts: GCP budget alert at $5 a month. Cloudflare usage is checked weekly from its analytics API, because
-  R2 has no spending cap.
+- Every paid response is cached under a full key.
+- There is a GCP budget alert at $5 a month. R2 usage is checked weekly, because R2 has no spending cap.
 
 ---
 
-## 4. Sources, by PESTLE dimension
+## 5. Sources: a portfolio, by domain
 
-**Principle: normalise protocols, not providers** (from the Access architecture document). Tier 1 needs seven
-adapters: `bulk` (zip or CSV), `sdmx`, `rest`, `oaipmh`, `rss`, `bigquery` and `html`. Each new source is
-configuration plus a parser, not a new service.
+News over-represents events that attract attention and under-represents slow structural change. So the portfolio
+deliberately mixes three kinds:
+- **administrative data:** IP RAPID;
+- **structured statistics:** ABS, WIPO, OpenAlex counts, patent aggregates;
+- **unstructured text:** legislation, Hansard, publications, news titles.
 
-**The PESTLE codebook, tailored to IP** (v1; the owner approves it in Phase 1):
+**Principle: normalise protocols, not providers** (from the Access architecture document). Tier 1 needs six adapters:
+`bulk`, `sdmx`, `rest`, `rss`, `bigquery` and `html`.
 
-| Dimension | What counts, for IP Australia |
+### 5.1 Source cards
+
+Each source has a card in `config/sources/<id>.yaml`, written in week 1 and checked in the census:
+
+| Field | Why it matters |
 |---|---|
-| **Political** | Government priorities and programmes; parliament; international relations and treaties; FTA IP chapters (for example GIs under the Australia–EU FTA); WIPO diplomacy; technology geopolitics and economic security |
-| **Economic** | Growth, productivity and R&D investment; business formation; trade and IP royalty flows; exchange rates (which drive non-resident filing); fees and the cost of rights; industry structure |
-| **Social** | Demographics and skills; attitudes to creators and IP; First Nations knowledge and culture; consumer harm (counterfeits, scams); SME awareness; changes in how people work |
-| **Technological** | Emerging technologies (AI, quantum, biotech, clean energy); automation of examination and service delivery; technology-driven shifts in filing behaviour |
-| **Legal** | IP legislation and regulation; court decisions; international harmonisation (PCT, Madrid, Hague, PLT); enforcement; AI and inventorship or copyright; privacy and data law |
-| **Environmental** | Climate and the net-zero transition (green-technology patents through WIPO's IPC Green Inventory); environmental regulation; genetic resources (the WIPO GRATK treaty); climate-adapted plant varieties (PBR) |
+| `domains`, `families` | Where its signals count |
+| `coverage` | Jurisdictions, languages, rights types, which publishers |
+| `cadence`, `publication_lag` | How early it can show anything; detectors' windows are set from this |
+| `history_start`, `stable_since`, `breaks` | **No trend claim over a window longer than the source's stable history.** Methodology breaks and Moria's own onboarding date are modelled as structural breaks, not as change. |
+| `known_biases` | For example: GDELT over-weights English-language and large outlets; OpenAlex's coverage of recent years fills in late; IP RAPID shows only published applications |
+| `revision_policy` | Whether figures are revised (ABS), so that vintages are kept |
+| `licence`, `snapshot_rights` | What may be stored and shown |
+| `expected_volume` | The ingestion monitor's baseline (§8.3) |
 
-**Tier 1, the pilot.** Access and licence for each source are confirmed in Phase 0, as the SOP's §15.1 inventory
-requires:
+### 5.2 Tier 1: the PoC portfolio
 
-| Source | Dimensions | Access | What Moria takes |
+Eleven sources across the six domains. Access and licence are confirmed in week 1.
+
+| Source | Domains | Adapter | What Moria takes |
 |---|---|---|---|
-| **IP RAPID** (IP Australia; successor to IPGOD; weekly; CC BY 4.0; `IPRAPID.zip` 1.35 GB, refreshed 2026-10-05) | Internal (S/W); T; E; Economic demand | `bulk` from data.gov.au | Six tables: `application`, `party-activity`, `application-links`, `application-events`, `application-classification`, `application-description`. Covers patents, trade marks, designs and PBR, with IPC and Nice classes, WIPO's 35 technology fields, event dates, PCT and Madrid links, and harmonised party names with ABNs. |
-| **ABS Data API** | E; S | `sdmx` | Business R&D, business counts, trade in services including charges for the use of IP, labour, population |
-| **OpenAlex** | T; S; E | `rest` (key; metered) | Counts by topic × year × country via `group_by`. Abstracts of Australian-affiliated and pilot-topic works for text mining. |
-| **Google Patents Public Datasets** | T; E | `bigquery` | Global filings by CPC/IPC × office × year; first-seen code pairs. Aggregates only. |
-| **WIPO IP Statistics Data Center** | Internal benchmarking; E | `bulk` (CSV) | Office-level filings, resident and non-resident shares, and growth, for peer offices |
-| **GDELT DOC 2.0 API** | P; S; T; L; E | `rest` | Article metadata and titles for IP and innovation queries, Australian and global. **Titles only**, so publishers' text is never stored. |
-| **Federal Register of Legislation** | L; P | `rest` or `rss` (to confirm) | IP Acts and regulations; changes and new instruments |
-| **Parliament: Hansard and Senate Estimates** | P; L | APH, or the OpenAustralia API (non-commercial terms; to confirm) | Debates and Estimates passages that mention IP Australia or the IP system |
-| **IP Australia publications** | Internal (S/W); all | `html` and PDF | Strategic Corporate Plan, Annual Report (performance results), Australian IP Report, consultations, news |
-| **arXiv** | T | `oaipmh` | New submissions in the pilot topic's categories |
+| **IP RAPID** (IP Australia; weekly; CC BY 4.0; `IPRAPID.zip` 1.35 GB, refreshed 2026-10-05) | D2, D3, D4, D6 | `bulk` | Six tables: application, party-activity, application-links, application-events, application-classification, application-description. Covers IPC and Nice classes, WIPO's 35 technology fields, event dates, PCT and Madrid links, and parties with ABNs. Also the **dispute and behaviour patterns** behind D4: oppositions, non-use removals, lapses, self-filing. |
+| **ABS Data API** | D2 | `sdmx` | Business R&D, business entries and exits, trade in services (including charges for the use of IP), industry structure |
+| **OpenAlex** | D3, D2 | `rest` (key; metered) | Counts by topic × year × country (`group_by`); abstracts of Australian-affiliated and question-relevant works. It covers arXiv preprints, so arXiv waits for Tier 2. |
+| **Google Patents Public Datasets** | D3, D5 | `bigquery` | Global filings by IPC/CPC × office × year; first-seen code pairs. Aggregates only. |
+| **WIPO IP Statistics Data Center** | D5, D6 | `bulk` | Office-level filings, resident and non-resident shares, and growth, for peer offices |
+| **Peer IP offices' strategies and annual reports** (UKIPO, IPONZ, CIPO, IPOS, EUIPO, EPO, USPTO, JPO, KIPO) | D6, D5 | `html` and PDF | Capability investments, service models, AI use, published performance |
+| **Federal Register of Legislation** | D1 | `rest` or `rss` (to confirm) | IP Acts and regulations; changes and new instruments |
+| **Parliament: Hansard and Senate Estimates** | D1, D4, D6 | APH, or the OpenAustralia API (non-commercial terms; to confirm) | Passages that mention IP Australia or the IP system |
+| **IP Australia publications** | D1, D4, D6 | `html` and PDF | Corporate Plan, Annual Report (performance and customer results), Australian IP Report, consultations, **examination-practice changes**, news |
+| **WIPO news and treaty pages** | D1, D5 | `rss` and `html` | Treaty developments, committee outcomes |
+| **GDELT DOC 2.0 API** | D1, D3, D4, D5 | `rest` | Article titles and metadata only, for IP, innovation, scam and enforcement queries |
 
-**Tier 2, after the pilot**, mostly from the Access architecture document's catalogue:
+### 5.3 Coverage gaps, stated in every output
+
+- **D4 (customer needs) is low coverage.** Its best evidence is internal: enquiries, search logs, complaints and
+  service feedback. Public proxies are filing behaviour and disputes from IP RAPID, published customer results,
+  Estimates questions, and news titles about scams and infringement. Every D4 finding carries a *low coverage* label.
+  This is the gap that most limits an IPAVentures lens.
+- **Courts:** AustLII's terms restrict automated bulk access. Federal Court judgments and IP Australia's hearing
+  decisions wait for permission or for another route (Tier 2).
+- **Non-English sources:** these are absent in the PoC, which under-represents Asian offices and markets in D5.
+
+### 5.4 Tier 2, after the PoC
+
+Taken mostly from the Access architecture document's catalogue:
+- procurement and budgets: AusTender (OCDS) and budget papers;
 - patents: EPO OPS, USPTO ODP;
-- foreign law and regulation: EUR-Lex, the US Federal Register, Regulations.gov;
+- preprints: arXiv;
+- standards bodies;
+- foreign regulation: EUR-Lex, the US Federal Register;
 - macro context: OECD, IMF, World Bank, UN Comtrade;
-- environment: Copernicus, NOAA, Australian energy statistics;
-- government demand: AusTender;
+- environment: Copernicus;
 - early signals: Media Cloud, Bluesky Jetstream, Hacker News, GitHub;
-- courts: Federal Court judgments, and AustLII **only with its permission**, since its terms restrict automated bulk
-  access;
-- WIPO Lex and the Global Innovation Index.
+- search trends (an official API, if available);
+- courts, with permission.
+
+Each new source extends the hindsight set and the source cards.
 
 ---
 
-## 5. Data model
+## 6. Data model
 
-**The evidence object is the unit**, not a chunk of text. Its envelope is the Access architecture document's
-provenance model, trimmed to what Tier 1 needs:
+### 6.1 The evidence envelope
+
+This is the Access architecture document's provenance model, trimmed, plus two dates added in v0.2.
 
 | Field | Meaning |
 |---|---|
-| `evidence_id` | SHA-256 of `provider` + `provider_record_id` + `content_hash`: stable across runs |
-| `provider`, `source_collection`, `provider_record_id` | The canonical producer, the dataset and the upstream id (DOI, application number, URL, series code) |
-| `kind` | `document` (text), `observation` (a time-series point) or `ipr_record` (an IP RAPID row) |
-| `family` | `research`, `patent`, `policy`, `legal`, `news`, `social`, `statistics` or `ipa_internal` |
-| `retrieval_method`, `request_hash`, `tool_identity` | Adapter, normalised request, and adapter version |
-| `provider_published_at`, `provider_updated_at`, `retrieved_at`, **`first_seen_at`** | Event time, revision time, retrieval time, and the first time Moria saw it. A first sighting is a signal in its own right. |
-| `raw_object_uri`, `raw_content_hash` | A pointer into `raw/` and its hash |
-| `licence` | Licence and redistribution limits, per source |
-| `parser_version` | Separates changes at the source from changes in extraction |
-| `security` | The sweep's findings (§11) |
+| `evidence_id` | SHA-256 of `provider` + `provider_record_id` + `content_hash` |
+| `provider`, `source_collection`, `provider_record_id` | The canonical producer, the dataset and the upstream id |
+| `kind`, `family`, `domains` | `document`, `observation` or `ipr_record`; the source family; the domains D1–D6 |
+| **`event_at`** | When the thing happened: filing date, judgment date, event date |
+| **`observable_at`** | When it became publicly observable: publication date, release date. **All point-in-time logic uses this.** A patent filed in 2024 may not be observable until 2025 or 2026. |
+| `provider_updated_at`, `retrieved_at`, `first_seen_at` | Revision time; retrieval time; the first time Moria saw it |
+| `dedup_group` | Near-duplicate group: syndicated copies and reposts count once |
+| `retrieval_method`, `request_hash`, `tool_identity`, `parser_version` | How it was retrieved and parsed |
+| `raw_object_uri`, `raw_content_hash`, `licence`, `security` | Pointer, hash, rights, sweep findings |
 
-**Analytical tables** (Parquet, queried with DuckDB):
+### 6.2 Evidence-layer tables
 
 | Table | Holds |
 |---|---|
-| `documents` | Cleaned text, title, language, country, family, dates |
+| `documents` | Text, title, language, country, family, domains, dates, `dedup_group` |
 | `observations` | `series_id`, `period`, `value`, `unit`, `vintage` |
-| `ipr_*` | The IP RAPID tables, plus derived `ipr_metrics` (demand, timeliness, outcomes; §9.2) |
-| `labels` | `evidence_id`, `backend`, `question_id`, `question_set_version`, `model_version`, `answer`, `probabilities`, `confidence` |
-| `embeddings` | `evidence_id`, `model`, `vector` (float16) |
-| `topics`, `doc_topics` | A topic model's run id, top terms, label and size, and each document's weights |
-| `signals` | `signal_id`, `type` (`emerging_topic`, `indicator_trend`, `novelty`, `new_combination`, `burst` or `event`), metrics, `first_detected`, evidence ids |
-| `drivers` | Statement, PESTLE dimensions, stance, impact, uncertainty, horizon, momentum, breadth, confidence, signals, evidence, review status |
-| `claims` | A synthesised proposition, with citations (`evidence_id` and quote or locator) and stance (supports, contradicts or contextualises) |
-| `scans` | `scan_id`, `as_of`, questions, config hash, outputs |
+| `ipr_*`, `ipr_metrics` | IP RAPID tables, plus demand, timeliness, outcomes and behaviour metrics |
+| `tags` | Descriptive per-item labels: `relevant`, `domain_*`, `pestle_*`, `rights_*`, with backend, version and probabilities |
+| `keyphrases`, `embeddings`, `topics`, `doc_topics` | Text features and clusters, with run ids |
+| `measures` | Rates per source volume, slopes and CIs, accelerations, change points, anomaly scores, co-occurrence lifts |
+| `ingestion_monitor` | Expected against actual volume per source per period, and incidents |
 
-**Evidence → signal → trend → driver.** A *signal* is a detected pattern. A *trend* is a signal with a statistically
-supported direction over time. A *driver* is a reviewed cluster of trends and signals that could affect IP Australia's
-objectives. Every driver keeps links down to its evidence.
+### 6.3 Interpretation and decision layers
 
-**Point in time.** Every scan takes an `as_of` date and reads only evidence with `first_seen_at <= as_of`, so a scan
-can be reproduced exactly. History filled in by the backfill has `first_seen_at` equal to the backfill date, so
-hindsight tests use `provider_published_at` instead. That carries a revision bias, which they disclose (§10).
+**The signal register** is an append-only event log. Its current state is a view, so the full history of each signal
+is kept, which is how persistence is tracked.
+
+| Field | Meaning |
+|---|---|
+| `signal_id`, `title`, `type` | `trend`, `acceleration`, `anomaly`, `weak_signal` or `wild_card` (§8.2) |
+| `questions`, `domains` | Which questions it bears on |
+| `detectors` | Which detectors fired, with their numbers and run ids (links into the evidence layer) |
+| `artefact_check` | Pass, or the flags raised: coverage, ingestion, duplicate, news cycle, source break, label drift |
+| `dossier` | The versioned dossier (§8.4) |
+| `status` | `candidate` → `investigating` → `validated` or `rejected` → `tracked` → `strengthened`, `weakened`, `disproved` or `mainstream` |
+| `rejection_reason` | `artefact`, `news_cycle`, `duplicate`, `not_relevant`, `already_known`, `insufficient_evidence` |
+| `alternatives_considered`, `australian_relevance` | Recorded by the analyst |
+| `interpretations[]` | Each one: author (an analyst, or a model with its version), stance, impact, horizon, uncertainty, PESTLE tags (external signals only), rationale, confidence, date. Disagreements stay side by side. |
+| `novel` | Not in the known-issues baseline (§2.3) |
+
+Other tables:
+- **Interpretation:** `drivers` (groups of validated signals), `placements` (where each driver or signal sits in each
+  lens), `scenarios`, `claims` (cited propositions in the write-ups).
+- **Decision:** `options`, `robustness` (option × scenario ratings), and `decisions` (action, linked
+  interpretations, owner, rationale, review date, outcome).
+
+**The missed-signal register** records each development that analysts, the conventional scan or later events showed
+Moria missed. It records the reason: a source gap, a detector gap, or a ranking cut-off. That keeps Moria from tuning
+itself only towards what it already detects.
+
+**Point in time.** A scan at `as_of` reads only evidence with `observable_at <= as_of` and
+`first_seen_at <= as_of` (backfilled items have only `observable_at`). Every model used at that date is fitted on that
+evidence alone (§11.3).
 
 ---
 
-## 6. Pipeline stages
+## 7. Pipeline stages
 
-Every stage follows the SOP's §16.1 stage contract:
+Every stage follows the SOP's §16.1 contract:
 - one module and one command per stage;
-- it reads only verified upstream outputs;
-- writes are atomic, and the stage is idempotent;
-- every run writes a manifest and a report;
-- failure is loud: exit code 2.
+- verified upstream outputs only;
+- atomic writes, and idempotent runs;
+- a manifest and a report per run;
+- loud failure, with exit code 2.
 
-| Stage | Command | Reads | Writes | Spends |
-|---|---|---|---|---|
-| Collect | `moria collect <source>` | Source APIs and files | `raw/` | BigQuery bytes (capped) |
-| Sweep | `moria sweep` | `raw/` | Findings; quarantine | — |
-| Normalise | `moria normalise` | Swept raw data | `lake/` | — |
-| IP RAPID | `moria ipr refresh`, `moria ipr metrics` | Weekly zip | `lake/ip_rapid/`, `ipr_metrics` | — |
-| Features | `moria features tfidf\|embed` | `lake/documents` | `features/` | — (local embeddings) |
-| Label | `moria label --backend jev\|sklearn\|llm` | Documents | `labels/` | Jev or LLM tokens |
-| Mine | `moria mine topics\|trends\|signals\|rules\|leadlag\|forecast` | Lake, features, labels | `topics`, `signals`, model cards | — |
-| Engines | `moria engine pestle\|swot\|cone --scan <id>` | Mined outputs | `drivers`, framework JSON | — |
-| Write-up | `moria write --scan <id>` | Framework JSON, evidence | `report.md`, `claims` | LLM tokens |
-| Check | `moria check --scan <id>` | The report, `claims`, the ledger, metrics | Check results | — |
-| Judge | `moria judge --scan <id>` | The report (wrapped as data) | Rubric scores | LLM tokens (the other family) |
-| Scan | `moria scan --question <id> --as-of <date>` | Everything above, in order | `scans/<id>/` | The sum of the above |
-| Eval | `moria eval labels\|topics\|forecast\|hindsight` | Gold sets, backtests | `reports/eval/` | Jev or LLM tokens for candidates |
-
----
-
-## 7. The mining layer (scikit-learn)
-
-| Job | Method | scikit-learn (and helpers) | Memory-safe form |
+| Stage | Command | Writes | Spends |
 |---|---|---|---|
-| Relevance pre-screen | A linear classifier on hashed n-grams, trained on gold and Jev labels | `HashingVectorizer`, `SGDClassifier(loss="log_loss")` | `partial_fit` in batches (264 MB measured) |
-| Distilled labellers (a candidate in §8.2) | One classifier per question, TF-IDF or embedding features | `TfidfVectorizer(max_features=20000)`, `LogisticRegression`, `OneVsRestClassifier` | Vocabulary fitted on a sample |
-| Calibration | Mapping Jev's and the classifiers' probabilities onto observed frequencies | `IsotonicRegression`, `CalibratedClassifierCV`, `calibration_curve`, `brier_score_loss` | Small |
-| Themes | Embedding clusters, and NMF topics for readable term lists | `MiniBatchKMeans`, `HDBSCAN`, `MiniBatchNMF`, `TruncatedSVD` | `partial_fit`; HDBSCAN on samples of 20k or fewer |
-| Choosing k and checking stability | Silhouette on a sample; agreement across seeds | `silhouette_score`, `adjusted_rand_score` | Sample |
-| Trend tests | Theil–Sen slope and its CI on monthly shares; Mann–Kendall; Holm adjustment | `scipy.stats.theilslopes`, `kendalltau`; statsmodels `multipletests` | Series are small |
-| Bursts | Poisson surprise of the latest window against the trailing rate | scipy | Small |
-| Novelty | Distance of new items from a trailing three-year reference | `IsolationForest`, `LocalOutlierFactor(novelty=True)` | 287 MB measured with k-means |
-| New combinations | First-seen IPC subclass pairs and Nice-class sets; lift | DuckDB SQL | 286 MB measured |
-| Lead–lag | Cross-correlation of a topic's monthly series across families | numpy and statsmodels `ccf` | Small |
-| Forecasts | Seasonal naive and ETS baselines; quantile gradient boosting with lags and drivers | statsmodels `ETSModel`; `HistGradientBoostingRegressor(loss="quantile")`; `TimeSeriesSplit` | Small |
-| Peer benchmarking | Clustering offices on standardised KPI profiles; percentile ranks | `StandardScaler`, `KMeans`, `NearestNeighbors` | Small |
-| Model selection | Fixed grids under the SOP's rule: "simplest within a tie margin of the best dev score" | `GridSearchCV` with a custom refit rule | — |
-
-**Emergence score**, for ranking themes and signals:
-- growth (the Theil–Sen slope of log share);
-- acceleration;
-- novelty;
-- breadth (the number of source families with a positive slope);
-- lead (whether research or patents lead the news).
-
-Each is turned into a percentile rank, and they are combined with weights held in config. The report shows the
-ranking's sensitivity to those weights, so no single arbitrary weighting decides the order.
+| Collect | `moria collect <source>` | `raw/` | BigQuery bytes (capped) |
+| Sweep | `moria sweep` | Findings; quarantine | — |
+| Normalise | `moria normalise` (including `dedup_group`, `event_at` and `observable_at`) | `lake/` | — |
+| Monitor | `moria monitor ingestion` | `monitors/`; incidents | — |
+| IP RAPID | `moria ipr refresh`, `moria ipr metrics` | `lake/ip_rapid/`, `ipr_metrics` | — |
+| Features | `moria features tfidf\|keyphrases\|embed\|index` (`index` builds BM25) | `features/` | — |
+| Tag | `moria tag --backend jev\|sklearn\|llm` | `features/tags/` | Jev or LLM tokens |
+| Measure | `moria measure rates\|trends\|changepoints\|anomalies\|cooccurrence\|forecast` | `measures/` | — |
+| Detect | `moria detect --as-of <date>` | Candidate signals | — |
+| Check | `moria artefacts --as-of <date>` | Artefact flags on candidates | — |
+| Dossier | `moria dossier <signal_id>` | `interpretation/dossiers/` | — |
+| Interpret | `moria interpret <signal_id> --backend jev` | A machine interpretation in the register | Jev tokens (cents) |
+| Register | `moria register export\|import` (spreadsheet round trip, validated, appended as events) | Register events | — |
+| Lenses | `moria lens pestle\|swot\|cone\|robustness --scan <id>` | Placements, scenarios, options | — |
+| Write-up | `moria write`, `moria check`, `moria judge` (`--scan <id>`) | Report, claims, check, grades | LLM tokens |
+| Decide | `moria decision add` | Decision-log events | — |
+| Eval | `moria eval tags\|themes\|forecast\|hindsight\|intelligence` | `reports/eval/` | Candidates' tokens |
 
 ---
 
-## 8. Jev and the generative models
+## 8. The mining layer
 
-### 8.1 Jev: typed decisions
+### 8.1 Seven analytical layers
 
-Jev takes a *state* (the item's text, defanged and wrapped as data) and a set of typed questions. Per third-party
-write-ups (to confirm against TypeSafe's docs in Phase 0), there are three kinds:
-- `noul`: yes or no, returning a probability;
-- `choice`: up to 255 options, with criteria;
+The PoC builds the four priority layers in full. The other three get only what those four need.
+
+| Layer | Methods | Tools | What it discovers | PoC |
+|---|---|---|---|---|
+| Descriptive | Counts, **rates per source volume**, distributions, cross-tabs | DuckDB | What is happening? | Yes (the base for everything) |
+| **Temporal** | Rolling averages; Theil–Sen slopes with CIs; **acceleration** (change in slope between periods); **change points** (PELT, CUSUM); Mann–Kendall with Holm adjustment | scipy, statsmodels, ruptures | What is changing unusually quickly? | **Priority** |
+| Text mining | TF-IDF; **BM25 search** for analysts; **keyphrases** (n-gram TF-IDF, spaCy only if these prove poor); new-term detection; NMF topics as a cross-check | scikit-learn, DuckDB `fts` | What subjects are appearing, and how are they discussed? | Partly: keyphrases, new terms, search |
+| **Semantic** | Embeddings; MiniBatchKMeans and HDBSCAN clusters; nearest neighbours (analogues, near-duplicates) | fastembed, scikit-learn, numpy | Which items discuss similar ideas, including in unfamiliar terms? | **Priority** |
+| **Anomaly** | Statistical baselines: exact Poisson rate tests from low baselines; IsolationForest and LocalOutlierFactor novelty against a trailing window | scipy, scikit-learn | What is unusual against history? | **Priority** |
+| **Relationship** | Co-occurrence of keyphrases, clusters, entities and classes across families and over time (new edges, rising lift); association rules on IPC pairs and Nice-class sets; cross-family convergence | DuckDB | Which developments, actors, technologies or problems are becoming connected? | **Priority** |
+| Predictive | Baseline forecasts (seasonal naive, ETS) with intervals and rolling-origin backtests; supervised models only where labels exist (the tags) | statsmodels, scikit-learn | What may happen next, with what uncertainty? | Baselines only |
+
+The memory-safe forms are as in §4.2: `partial_fit`, capped vocabularies, chunked neighbours, and partitioned
+indexes.
+
+### 8.2 Signal types and their detectors
+
+| Type | Operational definition | Detector |
+|---|---|---|
+| **Trend** | A measurable, sustained change in a rate or share | The Theil–Sen CI excludes 0 in at least 2 of 3 windows (12, 24, 36 months, each within `stable_since`), after Holm adjustment |
+| **Acceleration** | A trend whose rate of growth is itself increasing | The slope in the recent half exceeds the slope in the earlier half, with a bootstrap CI excluding 0; or a PELT change point to a steeper slope |
+| **Anomaly** | An observation significantly different from its baseline | Outside the baseline's 99% band, or a change point in level. **This triggers investigation; it is not yet a signal.** |
+| **Weak signal** | An early, possibly meaningful indication of a possible future development; often sparse, ambiguous, or spread across disparate sources | Any of the five indicators below, with at least 3 items from at least 2 sources |
+| **Wild card** | A low-probability, high-impact development | **Not detected.** Proposed from validated weak signals (by analysts, or by the generative model), and curated by analysts |
+
+**The five weak-signal indicators:**
+1. **`new_term`:** a keyphrase first seen in a credible family (research, patent, legal or policy) within the window.
+   It needs a document frequency of at least k across at least 2 sources.
+2. **`new_combination`:** a first-seen or sharply rising co-occurrence (lift) between previously separate clusters,
+   keyphrases, IPC subclasses or Nice classes.
+3. **`cross_family`:** a concept or cluster appears in at least 3 families within the window (for example research,
+   legal and policy), where it had appeared in at most 1 before.
+4. **`low_base_surge`:** a rate ratio against a low trailing baseline, by exact Poisson test, with at least 5 items.
+5. **`novel_items`:** items far from all clusters (IsolationForest or LOF on embeddings). They are grouped into
+   micro-clusters before review, so analysts see themes, not single items.
+
+**Priority in the review queue.** The queue is ranked by the lens's criteria (§1). For the agency-strategy lens these
+are:
+- detector strength;
+- breadth across families;
+- lead time;
+- the probability of relevance to the questions.
+
+Jev's *machine* impact estimate may raise a sparse item's priority, so that early, high-implication items are not lost.
+It never validates anything. The weights are in config, and the report shows how sensitive the ranking is to them.
+
+### 8.3 Artefact checks
+
+Every candidate passes these checks before review. A failed check is shown to the analyst; it does not hide the
+candidate.
+
+| Check | What it catches | Rule |
+|---|---|---|
+| Coverage | A source publishing more overall, not more about the topic | Counts are expressed as shares of the source's total volume. Flag if that total moved more than ±25% in the same window. |
+| Ingestion | Failed or duplicated collection | `ingestion_monitor` incidents (volume outside the expected band, gaps, retries) hold signals in the affected windows |
+| Duplication | One story syndicated 200 times | Collapse by `dedup_group` (canonical URL, then cosine ≥ 0.95 within 30 days) before counting |
+| News cycle | A burst of attention without substance | Only the news family; decays within about 2 weeks; no primary source in the dossier |
+| Source break | A methodology change or Moria's own onboarding | Windows crossing `breaks` or onboarding dates are excluded from trend claims |
+| Label drift | A change in the tagger, not in the world | Counts across a window always use one tagger version (re-tag, or restrict the window) |
+
+### 8.4 Evidence dossiers
+
+Explanations start from the evidence, never from a score. Each candidate's dossier holds:
+- **the detectors' numbers,** with the windows and run ids;
+- **the original evidence:** the top items by relevance, de-duplicated, with links and dates (event and observable);
+- **the nearest historical analogues:** nearest-neighbour items from earlier periods, and what became of them, from the
+  register's history;
+- **an alternative-explanations checklist:** coverage, ingestion, news cycle, duplication, source break, a known
+  seasonal or administrative cause (for example a fee change or a law's commencement date), and the known-issues
+  baseline;
+- **counter-evidence:** BM25 and neighbour searches for items that contradict the signal.
+
+Analysts read the dossier, search further in a notebook, and record status, alternatives, relevance and their
+interpretation. A machine interpretation (§9.1) may be attached, and is labelled as such.
+
+---
+
+## 9. Jev and the generative models
+
+### 9.1 Two uses of Jev, one per layer
+
+Jev takes a *state* (text, defanged and wrapped as data) and typed questions. Per third-party write-ups, to confirm in
+week 1, there are three kinds:
+- `noul`: yes or no;
+- `choice`: up to 255 options;
 - `score`: ordered levels.
 
 Each answer comes back with per-option probabilities and a confidence value. The state plus the longest question must
-fit within 32k tokens. The question set is versioned and locked like a prompt (`prompts/jev/questions-v1.yaml`).
+fit within 32k tokens. Question sets are versioned and locked like prompts.
 
-**Stage A, for every item that passes the scikit-learn pre-screen:**
-- `relevant` (noul): "Could this development plausibly affect Australia's IP system, IP Australia, or the people and
-  businesses who use IP rights in Australia, within ten years?"
-- `pestle_political` … `pestle_environmental` (six nouls, from the codebook's definitions). These are independent
-  probabilities, because an item can belong to several dimensions.
+**Per item: descriptive tags, in the evidence layer.** These run on every item that passes the scikit-learn
+pre-screen:
+- `relevant` (noul): could this plausibly affect Australia's IP system, IP Australia, or the people and businesses who
+  use IP rights in Australia, within ten years?
+- `domain_d1` … `domain_d6` (six nouls);
+- `pestle_*` (six nouls), used only when the item is external;
+- `rights_patents`, `rights_trade_marks`, `rights_designs`, `rights_pbr` (four nouls).
 
-**Stage B, only for items with P(relevant) at or above the threshold set on the dev set:**
-- `stance` (choice: opportunity, threat, both, neither), relative to IP Australia's stated purpose;
-- `impact` (score: negligible, minor, moderate, major, transformative);
-- `horizon` (choice: H1, H2, H3);
-- `settledness` (score: from "contested or unknown" to "settled"), which feeds uncertainty;
-- `signal_kind` (choice: event, trend, forecast or opinion, weak signal, not a development);
-- `rights_patents`, `rights_trade_marks`, `rights_designs`, `rights_pbr` (four nouls), which link drivers to internal
-  metrics for TOWS.
+The tags are used as **expected counts** (sums of probabilities), so their calibration is measured (§9.2).
 
-**How the probabilities are used:**
-- Volumes are *expected* counts. A theme's PESTLE weight is the sum of P(dimension) × P(relevant) over its items.
-- Thresholds apply only where a yes or no is unavoidable, such as which items enter a report.
-- Impact is the expected level: the sum of level × probability.
-- That makes calibration matter, so it is measured and corrected (§8.2).
+**Per signal: machine interpretations, in the interpretation layer.** These run on the dossier, which fits the 32k
+state limit:
+- `stance` (opportunity, threat, both, neither), relative to the lens's objectives;
+- `impact` (five levels);
+- `horizon` (H1, H2, H3);
+- `settledness` (from contested to settled);
+- `signal_type_check`: does the dossier read as a trend, a weak signal or noise?
 
-**Jev is used only behind an adapter.** Access is early, signups were reported paused on 22 September, and its
-benchmarks are the vendor's own. The `label` stage therefore has three backends with one contract: `jev`, `sklearn`
-and `llm`. Moria works, and is measured, without Jev.
+These are suggestions for analysts, attributed to Jev and its version. They are compared against analysts'
+interpretations, which become their test set (§11.2).
 
-### 8.2 Choosing the labeller by measurement
+**Jev sits behind an adapter.** Access is early, signups were reported paused on 22 September, and its benchmarks are
+the vendor's own. Every tag and interpretation has `jev`, `sklearn` and `llm` backends with one contract.
 
-This is fixed in advance, in the commit that adds the gold set (SOP §12):
+### 9.2 Choosing the tagger by measurement (sized for the PoC)
 
-- **The gold set:** 600 items, 100 from each of six families. Two analysts label a 20% overlap, and Cohen's kappa is
-  reported as the gold set's error bar. Disagreements are adjudicated.
-- **The split:** dev and test halves, by hashed id.
+This is fixed in advance, in the commit that adds the gold set:
+- **The gold set:** 300 items, stratified by family. Two analysts label a 20% overlap, and Cohen's kappa is reported.
+  The labels are relevance, domain and PESTLE only.
 - **Candidates, simplest first:**
-  1. scikit-learn trained on gold dev only;
+  1. scikit-learn trained on gold dev;
   2. Jev zero-shot;
-  3. Jev with isotonic calibration fitted on dev;
-  4. scikit-learn distilled from about 20k Jev "silver" labels;
-  5. a small LLM, zero-shot (the fallback if there is no Jev).
-- **Metrics:**
-  - macro-F1 per question, at thresholds chosen on dev;
-  - PR-AUC;
-  - **Brier score and expected calibration error (ECE)**, which measure whether "70%" comes true about 70% of the
-    time;
-  - the cost per 1k items, reported beside quality.
-- **The rule:** the simplest candidate within 0.02 macro-F1 of the best on dev, with ECE of 0.05 or less after
-  calibration. The result is reported on test with bootstrap 95% intervals.
-- **Precision:** with 300 test items, the standard error of an F1 is about 0.025 to 0.03. Gaps under about 0.06
-  can't be separated. If a decision hinges on a smaller gap, the set grows.
-- The result is a recommendation; the owner adopts the labeller (SOP §5).
+  3. Jev with isotonic calibration;
+  4. scikit-learn distilled from Jev silver labels;
+  5. a small LLM (the fallback).
+- **Metrics:** macro-F1, PR-AUC, Brier score and ECE (whether "70%" comes true about 70% of the time), and the cost
+  per 1k items.
+- **The rule:** the simplest candidate within 0.02 macro-F1 of the best on dev, with ECE ≤ 0.05 after calibration.
+  The result is reported on test with bootstrap 95% intervals.
+- **Precision:** with 150 test items, the standard error of an F1 is about 0.04, so gaps under about 0.1 can't be
+  separated. That is enough for the PoC's question, which is whether the tags are good enough to filter and count. A
+  larger set comes when scaling.
+- The result is a recommendation; the owner adopts (SOP §5).
 
-### 8.3 Generative models: naming, writing, narratives
+### 9.3 Generative models: naming, writing, wild cards
 
-Jev can't write, so a generative model does these four jobs:
-- naming topics, from their top terms and representative items;
-- drafting driver statements;
-- proposing TOWS options and wildcards;
+A generative model does these jobs:
+- naming clusters;
+- drafting driver statements from validated signals;
+- proposing wild cards and TOWS options;
 - writing scenario narratives and the scan report.
 
-**Each output is checked before anyone sees it.** It follows the SOP's answer structure: prose with `[n]` markers,
-claims, citations, and gaps. A deterministic **check** confirms:
-- every cited `evidence_id` was shown to the model;
-- every quote is verbatim, and substantial;
-- **every number in the prose appears in the metrics JSON the model was given**. This number check is new for Moria:
-  trends and forecasts are never invented in the writing;
-- the coverage agrees with the claims and gaps.
+It only ever sees dossiers and validated register entries, wrapped as data.
 
-A failed check is retried once, with its errors wrapped as data. An answer that still fails is shipped flagged, never
-passed silently.
+**The deterministic check** confirms:
+- every cited `evidence_id` was shown;
+- every quote is verbatim;
+- **every number in the prose appears in the metrics given**;
+- every signal cited is `validated` or `tracked`, unless the text explicitly marks it as a candidate.
 
-**A judge from the other model family** grades each report, blind to the writer. Its rubric: grounded, balanced (does
-it report contrary evidence?), specific to IP Australia, and distinct (are drivers repeated?).
+A failure is retried once. An answer that still fails is shipped flagged.
 
-### 8.4 Model roles
+**A judge from the other model family** grades each report. Its rubric: grounded; balanced (does it report
+counter-evidence and the alternatives considered?); specific to IP Australia; distinct.
 
 | Work | Model class (SOP §14.3) |
 |---|---|
-| High-volume typed decisions | Jev, or a small cheap LLM behind validation, as chosen in §8.2 |
-| Bulk relevance pre-screen | scikit-learn |
+| Per-item tags, per-signal suggestions | Jev, or a small LLM behind validation (§9.2) |
+| Relevance pre-screen | scikit-learn |
 | Embeddings | Local `bge-small-en-v1.5` (MIT licence, pinned revision, no `trust_remote_code`) |
-| Topic naming | A small model |
-| Write-ups, TOWS options, scenario narratives | A strong model at medium effort |
+| Cluster naming | A small model |
+| Write-ups, options, scenarios, wild cards | A strong model at medium effort |
 | Judge | The other family |
 
 ---
 
-## 9. The three frameworks
+## 10. The frameworks as lenses
 
-### 9.1 PESTLE engine
+Each lens reads **validated** register entries only. Candidates appear in an appendix, labelled as candidates.
 
-1. **Gate:** the scikit-learn pre-screen, then Jev's `relevant`.
-2. **Dimension:** Jev's six `pestle_*` probabilities.
-3. **Themes per dimension:**
-   - candidates are k-means and HDBSCAN on embeddings, and NMF on TF-IDF;
-   - one is chosen by coherence (NPMI: how often a topic's top words occur together), stability across seeds (ARI)
-     and an analyst word-intrusion test (§10);
-   - the generative model names each theme.
-4. **Theme time series:** monthly expected counts and shares, split by source family.
-5. **Trend statistics:**
-   - Theil–Sen slope with its CI, and Mann–Kendall with Holm adjustment across themes;
-   - bursts;
-   - breadth across families;
-   - lead–lag between families. For example, "research leads Australian patent filings by about N months" becomes a
-     leading indicator.
-6. **Indicators:** structured series mapped to dimensions. For example, business R&D (Economic); IP RAPID filings by
-   technology field (Technological); green-inventory IPC filings (Environmental).
-7. **Drivers:** themes and indicators that move together are merged into candidate drivers. Each is ranked by the
-   emergence score and expected impact, and the generative model drafts a cited statement for it.
-8. **Review:** analysts merge, split, rename and adopt drivers. Their edits are recorded, and become training data for
-   the next cycle.
+### 10.1 PESTLE (external drivers only)
 
-**Output:** a PESTLE matrix. For each dimension, the top drivers, each with its trend chart, momentum, breadth,
-horizon, confidence and citations.
+1. Take the validated *external* signals (D1, D2, D3, D5, and external D6 items such as peer-office moves).
+2. Group them into drivers: clusters of signals that share evidence, keyphrases or co-occurrence links. Analysts merge,
+   split and name them.
+3. Place each driver by its PESTLE tags. Analysts' tags win over machine tags.
+4. For each driver, show its trends and accelerations, its breadth across families, its horizon, its interpretations
+   (analyst and machine, side by side) and its evidence.
 
-### 9.2 SWOT engine, with TOWS
+**The PESTLE codebook, tailored to IP** (v1; the owner approves it in week 1):
 
-**Strengths and weaknesses are internal, measured from open data:**
-
-| Area | Metrics from IP RAPID (fields confirmed in the Phase 0 census) |
+| Dimension | What counts |
 |---|---|
-| Demand | Applications by right type, applicant origin, route (direct, PCT or Madrid), technology field or Nice class; share with an ABN |
-| Timeliness | Days between key events in `application-events` (for example examination request to first report; filing to acceptance or registration): median and 90th percentile by right type and field; trend |
-| Outcomes | Shares accepted or registered, lapsed, withdrawn or refused; opposition rates |
-| Capability | Share of classifications made by machine (`classification_source`); self-filed against attorney-filed |
-| Peers | WIPO statistics for peer offices; the peer group is chosen by clustering on size and mix, not by assumption |
-| Text | Annual Report results against targets, ANAO audits, Estimates, consultations. Analysed with Jev (strength, weakness or neither) and cited claims. |
+| **Political** | Government priorities; parliament; treaties; FTA IP chapters (for example GIs under the Australia–EU FTA); WIPO diplomacy; technology geopolitics |
+| **Economic** | Growth, productivity and R&D; business formation; trade and IP royalty flows; exchange rates; the cost of rights; industry structure |
+| **Social** | Skills; attitudes to creators and IP; First Nations knowledge and culture; consumer harm (counterfeits, scams); SME awareness; work patterns |
+| **Technological** | Emerging technologies (AI, quantum, biotech, clean energy); automation of examination and services; technology-driven filing behaviour |
+| **Legal** | IP law and regulation; court decisions; harmonisation (PCT, Madrid, Hague, PLT); enforcement; AI and inventorship or copyright; privacy law |
+| **Environmental** | The net-zero transition (green patents through WIPO's IPC Green Inventory); environmental regulation; genetic resources (GRATK); climate-adapted plant varieties (PBR) |
+
+### 10.2 SWOT and TOWS
+
+**Strengths and weaknesses are internal (D4, D6 and IP Australia's own data):**
+
+| Area | Metrics, from IP RAPID unless stated |
+|---|---|
+| Demand | Applications by right type, origin, route (direct, PCT or Madrid), field or Nice class; share with an ABN |
+| Timeliness | Days between key events (examination request to first report; filing to acceptance): median and 90th percentile by right and field; trend |
+| Outcomes and disputes | Shares accepted, lapsed, withdrawn or refused; opposition and non-use removal rates |
+| Capability | Share of classifications made by machine; self-filed against attorney-filed |
+| Peers | WIPO statistics and peer-office reports; the peer group is chosen by clustering on size and mix |
+| Text | Annual Report results against targets, ANAO audits, Estimates; validated signals from D6 |
 
 **The rule:**
 - A *strength* is significantly better than the peer median, or a significant improving trend.
 - A *weakness* is the reverse.
-- "Significant" means the CI excludes no difference.
 
-Each statement cites its metric and its interval. The thresholds live in config; the owner adopts them.
+Each statement cites its metric and interval. The thresholds live in config; the owner adopts them.
 
-**Opportunities and threats are external.** They come from the PESTLE drivers:
-- Jev's `stance`, aggregated over a driver's evidence;
-- ranked by expected impact × momentum × confidence;
-- a driver whose evidence is split between "opportunity" and "threat" appears in both quadrants, marked contested.
+**Opportunities and threats come from the drivers,** using the analysts' stance (with the machine stance shown beside
+it). A contested driver appears in both quadrants, marked as contested.
 
-**TOWS** (the SWOT turned into options):
-- Pairs are linked through shared keys: right type, technology field, customer segment.
-  For example, a weakness of long pendency in computer technology, paired with a threat of AI-driven filing growth in
-  the same field.
-- For the strongest S×O, S×T, W×O and W×T pairs, the generative model proposes strategic options, each one cited.
-- Analysts choose.
+**TOWS:** S/W × O/T pairs are linked through shared keys (right type, technology field, customer segment). For the
+strongest pairs, the generative model proposes cited options, and analysts choose. The chosen options go to §10.4.
 
-**Output:** the SWOT grid, the TOWS table, and an evidence appendix.
+### 10.3 The Futures Cone and scenarios
 
-### 9.3 Futures Cone engine
-
-Voros's Futures Cone has these zones: projected, probable, plausible, possible and preferable. The data fills the
-first four; people fill the fifth.
-
-| Cone zone | How Moria fills it |
+| Zone | How Moria fills it |
 |---|---|
-| **Projected** (the baseline) | The median forecast of key indicators: filings by right type and top fields, non-resident share, timeliness, SME share |
-| **Probable** | The forecast's 50% interval. The model is chosen by rolling-origin backtest on MASE (error against a naive forecast) and on interval coverage. |
-| **Plausible** | Scenarios (method below), plus the 80% and 95% statistical bands |
-| **Possible** | Weak signals: novel items, small fast-growing themes, first-seen technology combinations, new terms. Plus wildcards: low-probability, high-impact events proposed by the generative model and tied to a signal (or marked "no signal yet"), then curated by analysts. |
-| **Preferable** | IP Australia's objectives and leadership's chosen end states. Moria supports **backcasting** here: for each end state it shows the gap between the projected path and the target, the drivers that help or hinder (from the SWOT), and the signposts to monitor. |
+| **Projected** | The median of the baseline forecasts for key indicators (filings by right and top fields, non-resident share, timeliness, SME share) |
+| **Probable** | The 50% interval of the forecast chosen by rolling-origin backtest (MASE, interval coverage). **Baselines only in the PoC.** |
+| **Plausible** | Scenarios, plus the 80% and 95% statistical bands |
+| **Possible** | Validated weak signals, and curated wild cards |
+| **Preferable** | Leadership's chosen end states. Moria supports **backcasting**: the gap between the projected path and the target, the drivers that help or hinder it, and the signposts to monitor. |
 
 **How the scenarios are built:**
 1. **Score each driver on impact and uncertainty.**
-   - Impact is Jev's expected impact, calibrated, plus analyst adjustment.
-   - Uncertainty is computed from the data: inverse settledness; disagreement in stance across the driver's evidence
-     (entropy); the relative width of the forecast interval for linked indicators; and disagreement between sources.
-   - Each is turned into a percentile rank and averaged.
-2. **Plot the impact–uncertainty matrix.**
-   - High impact and low uncertainty are *predetermined elements*: they go into every scenario.
-   - High impact and high uncertainty are *critical uncertainties*.
-3. **Choose the two scenario axes by data:** the pair of critical uncertainties whose driver-strength series are least
-   correlated, preferring different PESTLE dimensions. That keeps the 2×2 from collapsing onto one axis. Analysts can
-   override the choice.
-4. **Write the four scenarios.** The generative model drafts each one from its quadrant's drivers and evidence, and the
-   check applies. Each scenario states where key indicators would sit relative to the statistical cone, from analysts'
-   directional assumptions. Moria does not pretend to compute scenario probabilities.
+   - Impact comes from analysts, with Jev's suggestion beside it.
+   - Uncertainty comes from the data: inverse settledness, disagreement in stance across interpretations, forecast
+     interval width, and disagreement between sources.
+2. **Plot the impact–uncertainty matrix.** Predetermined elements go into every scenario; critical uncertainties are
+   the candidates for the axes.
+3. **Choose the axes.** They are the two critical uncertainties whose driver-strength series are least correlated,
+   preferring different PESTLE dimensions. Analysts can override the choice.
+4. **Develop the scenarios.** In the PoC, analysts develop **2 or 3** of the four quadrants. The generative model
+   drafts each one from evidence, and the check applies. Moria does not compute scenario probabilities.
 
-**Output:**
-- a fan chart per key indicator: the median, the 50/80/95% bands, and annotated scenario positions;
-- a cone map placing drivers and signals by horizon and zone;
-- the scenario narratives;
-- the signpost watchlist, which the weekly digest then tracks.
+### 10.4 Robustness of options
 
-### 9.4 One driver's journey (illustrative only; no real findings)
+Every TOWS option is rated against every developed scenario: performs well, acceptably or poorly. The rating comes
+from the analysts in the workshop, with a cited rationale drafted by the generative model. Each option is then
+classified:
+- **No-regret:** acceptable or better in every scenario.
+- **Hedge:** protects against a poor outcome in one or more scenarios, at modest cost.
+- **Bet:** strong in one scenario and poor in another. It needs signposts that would trigger or abandon it.
 
-1. OpenAlex shows a fast-growing theme on AI-assisted patent drafting.
-2. IP RAPID shows filings rising in computer technology.
-3. GDELT titles about AI inventorship burst.
-4. A legislative change appears on the Federal Register of Legislation.
-5. The PESTLE engine merges these into a candidate driver ("AI changes how IP is created and filed"), tagged T, L and P,
-   at horizon H1 to H2.
-6. Jev's stance splits between opportunity (AI-assisted examination) and threat (volume and quality pressure). The
-   driver enters both the O and T quadrants, marked contested, and pairs in TOWS with the timeliness metric for that
-   field.
-7. In the cone, the field's filings forecast forms the probable band. "Recognition of AI-generated inventions" becomes a
-   critical-uncertainty axis. An outlier cluster of AI-generated defensive publications becomes a weak signal in the
-   possible zone.
+The signposts go to the weekly digest. Options become entries in the decision layer, each with an owner and a review
+date.
+
+### 10.5 One signal's journey (illustrative only; no real findings)
+
+1. **Detectors fire.** `cross_family` shows a cluster about AI-generated prior art appearing in research (OpenAlex) and
+   policy (consultations) within one window. `low_base_surge` shows GDELT titles on the topic rising from a low base.
+2. **Artefact checks:** coverage passes; there is no ingestion incident. The news-cycle flag is not raised, because
+   primary sources are in the dossier.
+3. **The dossier** shows the top items, two analogues from 2021–22 (one faded and one became mainstream),
+   counter-evidence, and the checklist.
+4. **Validation.** An analyst validates it as a *weak signal* for questions 1 and 2, with D1, D3 and D6. Jev's machine
+   stance (threat 0.6, both 0.3) is recorded beside the analyst's "both".
+5. **Lenses.**
+   - PESTLE: it joins a T and L driver.
+   - SWOT: it pairs with the timeliness metric for computer technology.
+   - Cone: it sits in the possible zone, and seeds one scenario axis candidate.
+   - TOWS: it suggests an option, "AI-assisted prior-art triage". That option rates as a hedge across the scenarios.
+6. **Decision.** "Investigate: commission a feasibility note; review in Q3." The register then tracks whether the
+   signal strengthens.
 
 ---
 
-## 10. How we know: evaluation
+## 11. How we know: evaluation
 
-Each yardstick is committed before its numbers exist. Each evaluation chooses on dev and reports on test, with
-intervals.
+### 11.1 Is the intelligence any good?
 
-| Component | Yardstick | Pass rule (proposed; the owner adopts it) |
+Pass rules are proposed here and committed in week 1, before any run. The owner adopts them.
+
+| Measure | Definition | How it is measured | PoC target |
+|---|---|---|---|
+| **Historical signal recovery** | The share of hindsight-set developments Moria raised as candidates using only point-in-time evidence | Hindsight runs at past `as_of` dates | ≥ 50% |
+| **Lead time** | Months from Moria's first candidate flag to the development's mainstream point (coverage peak, or first mention in IP Australia's own publications) | Hindsight runs | Median ≥ 6 months |
+| **Precision** | The share of reviewed candidates that analysts validate | The register | ≥ 30% of the top 40 |
+| **Novelty** | Validated signals that are in neither the known-issues baseline nor the conventional scan | Comparison | **The PoC's success test: at least 3 validated signals the blind conventional scan missed** |
+| **Source diversity** | The share of validated signals whose evidence spans at least 2 families; the share that doesn't depend on news | The register | Reported |
+| **Decision usefulness** | Signals that changed an assumption, prompted an investigation, or informed an option or decision | The decision layer | Reported; tracked across cycles |
+| **Misses** | Developments found by the conventional scan or by analysts that Moria didn't flag | The missed-signal register | Every miss classified: source gap, detector gap, or ranking cut-off |
+| **Cost** | Model spend, and analyst hours per validated signal | Meters and timesheets | Reported |
+
+**The baseline for comparison is a conventional horizon scan.** An analyst does it blind to Moria, on the same
+questions and evidence window, in week 1 to week 5. A recent scan the agency already holds can stand in, with its
+date as the comparison point.
+
+### 11.2 Are the components sound?
+
+| Component | Yardstick | Pass rule (proposed) |
 |---|---|---|
-| Labellers (§8.2) | Gold set of 600 items; macro-F1, PR-AUC, Brier, ECE | Simplest within 0.02 macro-F1 of the best on dev; ECE ≤ 0.05 |
-| Themes | NPMI coherence; stability (mean ARI over 5 seeds); share assigned; analyst word-intrusion test on 20 themes | Simplest within a tie margin; intrusion spotted at least 70% of the time |
-| Trends | Holm-adjusted p-values; sensitivity to the window (12, 24 or 36 months) | A trend is reported only if it is significant in at least 2 of the 3 windows |
-| Forecasts | Rolling-origin backtest, 2012–2025: MASE, pinball loss, coverage | The 80% interval covers 75–85%; the simplest model within 5% of the best MASE |
-| Weak signals | **Hindsight test:** run with an `as_of` date in the past and check that known later developments were flagged. Precision@20 by analyst review. | Proposed: at least half of the known developments flagged 6 or more months before their peak in coverage; precision@20 ≥ 0.3 |
-| Write-ups | The deterministic check; the cross-family judge's rubric; analyst review | 100% pass the check after the retry; no grade below 2 of 3 unreviewed |
-| The whole scan | Analysts' usefulness rating per driver and option in the workshop | Tracked across cycles; it is the business success criterion from CRISP-DM phase 1 |
+| Tags (§9.2) | Gold set of 300 items: macro-F1, Brier, ECE | Simplest within 0.02 of the best; ECE ≤ 0.05 |
+| Machine interpretations | Agreement with analysts' interpretations on validated signals (weighted kappa) | Reported. They stay suggestions whatever the result. |
+| Clusters | Stability (mean ARI over 5 seeds); coherence; analyst word-intrusion test | Simplest within a tie margin; intrusion spotted at least 70% of the time |
+| Trends and change points | Holm-adjusted; sensitivity to the window | Significant in at least 2 of 3 windows |
+| Baseline forecasts | Rolling-origin backtest: MASE, coverage | The 80% interval covers 75–85% |
+| Artefact checks | Seeded artefacts (an injected volume spike, a duplicated syndication, a source onboarding) | All seeded artefacts flagged |
+| Write-ups | The check; the cross-family judge; analyst review | 100% pass the check after the retry |
 
-**The hindsight set** is chosen by analysts *before* any run. It includes known developments and also non-events, so
-that false alarms are counted. Candidate known developments:
-- COVID-19-related trade marks and patents (2020);
-- virtual-goods and metaverse trade marks in Nice classes 9, 35 and 41 (2021–22);
+### 11.3 Leakage rules for hindsight tests
+
+Retrospective tests overstate real-time performance whenever future information leaks in. These rules apply:
+1. **Observable dates only.** Every hindsight run reads evidence by `observable_at`, never by `event_at`.
+2. **Fit at the date.** Vocabularies, clusters, baselines, thresholds and taggers used at an `as_of` date are fitted
+   only on evidence observable by then.
+3. **Pretrained models know the future.** The embedder, Jev and the LLMs were trained after many hindsight events. So
+   each hindsight run reports two variants:
+   - **term-only:** counts, TF-IDF, keyphrases and co-occurrence, with no pretrained model;
+   - **full.**
+
+   The gap between them is the contamination allowance. Machine impact judgements are excluded from hindsight
+   scoring.
+4. **Developments are defined from contemporaneous evidence.** The hindsight set is chosen by analysts blind to
+   Moria's output, and includes **non-events**, so that false alarms are counted.
+
+Candidate developments:
+- COVID-19-related marks and patents (2020);
+- virtual-goods and metaverse marks in Nice classes 9, 35 and 41 (2021–22);
 - generative-AI filings (2022–24).
 
 **Limits, disclosed in every report:**
-- Backfilled history uses publication dates, not first sighting, so hindsight tests flatter the system somewhat.
-- The probable band assumes the past's patterns persist.
-- The LLM-written test material is not real analysts' questions until the workshops supply some.
+- backfilled history has no true first sighting;
+- the probable band assumes the past persists;
+- D4 is low coverage;
+- non-English sources are absent.
 
 ---
 
-## 11. Security, privacy and governance
+## 12. Security, privacy and governance
 
-**From the SOP (§22), applied here:**
-- Everything from a source, from a model or from another tool is untrusted data, never instructions.
-- The sweep stage removes active content, marks hidden content, and scans for AI-directed instructions, Unicode
-  smuggling, secrets and personal data. High severity quarantines the item; the owner alone approves allowlist entries.
+**From the SOP (§22):**
+- Everything from a source, a model or a tool is untrusted data, never instructions.
+- The sweep removes active content, marks hidden content, and scans for AI-directed instructions, Unicode smuggling,
+  secrets and personal data. High severity quarantines the item, and the owner alone approves allowlist entries.
 - Prompts and Jev states wrap source text in defanged delimiters.
 - Every generated string is re-scanned.
-- API clients are pinned, with `store=false` for OpenAI.
+- Clients are pinned, with `store=false` for OpenAI.
 - Local models have a permissive licence and a pinned revision, and no `trust_remote_code`.
 
 **Specific to Moria:**
-- **Personal information.** IP RAPID's party table includes individuals.
-  - Names of parties that are individuals are hashed at ingest.
+- **Personal information.** IP RAPID's parties include individuals.
+  - Their names are hashed at ingest.
   - Analysis stays at organisation, sector and country level.
   - No output profiles a person.
-- **Pickled models are code.** A `joblib` artefact is loaded only if its SHA-256 matches the manifest Moria wrote.
-- **The VM:**
-  - no inbound ports; SSH through IAP;
-  - the R2 token is scoped to one bucket, read and write;
-  - the GCP service account has least privilege (Secret Manager accessor, BigQuery job user);
-  - budget alerts are set.
-- **Licences, per source in the evidence envelope:**
-  - news is stored as titles and URLs only;
-  - AustLII is not harvested without permission;
-  - OpenAustralia's terms are non-commercial;
-  - IP RAPID is CC BY 4.0, so reports attribute it.
-- **Data residency.** The free tier is US-only (us-west1), and R2 has no Australian jurisdiction setting. That is
-  acceptable only because Moria holds public data. Anything non-public needs an environment the agency approves.
-- **AI governance.** If IP Australia adopts Moria's outputs into official strategic planning, it is likely an in-scope
-  AI use case under the DTA's *Policy for the responsible use of AI in government* v2.0 (in effect since
-  15 December 2025). That brings a use-case owner, an entry in the agency's register, and a risk assessment. Moria
-  helps by design:
-  - every claim is traceable to evidence;
-  - every model choice is measured and recorded;
-  - every scan is reproducible from its `as_of` date and manifests;
-  - outputs are labelled "machine-assisted analysis: draft for analyst review".
+  - The register records analysts' names, as authors of interpretations, for accountability only.
+- **Pickled models are code.** A `joblib` artefact loads only if its SHA-256 matches its manifest.
+- **The VM:** no inbound ports; SSH through IAP; a bucket-scoped R2 token; a least-privilege service account; budget
+  alerts.
+- **Licences, per source card:** news is stored as titles and URLs; AustLII is not harvested without permission;
+  OpenAustralia's terms are non-commercial; IP RAPID is CC BY 4.0, so reports attribute it.
+- **Data residency.** The free tier is US-only, and R2 has no Australian jurisdiction. That is acceptable for public
+  data only.
+- **AI governance.** If IP Australia adopts the outputs into official planning, Moria is likely an in-scope use case
+  under the DTA's *Policy for the responsible use of AI in government* v2.0 (in effect since 15 December 2025). The
+  three-layer design helps:
+  - observation, interpretation and decision are separate and attributed;
+  - every model choice is measured;
+  - every scan is reproducible from its `as_of` date;
+  - machine interpretations are always labelled as such.
 
 ---
 
-## 12. Build order
+## 13. The six-week proof of concept
 
-Each phase is one owner request and one or two sessions, under the SOP's cycle (§2): build, verify without spending,
-gate, run, read, record, reply.
+The PoC tests whether the approach produces useful intelligence. It does not try to cover every source and question.
+Each week is one or two Claude Code sessions under the SOP's cycle, with the owner's gates as marked.
 
-| Phase | Work | Checked by | Spend |
+| Week | Work | Gate or check | Spend |
 |---|---|---|---|
-| **0. Kickoff** | Repo skeleton per SOP §15.3 (`CLAUDE.md`, `docs/decisions.md`, config, `prompts/`, CI with no network, hygiene test). VM provisioned by script; R2 bucket and scoped token. Environment check: DuckDB reads and writes `r2://`; Jev `/v1/models`; OpenAI, Gemini and Langfuse auth; BigQuery dry run. `scripts/memprobe.py` on the real VM. Tier 1 inventory and licences. | Green CI; every provider answers; probe numbers recorded | < $0.10 |
-| **1. Business understanding** | Strategic-question register; objectives taxonomy from the Corporate Plan 2026–27; PESTLE codebook; Jev question set v1; annotation guide; the hindsight set (chosen by analysts) | **Owner approves** the questions, the codebook and the hindsight set | $0 |
-| **2. Data** | Tier 1 adapters and collectors; sweep; normalisation; IP RAPID ingest and `ipr_metrics`; indicators; backfill of counts; data-quality census reports | Fixture tests; real-data runs with manifests; reports read | $0 (BigQuery capped) |
-| **3. Labels** | Gold set (about 8 analyst-hours); the labeller measurement (§8.2) | Report with intervals; **owner adopts** a labeller | about $5 |
-| **4. Mining** | Embeddings; themes; trends; signals; rules; lead–lag; forecasts, each with its measurement; the hindsight test | Eval reports; **owner adopts** the methods | $5–15 |
-| **5. Frameworks and write-up** | PESTLE, SWOT/TOWS and cone engines; write-up with the check; judge; **the pilot scan** on the AI question; analyst workshop | The check at 100%; judge grades; workshop ratings | $10–25 |
-| **6. Operate** | Timers; weekly digest; quarterly scans; drift checks; Tier 2 sources added one at a time, each extending the gold and hindsight sets | Each new source re-runs its evaluations (SOP §21.4) | $10–25 a quarter |
+| **1. Scope and baseline** | Repo skeleton (SOP §15.3), VM and R2, environment check, the probe on the VM. The 5–8 questions, the lens, the codebook, the source cards, the known-issues baseline, the definition of a meaningful signal, the hindsight set and non-events, and the pass rules, all committed. **The blind conventional scan starts.** | **Owner** approves the questions, lens, codebook, hindsight set and pass rules | < $1 |
+| **2. Data pipeline** | Tier 1 adapters; sweep; normalise (event and observable dates, de-duplication); ingestion monitors; IP RAPID ingest and metrics; backfill of counts; the 300-item gold set and the tagger measurement | Fixture tests; manifests; census reports; **owner adopts** a tagger | about $5 |
+| **3. Mining** | Rates; trends, accelerations and change points; clusters and neighbours; novelty; co-occurrence and cross-family; the five weak-signal indicators; artefact checks (with seeded artefacts); dossiers; BM25 index; point-in-time hindsight runs, term-only and full | Component yardsticks (§11.2) | $0 to $2 |
+| **4. Signal validation** | Analysts review the top 40 or so candidates, test alternatives, and record status, reasons and interpretations. Ranking weights are refined (recorded as a decision). Misses and source gaps are logged. | Precision; misses classified | Cents (Jev suggestions) |
+| **5. Strategic interpretation** | PESTLE over validated external signals; SWOT and TOWS; impact–uncertainty; axes; 2–3 scenarios; the robustness matrix; write-ups with the check and the judge; the workshop | The check at 100%; judge grades; workshop ratings | $5 to $20 |
+| **6. Evaluation and demonstration** | Comparison with the blind conventional scan (overlap, novelty, misses); recovery and lead time; precision; diversity; cost and hours; the evaluation report; **a recommendation on whether to scale**; a demonstration | **Owner** decides whether to scale | $0 to $2 |
 
-**Shape outputs now for later uses, but don't build them yet** (they go under "Future state" in `CLAUDE.md`):
-- a question-answering agent over the evidence store (the SOP's agent pattern);
+**The deliverables:**
+1. a reproducible ingestion and mining pipeline;
+2. the source catalogue (source cards) and a documented methodology (`docs/methodology.md`);
+3. a prioritised, evidence-linked **signal register**;
+4. PESTLE and SWOT/TOWS analyses with traceable evidence;
+5. 2 or 3 alternative futures, and options rated for robustness;
+6. an evaluation report, and a recommendation on whether to scale.
+
+**Analyst time** (estimates):
+- week 1: about 6 hours (questions, baseline, hindsight set);
+- week 2: about 4 hours (gold labels);
+- week 4: about 10 hours (about 40 candidates at 15 minutes each);
+- week 5: a half-day workshop for 3 or 4 people;
+- week 6: about 2 hours;
+- **plus the blind conventional scan: about 3 analyst-days,** unless a recent scan can stand in.
+
+**After the PoC, if the owner decides to scale:**
+- quarterly cycles (§4.4);
+- Tier 2 sources added one at a time, each extending the hindsight set (SOP §21.4);
+- the IPAVentures lens, once internal customer data is available in an approved environment;
+- quantile forecasts, if the baselines fail coverage.
+
+Shape the outputs for these, but don't build them yet (they go under "Future state" in `CLAUDE.md`):
+- a question-answering agent over the evidence (the SOP's agent pattern);
 - a dashboard;
-- other agents as callers;
-- non-English sources;
-- an Iceberg catalogue on R2.
+- other agents as callers.
 
 ---
 
-## 13. Flags
+## 14. Flags
 
-**For you: Jev is early access, and its claims are the vendor's own.**
-- Found: signups were reported paused on 22 September 2026. Its benchmarks are on four internal datasets.
-- Why it matters: the design leans on its calibrated probabilities.
-- Options: (a) proceed with Jev as one of three backends and measure it (§8.2); (b) drop it for a small LLM.
-- I recommend (a). It costs nothing if Jev is unavailable, because the fallback is built anyway.
-- I need: whether you have an API key.
+**For you: the PoC's success test needs a blind baseline.**
+- Found: the strongest test of value is whether Moria finds what a conventional scan missed. That needs a scan done
+  without seeing Moria's output.
+- Options: (a) an analyst does one, about 3 days; (b) use the agency's most recent strategic scan, if one exists;
+  (c) skip it, and judge novelty only against the known-issues baseline.
+- I recommend (a), or (b) if a scan from the last 12 months exists. With (c), the claim of novelty is weaker.
+- I need: which option, and who.
 
-**For you: the free VM is small and slow, but it is enough.**
-- Found: 1 GB of RAM and 0.25 vCPU sustained. The measured peaks are 206 to 462 MB, with one job at a time.
-- Why it matters: the backfill (2 to 3 years of text) will take hours to days on the e2-micro.
-- Options: (a) run the backfill slowly on the free VM; (b) run it once on a larger VM. If the account is new,
-  that is covered by the $300, 90-day trial credit.
-- I recommend (a), unless the backfill estimate in Phase 2 exceeds about 3 days.
+**For you: customer needs (D4) is the weakest domain on public data.**
+- Found: enquiries, search logs, complaints and feedback are internal.
+- Why it matters: it limits question 5 and any IPAVentures lens.
+- I recommend public proxies in the PoC, labelled *low coverage*, and an approved environment later for internal data.
 - I need: nothing now.
 
-**For you: "free" is probably not $0.**
-- Found: an in-use external IPv4 is likely about $3.65 a month (unverified for the free tier). Egress over 1 GB a month
-  is billed.
-- I recommend accepting this, with a $5 a month budget alert.
-- I need: a yes.
-
-**For you: residency and policy.**
-- Found: the free tier is US-hosted.
-- Why it matters: this is acceptable for public data only. If the work becomes official, the DTA AI policy applies.
-- I recommend public data only, and keeping the design portable. Everything is Parquet, Python and S3-compatible
-  storage, so it can move to an agency-approved environment unchanged.
-- I need: confirmation of the public-only scope.
-
-**For you: futures honesty.**
-- The probable band is extrapolation, and the preferable zone is leadership's choice.
-- Reports will say both, every time.
+**For you: hindsight tests flatter pretrained models.**
+- Found: the embedder, Jev and the LLMs were trained after the hindsight events.
+- I recommend reporting both the term-only and the full variants (§11.3), and treating the gap as the contamination
+  allowance.
 - I need: nothing.
 
----
-
-## 14. For the owner
-
-1. **Adopt this design as the basis for Phase 0?** (yes / changes)
-2. **Pilot question:** "How could AI change the demand for, and the administration of, IP rights in Australia,
-   2026–2036?" (yes / another)
-3. **Jev:** do you have API access? (yes / no; if no, the LLM fallback is the starting backend)
-4. **Scope:** public data only on this stack? (yes / no)
-5. **Budget:** $50 for the backfill and the first scan, then about $25 a quarter; infrastructure alert at $5 a month.
-   (yes / amount)
-6. **People:** who labels the gold set (about 8 hours) and joins the review workshop (half a day a scan)?
-7. **Repo visibility:** private or public? This decides whether gold-set excerpts and reports are committed to git, or
-   kept only in R2.
+**Carried from v0.1** (unchanged):
+- **Jev is early access,** with vendor-only benchmarks. It sits behind an adapter with fallbacks. I need to know
+  whether you have a key.
+- **The free VM is small and slow but enough.** The measured peaks are 206 to 489 MB. The fallback for heavy one-off
+  jobs is a GitHub Actions runner, or a temporary VM paid from the $300 trial credit.
+- **"Free" is probably about $4 a month,** for the IPv4 address.
+- **Public data only** on this US-hosted stack.
+- **Futures honesty:** the probable band is extrapolation, and the preferable future is leadership's choice.
 
 ---
 
-## 15. References
+## 15. For the owner
 
-- Owner's SOP: `sop-agent-construction-v2.md` (method, records, money rules, security).
+1. **Purpose:** whole-of-agency strategy, IPAVentures opportunities, or both? I recommend agency strategy for the
+   PoC, with IPAVentures as a later lens (§1).
+2. **Adopt v0.2 as the basis for the six-week PoC?** (yes / changes)
+3. **The questions:** keep, edit or replace the seven starter questions (§2.2).
+4. **The baseline:** a blind conventional scan (about 3 analyst-days), a recent existing scan, or none (§14)?
+5. **Jev:** do you have API access? (yes / no)
+6. **Scope:** public data only on this stack? (yes / no)
+7. **Budget:** $50 cap for the PoC (expected $20 to $40), then about $25 a quarter; infrastructure alert at $5 a
+   month. (yes / amount)
+8. **People and visibility:**
+   - who gives about 22 analyst-hours plus the workshop (§13)?
+   - is the repo private or public? This decides whether dossier excerpts are committed to git or kept only in R2.
+
+---
+
+## 16. References
+
+- Owner's SOP: `sop-agent-construction-v2.md`.
 - Source catalogue and provenance model: `Access-architecture-and-reusable-adapters.md`.
-- IP RAPID, data.gov.au dataset `423000b8-5735-4447-bcb9-792644bcd7ea`, and its data dictionary (IP Australia Centre of
-  Data Excellence, 2023-08-01).
-- IP Australia, Strategic Corporate Plan 2025–26 and 2026–27 (published 1 September 2026).
-- Google Cloud free-tier features (Compute Engine e2-micro, BigQuery, the $300 trial):
-  `docs.cloud.google.com/free/docs/free-cloud-features`.
-- Cloudflare R2 pricing (10 GB-month, 1M Class A, 10M Class B, free egress), and DuckDB's R2 guide (`TYPE r2` secrets).
+- The alternative view reviewed for v0.2 (supplied by the owner, 2026-10-09).
+- IP RAPID: data.gov.au dataset `423000b8-5735-4447-bcb9-792644bcd7ea`, and its data dictionary (IP Australia
+  Centre of Data Excellence, 2023-08-01).
+- IP Australia: Strategic Corporate Plan 2025–26 and 2026–27 (published 1 September 2026); "Innovation at IP
+  Australia" (IPAVentures, IP First Response).
+- Google Cloud free-tier features; Cloudflare R2 pricing; DuckDB's R2 guide and its `fts` extension.
 - TypeSafe Jev: Browserbase, "What is Jev?" (2026-09-21); DeepLearning.AI, *The Batch* (2026-09-25); third-party API
-  guides (endpoint, pricing, the signup pause).
+  guides.
 - DTA, *Policy for the responsible use of AI in government* v2.0 (effective 2025-12-15).
-- Voros, J. (2003), "A generic foresight process framework", *Foresight* 5(3): the Futures Cone.
-- Chapman, P. et al. (2000), *CRISP-DM 1.0: Step-by-step data mining guide*.
+- Voros, J. (2003), "A generic foresight process framework", *Foresight* 5(3).
+- Chapman, P. et al. (2000), *CRISP-DM 1.0*.
 - Verhoeven, D., Bakker, J. and Veugelers, R. (2016), "Measuring technological novelty with patent-based indicators",
-  *Research Policy* 45(3): recombination as a novelty signal.
+  *Research Policy* 45(3).
+- Killick, R., Fearnhead, P. and Eckley, I. (2012), "Optimal detection of changepoints with a linear computational
+  cost", *JASA* 107(500): PELT.

@@ -1,4 +1,4 @@
-"""Peak-memory probe for Moria's planned workloads (docs/design.md §3.2).
+"""Peak-memory probe for Moria's planned workloads (docs/design.md §4.2).
 
 Each workload runs in its own process, so each peak is independent. The data is synthetic, at the planned scale.
 Run it on the target VM to confirm the free tier (1 GB RAM) holds them, one job at a time:
@@ -24,6 +24,8 @@ WORKLOADS = [
     "nmf_hashed",
     "duckdb_agg",
     "hdbscan",
+    "fts_bm25",
+    "knn_chunked",
     "embed",
 ]
 
@@ -105,6 +107,33 @@ def run(name):
         x = PCA(n_components=20, random_state=0).fit_transform(rng.standard_normal((20_000, 384), dtype=np.float32))
         HDBSCAN(min_cluster_size=25, copy=True).fit(x)
         out["points"] = 20_000
+    elif name == "fts_bm25":  # analyst search: DuckDB's full-text index, ranked by BM25
+        import duckdb
+
+        con = duckdb.connect()
+        con.execute("SET memory_limit='300MB'; SET threads=2;")
+        con.execute("CREATE TABLE docs (id INTEGER, body VARCHAR)")
+        for start in range(0, 100_000, 10_000):  # 100k documents of 150 words
+            batch = synthetic_docs(10_000, rng)
+            con.executemany("INSERT INTO docs VALUES (?, ?)", [(start + i, d) for i, d in enumerate(batch)])
+        con.execute("PRAGMA create_fts_index('docs', 'id', 'body', stemmer='none', stopwords='none')")
+        hits = con.execute(
+            """SELECT id, fts_main_docs.match_bm25(id, 'w17 w4242 w31337') AS score FROM docs
+               WHERE score IS NOT NULL ORDER BY score DESC LIMIT 10"""
+        ).fetchall()
+        out.update(docs=100_000, hits=len(hits))
+    elif name == "knn_chunked":  # nearest neighbours and near-duplicates: cosine top-10 over float16 vectors, in chunks
+        n, dims, chunk = 200_000, 384, 20_000
+        store = np.empty((n, dims), dtype=np.float16)  # stored as float16, as in features/; built chunk by chunk
+        for lo in range(0, n, chunk):
+            block = rng.standard_normal((chunk, dims), dtype=np.float32)
+            store[lo : lo + chunk] = block / np.linalg.norm(block, axis=1, keepdims=True)
+        queries = store[:500].astype(np.float32)
+        best = np.full((len(queries), 10), -np.inf, dtype=np.float32)
+        for lo in range(0, n, chunk):
+            sims = queries @ store[lo : lo + chunk].astype(np.float32).T
+            best = np.sort(np.concatenate([best, np.sort(sims, axis=1)[:, -10:]], axis=1), axis=1)[:, -10:]
+        out.update(vectors=n, queries=len(queries))
     elif name == "embed":
         try:
             from fastembed import TextEmbedding
