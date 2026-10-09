@@ -291,4 +291,55 @@ design tabulates every point against v0.1 and v0.2.
   6. who reviews and labels;
   7. comfort with the public repo.
 
-Next free decision number: D-005.
+---
+
+## D-005 — The owner approves v0.3's direction, adopts the four outside-in questions, and reviews alone; an explainer of the mining (2026-10-09)
+
+**Context.** The owner replied to v0.3: "Very happy with basically all of that." They asked:
+- why an embedding model can't be used on Kaggle;
+- how the process works ("I've not done data mining before… I'm imagining we'd need to create an embedding and then
+  cluster them by k-means or something like that?");
+- what the 200 items to label would look like.
+
+They also said that it's just them at this stage.
+
+**Decision (owner).**
+- The direction of design v0.3 is approved.
+- **The four outside-in questions are adopted** ("Absolutely bang on").
+- **The owner is the only reviewer and labeller,** for now.
+
+**Settled in the build (Claude), following from these:**
+- **A misunderstanding corrected.** Embeddings *can* run on Kaggle, and v0.3 already used Colab and Kaggle for the
+  backfill. What can't run there is Matilda-Jev (too large) or anything on TPUs. Design §4.1 now names the free
+  Kaggle or Colab GPU as the default place for the embedding backfill, with weekly new items on the Actions runner.
+- **Two-stage review for one person.**
+  - Triage: up to 40 candidates at about 1 to 2 minutes each, choosing keep, park or reject.
+  - Deep review: the 8 to 10 kept, at about 15 to 20 minutes each.
+  - About 3 to 4 hours a round, against about 10 hours for 40 full dossiers.
+- **Labelling for one person.**
+  - About 200 items: about 150 stratified by source type, about 50 the tagger is least sure of, and about 10 hidden
+    repeats.
+  - The repeats measure self-consistency, which replaces two-annotator agreement.
+  - Four menu answers per item: mainly about (PESTLE), ring, territories, usable. About 30 seconds an item, so 1.5 to
+    2 hours in sittings.
+- **The explainer** `docs/mining-explained.md` and the demo `scripts/demo_embed_cluster.py`:
+  - the demo embeds 28 made-up headlines with `bge-small-en-v1.5`, chooses k by silhouette (k=5, at 0.167), names
+    clusters by class-based TF-IDF, ranks novelty by distance from each cluster's centre, and lists nearest
+    neighbours;
+  - **result:** the four planted themes mostly came back, and all four planted odd ones out were among the five worst
+    fits;
+  - **the limit it shows:** k-means put the odd ones into a meaningless grab-bag cluster. This is why the design keeps
+    HDBSCAN beside it, a stability check, and novelty as a signal.
+
+**Spend:** $0.
+
+**Consequences.**
+- For the owner, design §15:
+  1. compute option A or B;
+  2. the five territories;
+  3. a yes to create the R2 bucket, then an R2 token as repo secrets;
+  4. an OpenAlex key;
+  5. comfort with the public repo;
+  6. the labelling format: a spreadsheet, or a phone page.
+
+Next free decision number: D-006.

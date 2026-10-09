@@ -1,6 +1,7 @@
 # Moria: a broad signal-detection and validation engine for IP Australia's strategic foresight
 
-**Design v0.3, 2026-10-09. Status: proposed (D-004); it builds on the owner's decisions in D-003.** Nothing is built
+**Design v0.3, 2026-10-09. Status: direction approved by the owner (D-005), with set-up items open (§15). It builds on
+D-003 and D-004.** Nothing is built
 yet. v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
 - one purpose, with two audiences;
 - broader than the IP system;
@@ -167,7 +168,7 @@ there.
 
 These are drafts for the owner to edit.
 
-**Outside-in questions (new in v0.3):**
+**Outside-in questions (adopted by the owner, D-005):**
 1. Which shifts in the wider world could most change why, how or whether Australians create, protect and use ideas
    over the next decade? Shifts here means demographic, climate and energy, geopolitical, economic, social or
    technological change.
@@ -212,7 +213,7 @@ Territories are used four ways:
 | **Wide and shallow, then narrow and deep** | Whole-taxonomy counts are cheap and come first. Dossiers are built only for ranked candidates. People review only the top of the queue. |
 | **Pathway gate** | Applied to *signals*, never to items. A candidate with no nameable pathway is parked, not deleted. It is revisited if it grows. |
 | **Ring quotas** in the review queue | Core 35%, adjacent 35%, wider world 30%. Third-order pathways are at most 20% of the queue. |
-| **Review budget** | About 40 dossiers per review round |
+| **Review budget** (one reviewer) | Two stages per round. **Triage:** up to 40 candidates at about 1 to 2 minutes each (one-line summary, small chart, three examples), choosing keep, park or reject. **Deep review:** the 8 to 10 kept, at about 15 to 20 minutes each. About 3 to 4 hours a round. |
 | **Known-trends baseline** | Foresight syntheses (§5.2) and IP Australia's own documents, extracted once. A candidate that only restates a known trend is marked `already_known` in seconds. |
 | **Saturation rule** | Stop adding sources to a ring once its last 2 additions yielded no new validated driver in a cycle. Add to the ring that is still yielding. |
 
@@ -311,8 +312,13 @@ on CPU.
   the free tier.
 - **Kaggle** gives free GPUs (users report about 30 hours a week; not an official figure) and a TPU v5e-8 (9-hour
   sessions).
-- **What they are good for here:** embedding the backfill with larger encoders; running the small Jev-class models
-  over every item rather than only over signals; one-off hindsight runs.
+- **What they are good for here:**
+  - **embedding the backfill.** This is the default place for it: two or three years of items at once, faster than a
+    CPU, and with room for larger, more accurate encoders;
+  - running the small Jev-class models over every item, rather than only over signals;
+  - one-off hindsight runs.
+
+  Weekly new items are few enough to embed on the scheduled Actions runner.
 - **What they can't do:**
   - run Matilda-Jev (§9.2);
   - use TPUs, because our stack (llama.cpp, ONNX, PyTorch) doesn't target them;
@@ -378,7 +384,7 @@ moria/
 |---|---|
 | Daily, from day 1 | Feeds and incremental APIs (news titles, legislation, publications, new research works); sweep; normalise; de-duplicate; ingestion monitors |
 | Weekly | IP RAPID refresh; whole-taxonomy counts; ABS releases; embeddings and tags; detectors; artefact checks; dossiers; pathway suggestions; **the early-warning digest** |
-| Each cycle (quarterly, after the sprint) | The strategic view; the lenses; the workshop |
+| Each cycle (quarterly, after the sprint) | The strategic view; the lenses; an interpretation session (you, for now; a workshop once others join) |
 
 ### 4.5 Costs
 
@@ -656,7 +662,7 @@ interpretation. A machine interpretation (§9) may be attached, and is labelled 
 | Job | Free default | Measured or to measure | Upgrade, only if measured need |
 |---|---|---|---|
 | Encoding, for clusters, neighbours and de-duplication | `BAAI/bge-small-en-v1.5` (MIT) through fastembed on CPU | 462 MB; 18 texts/s per thread | A shortlist of larger open encoders, compared on cluster stability and coherence on our data, run on a free GPU |
-| Per-item descriptive tags (ring, domain, PESTLE origin, territory) | (1) Zero-shot: cosine similarity to the codebook and territory descriptions. (2) After about 200 labels from you: logistic regression on the embeddings, with isotonic calibration. | To measure on your labels (§11.2) | The decision model on a free T4 over every item, if the day-3 measurement shows it is fast enough |
+| Per-item descriptive tags (ring, domain, PESTLE origin, territory) | (1) Zero-shot: cosine similarity to the codebook and territory descriptions. (2) After about 200 labels from you (how they're picked, and what you'd see: `docs/mining-explained.md`): logistic regression on the embeddings, with isotonic calibration. | To measure on your labels (§11.2) | The decision model on a free T4 over every item, if the day-3 measurement shows it is fast enough |
 | Signal-level decisions (pathways and order, origin, horizon, stance) | `chaoliangUNSW/Jev-Style-0.8B-Decision-v3` (Apache-2.0; 0.53 GB in 4-bit; up to 25.6k tokens of input; a `/v1/systemone`-compatible server) on an Actions runner | About 1.7 GB; 88 s per 8k-token dossier | The 2B sibling; `alibiserikbay/JevK5` (4B); `autotrust/JEV-9B` on a free T4; then **Matilda-Jev** (paid menu M1) |
 | Cluster names | The top keyphrases by class-based TF-IDF: deterministic | — | Drafting (M2) |
 | Dossiers, digests | Deterministic templates: tables, top evidence, analogues, checklist | — | — |
@@ -774,7 +780,7 @@ choose. The chosen options go to §10.4.
 ### 10.4 Robustness of options
 
 Every TOWS option is rated against every developed scenario: performs well, acceptably or poorly. The rating comes
-from the analysts in the workshop, with a cited rationale (written by people, or drafted under M2). Each option is then
+from the reviewer (a workshop once others join), with a cited rationale (written by people, or drafted under M2). Each option is then
 classified:
 - **No-regret:** acceptable or better in every scenario.
 - **Hedge:** protects against a poor outcome in one or more scenarios, at modest cost.
@@ -835,7 +841,7 @@ can stand in, with its date as the comparison point.
 
 | Component | Yardstick | Pass rule (proposed) |
 |---|---|---|
-| Tags and decision models (§9) | About 200 labels from you: macro-F1, Brier, ECE, seconds per item on CPU and on a T4 | Simplest within 0.02 of the best; ECE ≤ 0.05. With about 200 labels the standard error is about 0.05, so gaps under about 0.12 can't be separated: enough for a go/no-go. |
+| Tags and decision models (§9) | About 200 labels from you (about 150 stratified by source type, about 50 the tagger is least sure of, and about 10 hidden repeats). The repeats measure your self-consistency, which replaces two-annotator agreement because there is one labeller. Metrics: macro-F1, Brier, ECE, seconds per item on CPU and on a T4. | Simplest within 0.02 of the best; ECE ≤ 0.05. With about 200 labels the standard error is about 0.05, so gaps under about 0.12 can't be separated: enough for a go/no-go. |
 | Machine interpretations | Agreement with analysts' interpretations on validated signals (weighted kappa) | Reported. They stay suggestions whatever the result. |
 | Clusters | Stability (mean ARI over 5 seeds); coherence; analyst word-intrusion test | Simplest within a tie margin; intrusion spotted at least 70% of the time |
 | Trends and change points | Holm-adjusted; sensitivity to the window | Significant in at least 2 of 3 windows |
@@ -937,9 +943,9 @@ branches, merged daily:
 | 6–7 | Buffer: fixes, documentation (`docs/methodology.md`), handover | | | |
 
 **After the machinery (at the owner's pace):**
-1. about 200 labels (2 to 3 hours), so the tagger comparison can run;
-2. the first review round (about 40 dossiers at 15 minutes each);
-3. the lenses and a workshop.
+1. about 200 labels (about 30 seconds each, so 1.5 to 2 hours, in sittings), so the tagger comparison can run;
+2. the first review round: triage, then a deep review of the 8 to 10 kept (about 3 to 4 hours; §2.5);
+3. the lenses, in your own interpretation session.
 
 Deferred out of the sprint: forecasts, generative drafting (M2), the blind scan, and Tier 2 sources.
 
@@ -974,30 +980,30 @@ free Jev-Style models come first (§9).
 
 ## 15. For the owner
 
-**Decisions:**
+**Settled (D-005):**
+- the direction of v0.3;
+- the four outside-in questions;
+- the reviewer: you alone. Review is two-stage (§2.5), and labelling checks your self-consistency (§11.2).
+
+**Still open:**
 1. **Compute:** option A (Actions and R2, $0) or B (adding the e2-micro)? I recommend A.
-2. **The questions:** keep, edit or replace the four outside-in and seven system-specific drafts (§2.3).
-3. **Your five Growth Territories:** paste them in. For each, a name, two or three sentences, and a few seed terms.
-
-**Set-up I need from you** (about an hour in total; nothing is spent):
-
-4. **Cloudflare:** a yes, and I'll create the private bucket `moria` with the connected Cloudflare tool. Your account
+2. **Your five Growth Territories:** a name, two or three sentences, and a few seed terms each. The seven
+   system-specific sub-questions (§2.3) stay unless you edit them.
+3. **Cloudflare:** a yes, and I'll create the private bucket `moria` with the connected Cloudflare tool. Your account
    has no buckets yet. Then you create an R2 API token (Object Read & Write, scoped to that bucket) in the dashboard
    and add three repo secrets: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`.
-5. **An OpenAlex API key** (free), added as `OPENALEX_API_KEY`. For BigQuery or option B, also a GCP project with
-   billing enabled, plus a service-account key as a secret. BigQuery's free tier still needs a project.
+4. **An OpenAlex API key** (free), added as `OPENALEX_API_KEY`. For BigQuery or option B, also a GCP project with
+   billing enabled, plus a service-account key as a secret.
+5. **Repo visibility:** the repo is **public**. That's fine for code and design, and the evidence stays in the private
+   bucket. Are you comfortable with the design being public under this account?
+6. **Labelling format:** a spreadsheet, or a phone-friendly page with one item per screen
+   (`docs/mining-explained.md`)?
 
-**The clarification you asked for (old item 8):**
-
-6. **People.** The machine produces candidates, and a person has to judge them. Three tasks:
-   - label about 200 example items, so we can tell which free tagger works (2 to 3 hours);
-   - review the first queue of about 40 dossiers (about 10 hours);
-   - interpret the validated signals in a workshop (half a day).
-
-   Will that be you alone, or who else? It sets how many dossiers a round can carry.
-7. **Repo visibility.** I checked: the repo is **public**. That's fine for code and design, makes GitHub Actions
-   free, and the evidence stays in the private bucket. Are you comfortable with the design being public under this
-   account?
+**Your time, in total:**
+- about an hour of set-up;
+- about an hour before mining (the baseline and the hindsight set, §2.6);
+- 1.5 to 2 hours of labelling;
+- 3 to 4 hours per review round.
 
 **Spend:** none requested. The paid menu (§4.6) is for later, item by item.
 
