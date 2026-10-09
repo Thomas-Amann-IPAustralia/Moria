@@ -1,17 +1,20 @@
 # Moria
 
-A signal-detection and validation engine for IP Australia's strategic foresight. It mines public data for trends and
-weak signals, has analysts validate them, and reads the validated signals through PESTLE, SWOT/TOWS and a Futures
-Cone, each finding traceable to its evidence. Storage is Cloudflare R2; compute is the Google
-Compute Engine free tier; mining uses scikit-learn; typed judgements use Jev; a generative model does the writing.
+A broad signal-detection and validation engine for IP Australia's strategic foresight. It scans public data across
+the IP system, its adjacent fields and the wider world for trends and weak signals. Each candidate must show a
+pathway to the IP system, and people validate it. The validated signals are then read through PESTLE, SWOT/TOWS and
+a Futures Cone, each finding traceable to its evidence. Free by default: scikit-learn, DuckDB and open Hugging Face
+models (including a free Jev-class decision model), with Cloudflare R2 for storage and GitHub Actions or the GCE
+free tier for compute.
 
-**Status: design v0.2 proposed, nothing built yet.** Read [`docs/design.md`](docs/design.md) (§0.1 lists what
-changed from v0.1); the decisions behind it are D-001 and D-002 in [`docs/decisions.md`](docs/decisions.md).
+**Status: design v0.3 proposed, nothing built yet.** Read [`docs/design.md`](docs/design.md) (§0.1 lists what
+changed); the decisions behind it are D-001 to D-004 in [`docs/decisions.md`](docs/decisions.md).
 
 | Path | What it is |
 |---|---|
-| `docs/design.md` | The system design (v0.2) |
+| `docs/design.md` | The system design (v0.3) |
 | `docs/decisions.md` | The decision log (append-only) |
-| `scripts/memprobe.py` | Peak-memory probe of the planned workloads; re-run it on the e2-micro in Phase 0 |
+| `scripts/memprobe.py` | Peak-memory probe of the planned workloads; re-run it on the target runner on day 1 |
+| `scripts/probe_jevstyle.py` | Memory, speed and behaviour probe of the free Jev-class decision model |
 | `sop-agent-construction-v2.md` | The owner's SOP for building on evidence; it governs how this repo is built |
 | `Access-architecture-and-reusable-adapters.md` | Catalogue of horizon-scanning sources, protocol adapters and the provenance model |

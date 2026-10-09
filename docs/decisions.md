@@ -176,4 +176,119 @@ design tabulates every point against v0.1 and v0.2.
   7. the $50 PoC cap;
   8. analyst time (about 22 hours plus a workshop, plus about 3 days for a blind scan), and the repo's visibility.
 
-Next free decision number: D-003.
+---
+
+## D-003 — The owner's answers on v0.2: one purpose for both audiences, broader scope, free first, one week (2026-10-09)
+
+**Context.** The owner answered the v0.2 decisions (design §15 there).
+
+**Decision (owner).**
+1. **Purpose: both.** "IPAVentures is the agency's strategic 'canary in a coal mine', so by shaping the purpose for
+   IP Australia inherently shapes it for IPAVentures."
+2. **Speed and breadth.** Be ambitious and move quickly: about one week for the machinery, while the analysis takes
+   longer. The analysis was too IP-specific: "There are MANY factors which may impact the Australian IP system over
+   the course of 10 years," so think broadly, but not so broadly as to waste time.
+3. **Questions.** The owner couldn't see the drafted questions, and will add five Growth Territories of their own. The
+   investigation may be broader than those five.
+4. **Model.** The owner will likely use Matilda, a Jev-class model on Hugging Face.
+5. **Scope.** Public data only (confirmed).
+6. **Money.** No spend is approved until its exact purpose is known. Free options first, including open Hugging Face
+   models for encoding and clustering.
+7. **Clarification.** The owner asked what item 8 (people and repo visibility) meant.
+8. **Compute.** Asked mid-turn: can the GPUs or TPUs on Google Colab be used?
+
+**Consequences.** Design v0.3 (D-004) applies these answers.
+
+---
+
+## D-004 — Design v0.3: broad by design, free first, a one-week machinery sprint (2026-10-09)
+
+**Context.** The owner's answers in D-003.
+
+**Decision (a recommendation; the owner decides adoption).** `docs/design.md` v0.3:
+
+- **One register, two views.** The early-warning view (IPAVentures) shows weak signals, low-base surges and novel
+  items once past the artefact checks. The strategic view (agency) shows validated trends and drivers. The lens
+  decision of v0.2 is removed.
+- **Breadth by design.**
+  - There is no IP filter at collection.
+  - There are three rings: core (the IP system), adjacent (economy, technology, international) and the wider world.
+  - Big sources are read as whole-taxonomy counts: all OpenAlex topics, all CPC subclasses, ABS headline series, and
+    about 200 broad news themes, each for the world and for Australia.
+  - Every candidate must show one of **six pathways** to the IP system (demand, value, function, legitimacy, the
+    organisation, outcomes), with an order from 1 to 3; order 3 must name its chain.
+  - Four outside-in questions lead, and the v0.2 questions become sub-questions. Growth Territories have a slot.
+- **Breadth controls.**
+  - The pathway gate applies to signals, never to items.
+  - Ring quotas in the review queue: 35% core, 35% adjacent, 30% wider world, with third-order pathways capped at 20%.
+  - A review budget of about 40 dossiers a round.
+  - A known-trends baseline drawn from foresight syntheses.
+  - A saturation rule for adding sources.
+  - A breadth measure: if the wider world yields nothing, the scan is too narrow; if it yields only order-3 noise, it
+    is too broad.
+- **Novelty baseline.** The known-trends baseline plus the five territories replace the three-day blind scan. The
+  success test is at least 3 validated signals outside both.
+- **Free first.**
+  - Embeddings: local `bge-small-en-v1.5`.
+  - Per-item tags: zero-shot similarity, then logistic regression on about 200 of the owner's labels.
+  - Signal-level decisions: the free Jev-class model `Jev-Style-0.8B-Decision-v3` (Apache-2.0).
+  - Cluster names and dossiers: deterministic. Write-ups: written by people.
+  - A **paid menu** (M1–M4) lists each optional item with its purpose, quantity, cost and free alternative. Nothing
+    on it runs without its own approval.
+- **Matilda-Jev** is the measured upgrade (M1), not the default.
+  - For it: Apache-2.0; an Australian maker; the same `/v1/systemone` API, so the adapter takes it unchanged.
+  - Against running it for free: 26.1B parameters, about 49 GiB in bf16 or about 16.3 GiB in FP4, tested only on AMD
+    MI355X. Its runtime needs `trust_remote_code`, which needs the owner's security exception.
+- **Compute, a decision for the owner.**
+  - Option A (recommended): GitHub Actions, which is free for this **public** repo, plus R2. $0.
+  - Option B: as first specified, adding the e2-micro. About $0.60 to $3.65 a month for its IPv4 address.
+  - Free Colab or Kaggle GPUs serve as optional manual bursts. A free T4 can't run Matilda-Jev, and our stack doesn't
+    use TPUs.
+- **The one-week sprint:** three parallel sessions; daily collectors live on day 1, because first sightings can't be
+  backfilled; the first ranked queue of about 40 dossiers on day 5; two buffer days.
+
+**Rejected, a line each:**
+- **An item-level IP-relevance gate.** It would discard wider-world change before its pathway could be judged.
+- **Matilda-Jev as the default.** It isn't free to run, and needs a security exception.
+- **The decision model over every item on CPU.** At about 5 s an item, 150k items take about 9 days.
+- **TPUs.** Nothing in the stack targets them.
+
+**Checked:**
+- **Free decision model.** `scripts/probe_jevstyle.py` ran `Jev-Style-0.8B-Decision-v3` (Q4_K_M, llama.cpp at
+  `441df11`) on this session's 4 CPUs.
+  - Scorer peak about 1,711 MB, plus 237 MB of Python.
+  - About 5.1 s per short item with 7 questions; 88 s for an 8,189-token state with 7 questions.
+  - On six test sentences it ranked relevant items above irrelevant ones, but its probabilities were low (an
+    AI-inventorship ruling scored 0.29 on P3), and it misplaced one origin. So its outputs are suggestions, to be
+    recalibrated on the owner's labels.
+  - The model's Python wrapper and C++ scorer were read before running: no network calls; it launches only the local
+    scorer.
+- **Matilda-Jev's** model cards (v1 and FP4) were read on Hugging Face.
+- **Repo visibility:** public, via the GitHub API.
+- **The connected Cloudflare account has no R2 buckets.**
+- **Reachability from the build environment:**
+  - ABS, legislation.gov.au, WIPO, IP Australia, Hugging Face and Kaggle answered 200;
+  - OpenAlex and GDELT answered 429 (OpenAlex needs a key);
+  - APH and OpenAustralia answered 403 with a Cloudflare bot challenge;
+  - CSIRO reset the connection.
+- **GCP** has no credentials in this environment.
+- **GitHub Actions:** GitHub's docs say standard runners are free for public repositories. The runner hardware is to
+  confirm on day 1.
+- **Colab:** the free tier gives a T4, with sessions of at most about 12 hours (third-party summaries of Google's
+  FAQ).
+- **The diagram** renders with mermaid-cli 11.4.2.
+
+**Spend:** $0.
+
+**Consequences.**
+- Nothing is built.
+- For the owner, design §15:
+  1. compute option A or B;
+  2. the questions;
+  3. the five territories;
+  4. a yes to create the R2 bucket, then an R2 token as repo secrets;
+  5. an OpenAlex key (and GCP only for option B or BigQuery);
+  6. who reviews and labels;
+  7. comfort with the public repo.
+
+Next free decision number: D-005.
