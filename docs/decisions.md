@@ -342,4 +342,68 @@ They also said that it's just them at this stage.
   5. comfort with the public repo;
   6. the labelling format: a spreadsheet, or a phone page.
 
-Next free decision number: D-006.
+---
+
+## D-006 — Option A, a public repo, spreadsheet labelling, the R2 bucket created, and the five Growth Territories turned into search terms (2026-10-10)
+
+**Context.** The owner answered the open items in design §15:
+- "option A";
+- "Yes, please create the R2 bucket";
+- the repo "can/should be public";
+- "Spreadsheet will be better".
+
+They supplied five Growth Territories, each with an aim, "imagine a world where", what has recently changed, the jobs
+to be done, and a 2022 "why now" statement. They asked for search terms to be created from that context, and where
+the OpenAlex key should go.
+
+**Decision (owner).**
+- **Compute:** option A (GitHub Actions and R2).
+- **Repo:** public.
+- **Labelling:** by spreadsheet.
+- **Bucket:** create the R2 bucket.
+- **The territories:** T1 Protect Australian IP; T2 Empower others; T3 Amplify Australian IP; T4 Cultivate our
+  ecosystem; T5 Revisit our purpose.
+
+**Done, and settled in the build (Claude):**
+- **The bucket `moria` was created** through the connected Cloudflare tool, and confirmed with a read-back. It is
+  private (no public access), Standard storage, `ENAM` location (Eastern North America, near the Actions runners),
+  default jurisdiction, created 2026-10-10T16:58:02Z.
+- **`config/territories.yaml` (public)** holds, for each territory:
+  - a description for similarity tagging;
+  - search terms in three rings (about 120 core and adjacent phrases, plus wider-world forces);
+  - exclusions and search rules: never a bare "IP"; both "trade mark" and "trademark"; each query run worldwide and in
+    Australian sources;
+  - the main pathways;
+  - the IP RAPID indicators to compute.
+- **The owner's verbatim context is kept out of the public repo,** in `config/territories.context.yaml`, which is
+  git-ignored and destined for the private bucket. It includes internal findings (for example the IP First Response
+  insights and customer-testing results). Publishing it would be outward-facing and irreversible, and the owner's yes
+  covered the design, not this text. **For the owner:** may it be published?
+- **A fifth use of territories:** a "what has changed since 2022" note per territory, testing each 2022 "why now" claim
+  against 2022–2026 data.
+- **Where keys go** (`docs/setup.md`): wherever the code that uses them runs.
+  - GitHub Actions secrets: for the scheduled jobs.
+  - The Claude Code environment's network secrets or environment variables: for building and testing.
+  - Kaggle or Colab secrets, later.
+  - The OpenAlex key and the three R2 values go in **both** Actions and the Claude Code environment, under
+    `OPENALEX_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`.
+
+**Checked:**
+- **GDELT and the terms:** a check of all 122 core and adjacent terms against GDELT was attempted from this session.
+  - Calls took about 20 s each.
+  - Even when paced at one start every 5.5 s, they drew HTTP 429 after the first call. That call returned zero
+    results for "intellectual property enforcement", so it isn't trusted.
+  - The check was stopped. It becomes `moria terms check` on day 2, run from the Actions runners.
+- **R2 from this session:** a TLS connection to an R2 endpoint with a placeholder account ID failed the handshake. It
+  is retested once the real account ID is in the environment.
+
+**Spend:** $0. R2 storage is empty, within the free tier.
+
+**Consequences.**
+- **For the owner:**
+  1. the R2 token and the OpenAlex key, in both places;
+  2. whether the territory context may be public;
+  3. any edits to the search terms;
+  4. a go for day 1, whose skeleton needs no keys.
+
+Next free decision number: D-007.

@@ -1,0 +1,276 @@
+# Growth Territories (owner, 2026-10-10; D-006). Names and aims are the owner's. Descriptions, search terms,
+# pathways and indicators were drafted by Claude from the owner's context; the owner may edit any of them.
+#
+# The owner's own context for each territory (imagine / what has recently changed / jobs to be done / the 2022 "why
+# now" statement) is kept OUT of this public repo, in config/territories.context.yaml (git-ignored), until the owner
+# confirms it may be published. Jobs read it from the private R2 bucket at interpretation/territories/context.yaml.
+#
+# Where this file is used (docs/design.md §2.4):
+#   - search terms add query themes to the broad sources (GDELT news titles, OpenAlex research, publications and
+#     legislation). They are searched IN ADDITION to the broad wider-world themes, never instead of them;
+#   - `description` is what items and signals are compared against (embedding similarity) to tag territories;
+#   - `ipr_indicators` are measures to compute from IP RAPID (fields and event types confirmed in the day-2 census);
+#   - `pathways` are the routes to the IP system each territory mostly travels (design §2.2).
+#
+# Terms are grouped by ring: `core` uses IP-system language; `adjacent` describes the same need without IP jargon
+# (most of the world never says "intellectual property"); `wider_world` names forces that could move the territory.
+# Every term is checked on day 2 (`moria terms check`): its volume worldwide and in Australian sources, and a sample
+# of hits read for noise. A check from this session's shared network exit was refused by GDELT (HTTP 429).
+version: 1
+
+search_rules:
+  - Never search a bare "IP": it matches IP addresses and networking. Use "intellectual property".
+  - Search both spellings, "trade mark" and "trademark", and Australian and US spellings generally.
+  - Quote multi-word phrases. Each adapter compiles groups of up to five phrases with OR, in each source's syntax.
+  - Run each query twice, worldwide and Australian sources only, so the gap between them is itself a signal.
+  - A term is dropped or narrowed if its hit sample is mostly off-topic (checked on day 2).
+
+territories:
+  - id: T1
+    name: Protect Australian IP
+    aim: Uncover how we can strengthen the protection and enforcement of IP.
+    description: >-
+      How Australian rights holders, especially small businesses, protect and enforce their intellectual property
+      at home and overseas: infringement, counterfeiting, piracy, scams and disputes, and the agencies, platforms
+      and services that help or fail them, including the cost and stress of enforcement.
+    pathways: [P3, P2, P4]
+    terms:
+      core:
+        - intellectual property enforcement
+        - intellectual property infringement
+        - trade mark infringement
+        - trademark infringement
+        - patent infringement
+        - design infringement
+        - counterfeit goods
+        - counterfeiting
+        - pirated goods
+        - online piracy
+        - brand protection
+        - anti-counterfeiting
+        - intellectual property theft
+        - trademark squatting
+        - bad faith trade mark
+        - intellectual property dispute
+        - intellectual property litigation
+        - cease and desist
+      adjacent:
+        - fake products online
+        - knock-off products
+        - dupe culture
+        - copycat products
+        - parallel imports
+        - product authenticity
+        - supply chain traceability
+        - digital product passport
+        - marketplace takedown
+        - platform liability
+        - brand impersonation
+        - fake invoice scam
+        - small business export
+        - cross-border e-commerce
+      wider_world:
+        - economic coercion
+        - organised crime
+        - counterfeit medicines
+        - consumer product safety
+        - cost of living
+        - online platform regulation
+        - trade tensions
+    exclude: [maritime piracy, IP address, software piracy statistics]
+    ipr_indicators:
+      - Opposition filings by right type, and the share by Australian applicants
+      - Non-use removal applications against trade marks
+      - Australian-origin filings abroad (WIPO statistics; IP RAPID covers Australian applications only)
+      - Madrid applications designating Australia, by origin country
+
+  - id: T2
+    name: Empower others
+    aim: Equip stakeholders with more ways to use the IP system.
+    description: >-
+      How innovators, especially small businesses and those under-served today, work out what is worth protecting
+      and obtain suitable rights with confidence: awareness, cost, timing, complexity, AI and digital tools that
+      simplify identification and application, and protection that fits iterative, collaborative development.
+    pathways: [P1, P2, P6]
+    terms:
+      core:
+        - intellectual property awareness
+        - intellectual property for small business
+        - patent application cost
+        - trade mark application
+        - trademark registration
+        - provisional patent
+        - design registration
+        - patent grace period
+        - accelerated examination
+        - AI patent drafting
+        - AI trademark search
+        - intellectual property strategy
+        - first patent
+      adjacent:
+        - intangible assets
+        - startup founders
+        - open innovation
+        - collaborative research agreement
+        - research commercialisation
+        - research translation
+        - rapid prototyping
+        - iterative product development
+        - generative design
+        - R&D tax incentive
+        - trade secrets
+        - small business AI adoption
+      wider_world:
+        - entrepreneurship
+        - creator economy
+        - First Nations business
+        - regional innovation
+        - skills shortage
+        - digital adoption
+    exclude: []
+    ipr_indicators:
+      - First-time applicants (no earlier filing under the same ABN or harmonised name)
+      - Share of applications filed without an attorney (self-filed)
+      - Applications that lapse or are withdrawn before acceptance, and when
+      - Provisional patent applications that convert to complete applications
+      - Applicants with an ABN, by state and size proxy
+
+  - id: T3
+    name: Amplify Australian IP
+    aim: Meaningfully extend the utility and value of IP.
+    description: >-
+      How businesses understand, demonstrate and use the commercial value of their intellectual property:
+      valuation, IP-backed investment and finance, licensing and partnerships, commercialisation and growth,
+      platforms that link registered rights to commercial services, and government priorities for manufacturing,
+      critical minerals and emerging technology.
+    pathways: [P2, P6, P1]
+    terms:
+      core:
+        - intellectual property valuation
+        - patent valuation
+        - IP-backed finance
+        - IP-backed lending
+        - patent licensing
+        - technology licensing
+        - intellectual property commercialisation
+        - patent monetisation
+        - brand registry
+        - standard essential patents
+        - patent pool
+        - intellectual property audit
+      adjacent:
+        - intangible asset valuation
+        - intangible investment
+        - deep tech venture capital
+        - university spin-out
+        - technology transfer
+        - commercialisation funding
+        - National Reconstruction Fund
+        - Future Made in Australia
+        - critical minerals processing
+        - advanced manufacturing
+        - innovation diffusion
+        - royalty income
+      wider_world:
+        - productivity growth
+        - industrial policy
+        - sovereign capability
+        - economic complexity
+        - small business lending
+    exclude: []
+    ipr_indicators:
+      - Assignments and other ownership changes recorded against rights
+      - Renewal and maintenance rates (persistence as a value proxy)
+      - Filings in priority sectors (manufacturing, critical minerals, emerging technologies) by technology field
+      - Filings by Australian universities and research organisations
+
+  - id: T4
+    name: Cultivate our ecosystem
+    aim: Work in new ways with ecosystem actors.
+    description: >-
+      How businesses reach IP support through organisations they already trust, and how partnerships extend an IP
+      office's reach: attorneys, legal and IP service providers, advisers, accelerators, industry bodies, platforms
+      and other government services, and the gaps between them.
+    pathways: [P5, P1, P3]
+    terms:
+      core:
+        - patent attorney
+        - trade marks attorney
+        - intellectual property firm
+        - intellectual property services
+        - intellectual property education
+        - intellectual property mediation
+        - IP management software
+        - legal tech intellectual property
+      adjacent:
+        - small business advisers
+        - business accelerator
+        - startup incubator
+        - industry association
+        - legal technology
+        - AI legal services
+        - government service partnerships
+        - one-stop shop for business
+        - digital identity
+        - business platforms
+      wider_world:
+        - trust in government
+        - digital public infrastructure
+        - public sector reform
+        - AI in government services
+        - platform economy
+    exclude: []
+    ipr_indicators:
+      - Share of applications filed through an attorney or agent, by right type
+      - Number of active agent firms, new entrants, and concentration of filings among them
+      - Local against overseas agents for non-resident applicants
+
+  - id: T5
+    name: Revisit our purpose
+    aim: Reconsider our raison d'etre in light of a changing world.
+    description: >-
+      Whether the purpose and role of an IP office should change: generative AI and inventorship, ownership and
+      value; Indigenous knowledge and geographical indications; IP used to solve societal problems; protection that
+      enables sharing and access; access as a right; government using IP to shape incentives; and the reach of
+      post-registration responsibilities.
+    pathways: [P4, P2, P5, P6]
+    terms:
+      core:
+        - AI inventorship
+        - AI-generated works copyright
+        - text and data mining exception
+        - Indigenous knowledge protection
+        - Indigenous cultural and intellectual property
+        - traditional knowledge
+        - geographical indications
+        - access to medicines patents
+        - patent waiver
+        - compulsory licensing
+        - right to repair
+        - plant breeders rights
+        - genetic resources disclosure
+        - patent system reform
+      adjacent:
+        - generative AI training data
+        - open source AI
+        - open science
+        - open data
+        - data rights
+        - digital commons
+        - climate technology transfer
+        - mission-oriented innovation
+        - platform power
+      wider_world:
+        - Closing the Gap
+        - First Nations economic empowerment
+        - climate adaptation
+        - pandemic preparedness
+        - digital sovereignty
+        - trust in institutions
+        - inequality
+    exclude: []
+    ipr_indicators:
+      - Patent filings in AI technology (IPC G06N), and their share of all filings
+      - Climate-related patent filings (WIPO IPC Green Inventory)
+      - Plant breeder's rights applications by plant group
+      - Certification and collective trade marks (a proxy for GI-style protection), by class

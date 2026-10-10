@@ -1,6 +1,7 @@
 # Moria: a broad signal-detection and validation engine for IP Australia's strategic foresight
 
-**Design v0.3, 2026-10-09. Status: direction approved by the owner (D-005), with set-up items open (§15). It builds on
+**Design v0.3, 2026-10-09; updated 2026-10-10. Status: direction approved by the owner (D-005, D-006), with set-up
+items open (§15). It builds on
 D-003 and D-004.** Nothing is built
 yet. v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
 - one purpose, with two audiences;
@@ -193,18 +194,49 @@ These are drafts for the owner to edit.
 
 ### 2.4 Growth Territories
 
-Each territory has:
-- a name and a short description;
-- a few seed terms;
-- optionally, the questions it serves.
+The owner supplied five territories on 2026-10-10 (D-006):
 
-Territories are used four ways:
-1. **Collection:** their seed terms add query themes to the broad sources.
-2. **Tagging:** each item and signal gets a territory similarity score (embeddings against the description).
-   People confirm it at validation.
+| | Territory | Aim (the owner's) | Main pathways |
+|---|---|---|---|
+| T1 | Protect Australian IP | Strengthen the protection and enforcement of IP | P3, P2, P4 |
+| T2 | Empower others | Equip stakeholders with more ways to use the IP system | P1, P2, P6 |
+| T3 | Amplify Australian IP | Meaningfully extend the utility and value of IP | P2, P6, P1 |
+| T4 | Cultivate our ecosystem | Work in new ways with ecosystem actors | P5, P1, P3 |
+| T5 | Revisit our purpose | Reconsider our raison d'être in light of a changing world | P4, P2, P5, P6 |
+
+**`config/territories.yaml`** (public) holds, for each territory:
+- a description that items and signals are compared against;
+- search terms in three rings: **core** (IP-system language), **adjacent** (the same need described without IP
+  jargon, because most of the world never says "intellectual property") and **wider world** (forces that could move
+  the territory);
+- exclusions;
+- the IP RAPID indicators to compute.
+
+The search terms were drafted from the owner's context, about 120 core and adjacent phrases in all, and the owner may
+edit any of them.
+
+**The owner's own context** ("imagine a world where", what has recently changed, the jobs to be done, the 2022 "why
+now") is kept in `config/territories.context.yaml`. That file is **git-ignored** and goes to the private bucket. It
+stays out of the public repo until the owner confirms it may be published, because it includes internal findings.
+
+Territories are used five ways:
+1. **Collection:** their terms add query themes to the broad sources, in addition to the wider-world themes, never
+   instead of them.
+2. **Tagging:** each item and signal gets a territory similarity score (embeddings against the description). People
+   confirm it at validation.
 3. **Coverage:** each cycle reports signals per territory, and territories with no signals (possible blind spots).
 4. **Novelty:** a validated signal outside every territory *and* outside the known-trends baseline is the strongest
    evidence that the scan is broad enough.
+5. **What changed since 2022.** Each 2022 "why now" statement makes claims that 2022–2026 data can test: growth
+   rates, shares of businesses, drivers named at the time. The first territory output is a short "what has changed
+   since your 2022 statement" note per territory, with its evidence.
+
+**Every term is checked on day 2** (`moria terms check`, from GitHub Actions):
+- its volume worldwide and in Australian sources over the last 3 months;
+- a sample of its hits, read for noise. Noisy terms are narrowed or dropped.
+
+An attempt from this session on 2026-10-10 was refused by GDELT (HTTP 429): the session shares a network exit, and
+calls took about 20 s each. So the check runs from the runners instead.
 
 ### 2.5 Keeping breadth useful
 
@@ -290,7 +322,7 @@ flowchart LR
   GPU -.->|"optional"| F
 ```
 
-### 4.1 Where things run: a decision for the owner
+### 4.1 Where things run (the owner chose option A, D-006)
 
 | | **Option A: free core (recommended)** | **Option B: as first specified** |
 |---|---|---|
@@ -302,7 +334,7 @@ flowchart LR
 | Set-up | R2 token into repo secrets | That, plus a GCP project with billing, the VM and IAP |
 | Weak points | Cron can start late, and is disabled after 60 days without repo activity; job logs are public (§12) | 1 GB RAM; 0.25 vCPU sustained; GCP egress beyond 1 GB a month is billed |
 
-I recommend **A** for the sprint: it is free, faster to set up, and has more memory. B can be added later if Actions'
+**Option A was adopted (D-006).** It is free, faster to set up, and has more memory. B can be added later if Actions'
 scheduling proves unreliable. Either way, nothing depends on a GPU. GPU notebooks only speed up steps that also run
 on CPU.
 
@@ -432,7 +464,7 @@ Each source has a card in `config/sources/<id>.yaml`, written on day 1 and check
 | **OpenAlex, whole taxonomy** (all fields, subfields and topics; world against Australia; by year) | Adjacent and wider world | Counts by `group_by`, plus capped samples of abstracts for flagged topics | Answered 429 (rate-limited) without a key. **A free API key is needed.** |
 | **Patents, all CPC subclasses** (Google Patents Public Datasets on BigQuery; world against AU filings, by year) | Adjacent | Aggregate SQL, dry-run first and capped | BigQuery needs a GCP project, even on its free tier |
 | **ABS headline series** (population and ageing, labour, business entries and exits, R&D, trade including IP charges, industry) | Adjacent and wider world | SDMX | Reachable |
-| **GDELT DOC 2.0,** about 200 broad themes drawn from the foresight seed list and the territories | All three | Titles and metadata only; timelines | Answered 429: it is rate-limited, so requests are paced |
+| **GDELT DOC 2.0,** about 200 broad themes drawn from the foresight seed list and the territories | All three | Titles and metadata only; timelines | Rate-limited: on 2026-10-10 it answered 429 to calls from this session's shared network exit, and calls took about 20 s. Collection runs from Actions runners, at one request every 5 s or slower. |
 | **IP RAPID** (weekly, CC BY 4.0, 1.35 GB) | Core | Bulk | Reachable |
 | **Federal Register of Legislation** | Core | REST or RSS (to confirm) | Reachable |
 | **IP Australia publications** (Corporate Plan, Annual Report, Australian IP Report, consultations, examination-practice changes, news) | Core | HTML and PDF | Reachable |
@@ -935,8 +967,8 @@ branches, merged daily:
 
 | Day | Session A | Session B | Session C | Done when |
 |---|---|---|---|---|
-| **1** | Skeleton (SOP §15.3); R2 bucket and secrets; Actions workflows; environment check; the probes on a real runner | Source cards; **daily collectors live** (news titles, legislation, publications, WIPO) | — | First daily run in R2 with manifests; probe numbers from a runner |
-| **2** | IP RAPID ingest; ABS headline series; the BigQuery CPC counts (dry run, then capped) | OpenAlex whole-taxonomy counts (with your key); the foresight syntheses ingested and the baseline draft; peer-office publications | — | Census reports per source; ingestion monitors green |
+| **1** | Skeleton (SOP §15.3); Actions workflows; the environment check of every key in `docs/setup.md` (the bucket `moria` already exists); the probes on a real runner | Source cards; **daily collectors live** (news titles, legislation, publications, WIPO) | — | First daily run in R2 with manifests; probe numbers from a runner |
+| **2** | IP RAPID ingest; ABS headline series; the BigQuery CPC counts (dry run, then capped) | OpenAlex whole-taxonomy counts (with your key); the foresight syntheses ingested and the baseline draft; peer-office publications; **`moria terms check`** over the territory terms | — | Census reports per source; ingestion monitors green |
 | **3** | Normalise; de-duplicate; event and observable dates | Territories wired in (seed themes, descriptions) | Embeddings backfill (Actions, or a free T4 notebook); keyphrases; BM25 index; zero-shot tags; **the decision-model speed test on a T4** | Every Tier 1 item embedded and tagged |
 | **4** | — | Fixes to the sources | Rates; trends, accelerations and change points over the whole taxonomies; world/AU divergence; anomalies; the five weak-signal indicators; cross-ring convergence; artefact checks with seeded artefacts | Candidate list with artefact flags |
 | **5** | Register export (spreadsheet) and import (validated, appended as events); the early-warning digest | — | Dossiers; pathway suggestions by Jev-Style 0.8B; ring quotas and ranking; a term-only hindsight smoke run | **The first ranked queue of about 40 dossiers, ready for review** |
@@ -980,24 +1012,20 @@ free Jev-Style models come first (§9).
 
 ## 15. For the owner
 
-**Settled (D-005):**
-- the direction of v0.3;
-- the four outside-in questions;
-- the reviewer: you alone. Review is two-stage (§2.5), and labelling checks your self-consistency (§11.2).
+**Settled:**
+- the direction of v0.3, the four outside-in questions, and you as the only reviewer (D-005);
+- compute option A; the repo stays public; labelling by spreadsheet; the five Growth Territories (D-006);
+- **the R2 bucket `moria` is created** (private, Standard storage, Eastern North America, 2026-10-10).
 
 **Still open:**
-1. **Compute:** option A (Actions and R2, $0) or B (adding the e2-micro)? I recommend A.
-2. **Your five Growth Territories:** a name, two or three sentences, and a few seed terms each. The seven
-   system-specific sub-questions (§2.3) stay unless you edit them.
-3. **Cloudflare:** a yes, and I'll create the private bucket `moria` with the connected Cloudflare tool. Your account
-   has no buckets yet. Then you create an R2 API token (Object Read & Write, scoped to that bucket) in the dashboard
-   and add three repo secrets: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`.
-4. **An OpenAlex API key** (free), added as `OPENALEX_API_KEY`. For BigQuery or option B, also a GCP project with
-   billing enabled, plus a service-account key as a secret.
-5. **Repo visibility:** the repo is **public**. That's fine for code and design, and the evidence stays in the private
-   bucket. Are you comfortable with the design being public under this account?
-6. **Labelling format:** a spreadsheet, or a phone-friendly page with one item per screen
-   (`docs/mining-explained.md`)?
+1. **Keys:** create the R2 token and get the OpenAlex key. Put each in both GitHub Actions secrets and the Claude Code
+   environment, under the names in `docs/setup.md`.
+2. **Your territory context:** may the "imagine / recently changed / jobs to be done / why now" text be published in
+   the public repo? Until you say yes, it stays in a git-ignored file and the private bucket. The names, aims,
+   descriptions and search terms are already public in `config/territories.yaml`.
+3. **The search terms:** edit `config/territories.yaml` if anything's missing or wrong. Otherwise the day-2 check
+   prunes them.
+4. **Go for day 1:** the skeleton needs no keys, so it can start now. The collectors need the keys.
 
 **Your time, in total:**
 - about an hour of set-up;
