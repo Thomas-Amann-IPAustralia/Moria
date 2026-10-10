@@ -485,4 +485,31 @@ the OpenAlex key should go.
   3. after the merge, run `collect-daily` once by hand from the Actions tab, to confirm R2 writes and GDELT from a
      runner.
 
-Next free decision number: D-008.
+## D-008 — The memory probe on the target runner: 235 to 603 MB peaks; 3 to 6 times faster than the session machine (2026-10-10)
+
+**Context.** Day 1's "done when" included probe numbers from a real runner (design §4.2, §13). The design's numbers
+came from this session's machine, not from the machine that will run the jobs (option A, D-006).
+
+**Decision (settled in the build: a measurement, nothing to approve).** The runner numbers replace the session
+numbers for planning. They are in design §4.2. Job sizing assumes a 4-vCPU, 16 GB GitHub-hosted runner.
+
+**Checked:**
+- **Probe run** [38072692475](https://github.com/Thomas-Amann-IPAustralia/Moria/actions/runs/38072692475):
+  `ubuntu-latest`, 4 vCPUs (AMD EPYC 9V45), 15,989 MB RAM, 3 GB swap.
+- **Peaks:** 235 to 603 MB for every planned workload. The ruled-out hashed NMF peaked at 860 MB.
+- **Speed:** 3 to 6 times faster than the session machine. Embeddings ran at 64.1 texts a second on one thread, so a
+  backfill of about 150k items takes about 40 minutes.
+- **CI run** [38072692650](https://github.com/Thomas-Amann-IPAustralia/Moria/actions/runs/38072692650) passed:
+  lint, format and 17 tests.
+- **A warning, not a failure:** GitHub warns that `actions/checkout@v4` and `actions/setup-python@v5` run on Node 20,
+  which it is deprecating. They still run. Move to the next major versions when GitHub's deadline is close.
+
+**Not yet measured:** the decision model (`Jev-Style-0.8B-Decision-v3`) on a runner. That is day 3.
+
+**Spend:** $0.
+
+**Consequences.**
+- No job needs the 1 GB VM. The BM25 index (603 MB on the runner) would not fit it reliably anyway.
+- Memory limits inside jobs (DuckDB's `memory_limit`) stay, so jobs also run on smaller machines.
+
+Next free decision number: D-009.

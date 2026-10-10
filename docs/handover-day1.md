@@ -1,6 +1,6 @@
 # Handover: the machinery sprint after day 1
 
-For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-006 to D-007 in `docs/decisions.md`.
+For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-006 to D-008 in `docs/decisions.md`.
 Build day 2 when the owner asks. Nothing in the machinery spends money.
 
 **Status (2026-10-10):** day 1 is done (D-007), on branch `claude/confident-curie-o51eog`.
@@ -18,6 +18,9 @@ Build day 2 when the owner asks. Nothing in the machinery spends money.
   - the adapters `gdelt`, `feed`, `sitemap` and `legislation`.
 - **Adding a source:** a new card in `config/sources/` (and a new adapter only if no existing one fits). Add a fixture
   test with a hand-built replica, then run `moria collect <id> --store local` on real data.
+
+- **The memory probe ran on a real runner (D-008):** peaks of 235 to 603 MB on a 4-vCPU, 16 GB runner, 3 to 6 times
+  faster than the session machine. The numbers are in design §4.2.
 
 ## Open items
 1. **Day 2:**
@@ -45,4 +48,4 @@ Build day 2 when the owner asks. Nothing in the machinery spends money.
 - Commit the code, run, then record.
 - Never commit data or the territory context.
 - Logs print counts and keys, never content.
-- Next free decision number: D-008.
+- Next free decision number: D-009.

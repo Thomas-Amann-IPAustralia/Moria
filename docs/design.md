@@ -385,6 +385,30 @@ data is synthetic, at the planned scale.
   item.** At 5 s an item, 150k items would take about 9 days. Per-item tags therefore come from scikit-learn on
   embeddings (§9.1), or from the decision model on a free GPU, if a day-3 measurement shows it is fast enough there.
 
+**On the target machine** (run by `.github/workflows/probe.yml` on 2026-10-10, D-008: GitHub Actions
+`ubuntu-latest`, 4 vCPUs (AMD EPYC 9V45), 16 GB RAM, 3 GB swap; same script, same synthetic data):
+
+| Workload | Peak memory | Time on the runner | Faster than here |
+|---|---|---|---|
+| Imports only | 235 MB | 2.3 s | about the same |
+| Text classifier, 200k documents streamed | 268 MB | 12.3 s | 3.3× |
+| `MiniBatchKMeans` then `IsolationForest` | 298 MB | 2.9 s | 3.8× |
+| `MiniBatchNMF`, 20k-term vocabulary | 297 MB | 10.6 s | 4.1× |
+| The same with 2^18 hashed features (ruled out) | 860 MB | 43.2 s | 5.6× |
+| DuckDB group-by and median, 20M rows | 266 MB | 1.3 s | 4.7× |
+| `HDBSCAN` on 20k points | 264 MB | 7.5 s | 4.6× |
+| BM25 full-text index over 100k documents | 603 MB | 12.3 s | 4.8–6.3× |
+| Cosine top-10, chunked | 353 MB | 1.2 s | 4.8× |
+| Local embeddings, `bge-small-en-v1.5`, 1 thread | 487 MB | 64.1 texts/s | 3.5× |
+
+**What follows from the runner numbers:**
+- Memory is not a constraint on runners: the largest planned job peaks at about 0.6 GB of 16 GB.
+- The runner is 3 to 6 times faster than this session's machine. The embedding backfill of about 150k items takes
+  about 40 minutes on one thread, inside one Actions job (the limit is 6 hours).
+- The BM25 index peaked higher on the runner (603 MB, against 489 MB here). It would not fit the 1 GB VM reliably;
+  option A doesn't use the VM.
+- The decision model has not been measured on a runner yet. That is a day-3 measurement.
+
 ### 4.3 Storage layout on R2
 
 All in a **private** bucket:
@@ -957,8 +981,8 @@ Candidate developments:
 
 ## 13. The one-week machinery sprint
 
-**Progress:** day 1 was built on 2026-10-10 (D-007). The rules and commands are in `CLAUDE.md`, and what's next is in
-`docs/handover-day1.md`.
+**Progress:** day 1 was built on 2026-10-10 (D-007), and the memory probe ran on a real runner (D-008). The rules
+and commands are in `CLAUDE.md`, and what's next is in `docs/handover-day1.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 
