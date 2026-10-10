@@ -957,6 +957,9 @@ Candidate developments:
 
 ## 13. The one-week machinery sprint
 
+**Progress:** day 1 was built on 2026-10-10 (D-007). The rules and commands are in `CLAUDE.md`, and what's next is in
+`docs/handover-day1.md`.
+
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 
 **Parallel sessions.** Adapters are independent modules, so up to three Claude Code sessions run at once on separate

@@ -19,7 +19,7 @@ import time
 
 model_dir, scorer, threads = sys.argv[1], sys.argv[2], int(sys.argv[3])
 sys.path.insert(0, model_dir)  # the wrapper was read before running; it only launches the local scorer
-from jev_style_decision_gguf import JevStyleDecisionGGUF
+from jev_style_decision_gguf import JevStyleDecisionGGUF  # noqa: E402
 
 PATHWAYS = {
     "p1_demand": "This development could change how many, or what kinds of, patents, trade marks, designs or "
@@ -87,7 +87,7 @@ for s in SAMPLES:
     lat.append(time.time() - t)
     row = {
         k: round(o["probabilities"]["true"] if "true" in o["probabilities"] else o["top_probability"], 2)
-        for k, o in zip(list(PATHWAYS) + ["origin", "horizon"], out)
+        for k, o in zip([*PATHWAYS, "origin", "horizon"], out, strict=True)
     }
     row["origin"] = out[5]["answer"]
     row["horizon"] = out[6]["answer"]

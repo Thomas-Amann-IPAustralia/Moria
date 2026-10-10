@@ -406,4 +406,83 @@ the OpenAlex key should go.
   3. any edits to the search terms;
   4. a go for day 1, whose skeleton needs no keys.
 
-Next free decision number: D-007.
+---
+
+## D-007 — Day 1 built: skeleton, store, manifests, polite HTTP, five daily collectors, the environment check, workflows (2026-10-10)
+
+**Context.** The owner said "Yes, start day 1", and "Keep it private for now" for the territory context (D-006).
+
+**Decision (owner: start day 1, keep the context private; the details below settled in the build).**
+- **Stack.** Python 3.11; uv with a committed `uv.lock`; ruff (line length 120; rule sets E, F, W, I, B, UP, SIM,
+  RUF); pytest. One package `src/moria`, with a typer CLI `moria`. Dependencies: boto3, defusedxml, httpx, pydantic,
+  pyyaml, typer and zstandard.
+- **Config.** `config/moria.yaml`, `config/sources/*.yaml` (source cards), `config/territories.yaml` and
+  `config/themes.yaml`, validated by pydantic with unknown keys as errors. Validation caught a real bug on the first
+  run: search rules containing `: ` had been parsed as mappings. They are now quoted.
+- **The store.** It writes either to R2 through its S3-compatible API (credentials only from the environment) or to
+  a local directory with the same layout (`data/store/`, git-ignored). Writes are atomic. `raw/` and `manifests/`
+  are immutable: overwriting fails loudly.
+- **Records.**
+  - The evidence envelope follows design §6.1, including `event_at` against `observable_at`.
+  - `evidence_id` is the SHA-256 of provider, record id and content hash.
+  - Raw bundles are one zstd JSON-lines object per source per run, sorted, so the same records give the same bytes.
+- **Manifests.** One per run, failed runs included. Each holds the outputs with SHA-256, counts, warnings, the
+  config hash, the git commit and dirty flag, and package versions.
+- **Ingestion monitors.** One entry per run: records against the card's expected band, flagged
+  `below_expected` or `above_expected`.
+- **The HTTP client.**
+  - An identifying user agent and a minimum interval per host (GDELT at 5.5 s).
+  - Retries with backoff that honour `Retry-After`.
+  - robots.txt for web pages.
+  - Errors name host and path only, never query strings, which may carry keys.
+- **Collectors:**
+  - `gdelt` (41 balanced query groups of up to 6 phrases; for each, an article list plus daily volumes worldwide and
+    from Australian sources);
+  - `legislation` (the Federal Register of Legislation's OData `Versions` by `registeredAt`, and `Titles` by
+    `asMadeRegisteredAt`. The API rejects a `Z` suffix, so datetimes are sent without a zone);
+  - `sitemap` (IP Australia; extracted text and metadata, plus the original HTML's SHA-256 and size, not the full
+    HTML. Pages can exceed 500 KB, and the free storage is 10 GB);
+  - `feed` (RSS and Atom: WIPO press, UKIPO news).
+- **`moria env-check`** reports each secret as present or missing, then makes one cheap call to R2, OpenAlex, GDELT
+  and each source. `--require` turns chosen checks into a gate (exit 2).
+- **Workflows.**
+  - `ci.yml`: lint, format and tests on every push and PR. No secrets.
+  - `collect-daily.yml`: 02:23 UTC daily and on demand; the bucket check gates collection. Secrets come only from
+    Actions secrets.
+  - `probe.yml`: the memory probe on a real runner, with results in the job summary.
+- **`CLAUDE.md`** is the rulebook from now on.
+
+**Rejected:**
+- **Storing full HTML** of web pages: storage, for little analytic gain. The hash keeps provenance.
+- **GDELT exclusion terms inside queries:** the negation syntax is unverified. Exclusions are applied at
+  normalisation instead.
+- **The `astral-sh/setup-uv` action:** pinning its version tag couldn't be verified from here. Workflows install uv
+  with pip on a pinned Python 3.11.
+
+**Checked:**
+- **Tests:** 17 pass, lint and format are clean, and CI makes no network calls.
+- **Real data, local store, 2026-10-10:**
+
+  | Source | Day | Result |
+  |---|---|---|
+  | `legislation_frl` | 2026-10-09 | 16 records |
+  | `wipo_press`, `ukipo_news`, `ipaustralia_site` | 2026-10-09 | 0 records, correctly. Their newest items are dated 2026-09-29, 2026-09-17 and 2026-10-06. |
+  | `wipo_press` | 2026-09-29 | 1 record (the Global Innovation Index 2026 release) |
+  | `ukipo_news` | 2026-09-17 | 1 record |
+  | `ipaustralia_site` | 2026-10-06 | 2 pages: 12,544 and 1,712 characters of extracted text |
+  | `gdelt_news` | 2026-10-09 | **Failed:** HTTP 429 from this session's shared network exit, after 4 attempts with backoff. Its manifest was written, and the command exited 2. It is expected to work from Actions runners; unverified until the first scheduled run. |
+
+- **`moria env-check` without keys:** every secret reported missing (no values), sources HTTP 200, GDELT 429.
+
+**Spend:** $0.
+
+**Consequences.**
+- **The schedule starts only from the default branch,** so this branch must be merged to `main`.
+- **The first real run needs the four secrets** in GitHub Actions.
+- **For the owner:**
+  1. add the secrets (`docs/setup.md`);
+  2. merge this branch (or ask for a pull request) so `collect-daily` starts;
+  3. after the merge, run `collect-daily` once by hand from the Actions tab, to confirm R2 writes and GDELT from a
+     runner.
+
+Next free decision number: D-008.

@@ -1,0 +1,29 @@
+# Moria settings (validated by moria.config.MoriaConfig; unknown keys are errors).
+store:
+  backend: local            # GitHub Actions passes --store r2
+  bucket: moria
+  local_root: data/store    # git-ignored
+  account_id_env: R2_ACCOUNT_ID
+  access_key_id_env: R2_ACCESS_KEY_ID
+  secret_access_key_env: R2_SECRET_ACCESS_KEY
+
+http:
+  user_agent: "Moria/0.1 (+https://github.com/Thomas-Amann-IPAustralia/Moria; public-data horizon scanning)"
+  timeout_s: 90
+  max_retries: 3
+  backoff_s: 5
+  default_min_interval_s: 1.0
+  host_min_interval_s:
+    api.gdeltproject.org: 5.5       # GDELT asks for at most one request every 5 seconds
+    www.ipaustralia.gov.au: 2.0
+    www.wipo.int: 2.0
+    www.gov.uk: 1.0
+    api.prod.legislation.gov.au: 1.0
+    api.openalex.org: 0.2
+
+# Logical name -> the environment variable that holds it (docs/setup.md). Values never appear in config or logs.
+secrets:
+  openalex: OPENALEX_API_KEY
+  r2_account_id: R2_ACCOUNT_ID
+  r2_access_key_id: R2_ACCESS_KEY_ID
+  r2_secret_access_key: R2_SECRET_ACCESS_KEY

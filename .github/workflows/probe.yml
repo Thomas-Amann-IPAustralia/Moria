@@ -1,0 +1,46 @@
+name: probe
+
+# Measures the planned workloads' peak memory on a real GitHub-hosted runner (design §4.2), on synthetic data.
+# Runs when the probe changes, or by hand. Results go to the job summary.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/memprobe.py
+      - .github/workflows/probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  memprobe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: python -m pip install --quiet uv
+      - name: Runner hardware
+        run: |
+          {
+            echo "## Runner"
+            echo '```'
+            nproc
+            free -m
+            lscpu | grep -E 'Model name|^CPU\(s\)|Flags' | cut -c1-300
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Memory probe
+        run: |
+          uv run --no-project --python 3.11 \
+            --with scikit-learn --with pandas --with pyarrow --with duckdb --with fastembed \
+            python scripts/memprobe.py | tee probe.jsonl
+          {
+            echo "## Peak memory by workload"
+            echo '```'
+            cat probe.jsonl
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

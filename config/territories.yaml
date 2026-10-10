@@ -19,11 +19,11 @@
 version: 1
 
 search_rules:
-  - Never search a bare "IP": it matches IP addresses and networking. Use "intellectual property".
-  - Search both spellings, "trade mark" and "trademark", and Australian and US spellings generally.
-  - Quote multi-word phrases. Each adapter compiles groups of up to five phrases with OR, in each source's syntax.
-  - Run each query twice, worldwide and Australian sources only, so the gap between them is itself a signal.
-  - A term is dropped or narrowed if its hit sample is mostly off-topic (checked on day 2).
+  - 'Never search a bare "IP": it matches IP addresses and networking. Use "intellectual property".'
+  - 'Search both spellings, "trade mark" and "trademark", and Australian and US spellings generally.'
+  - 'Quote multi-word phrases. Each adapter compiles groups of up to five phrases with OR, in each source''s syntax.'
+  - 'Run each query twice, worldwide and Australian sources only, so the gap between them is itself a signal.'
+  - 'A term is dropped or narrowed if its hit sample is mostly off-topic (checked on day 2).'
 
 territories:
   - id: T1

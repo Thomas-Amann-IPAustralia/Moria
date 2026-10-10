@@ -65,13 +65,13 @@ print(
 km = KMeans(n_clusters=best_k, n_init=10, random_state=0).fit(vectors)
 
 # Step 3, name each cluster by the words that are common in it but rare elsewhere (class-based TF-IDF).
-joined = [" ".join(h for h, c in zip(HEADLINES, km.labels_) if c == i) for i in range(best_k)]
+joined = [" ".join(h for h, c in zip(HEADLINES, km.labels_, strict=True) if c == i) for i in range(best_k)]
 tfidf = TfidfVectorizer(stop_words="english").fit(joined)
 words = np.array(tfidf.get_feature_names_out())
 weights = tfidf.transform(joined).toarray()
 print("Step 3, name the clusters:")
 for i in range(best_k):
-    members = [h for h, c in zip(HEADLINES, km.labels_) if c == i]
+    members = [h for h, c in zip(HEADLINES, km.labels_, strict=True) if c == i]
     print(f"  cluster {i} [{', '.join(words[np.argsort(-weights[i])[:4]])}] ({len(members)} items)")
     for h in members:
         print(f"      - {h}")

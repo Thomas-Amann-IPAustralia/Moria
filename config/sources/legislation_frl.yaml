@@ -1,0 +1,25 @@
+id: legislation_frl
+name: Federal Register of Legislation
+adapter: legislation
+rings: [core, adjacent, wider_world]
+domains: [D0, D1, D2, D5, D6]
+family: legal
+cadence: daily
+publication_lag: same day as registration
+coverage: >-
+  All Commonwealth legislation: Acts, legislative and notifiable instruments, and compilations. Every version
+  registered in the window, and every new title. Not state or territory law.
+history_start: "1901"
+stable_since: "the current OData API (v1); confirm its start date in the census"
+breaks: []
+known_biases:
+  - Commonwealth only
+  - Volumes follow parliamentary and administrative calendars (sitting weeks, end of financial year)
+  - registeredAt carries no timezone; windows are contiguous in the API's own clock
+revision_policy: compilations supersede earlier versions; each version is kept
+licence: "Commonwealth legislation; Federal Register of Legislation terms (to confirm in the census)"
+snapshot_rights: titles and metadata may be stored
+expected_volume: {min_per_run: 0, max_per_run: 600}
+params:
+  base_url: https://api.prod.legislation.gov.au/v1
+  page_size: 100

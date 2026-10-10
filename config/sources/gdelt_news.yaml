@@ -1,0 +1,30 @@
+id: gdelt_news
+name: GDELT DOC 2.0 news titles and volumes
+adapter: gdelt
+rings: [core, adjacent, wider_world]
+domains: [D0, D1, D2, D3, D4, D5, D6]
+family: news
+cadence: daily
+publication_lag: minutes to hours after publication
+coverage: >-
+  Worldwide online news monitored by GDELT. Moria queries English-language sources worldwide and Australian sources,
+  for the territory terms and the broad themes.
+history_start: "the DOC 2.0 API searches a rolling three months; older history needs GDELT's bulk files"
+stable_since: null
+breaks: []
+known_biases:
+  - Over-weights English-language and large outlets
+  - Syndicated stories appear many times (collapsed by de-duplication)
+  - GDELT's source list changes over time, so volumes are compared as shares, never raw counts alone
+  - Article lists are capped at 250 per query per day; volumes come from the timeline counts
+revision_policy: none; collected once per day
+licence: "GDELT data are open (attribute The GDELT Project). Article text belongs to publishers: titles, URLs and metadata only"
+snapshot_rights: titles, URLs and metadata may be stored; article text may not
+expected_volume: {min_per_run: 100, max_per_run: 15000}
+params:
+  phrases_per_query: 6
+  max_records: 250
+  territory_rings: [core, adjacent, wider_world]
+  include_themes: true
+  volume_scopes: [world, au]
+  articles: true

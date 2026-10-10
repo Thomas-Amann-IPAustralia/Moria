@@ -1,0 +1,21 @@
+id: ukipo_news
+name: UK Intellectual Property Office news and communications
+adapter: feed
+rings: [core]
+domains: [D1, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: GOV.UK news and communications from the UK IPO (the latest 20 items)
+history_start: "the feed holds the latest 20 items; older items need GOV.UK search"
+stable_since: null
+breaks: []
+known_biases:
+  - One peer office; others are added on day 2
+revision_policy: items can be updated in place (the Atom updated field)
+licence: "Open Government Licence v3.0"
+snapshot_rights: titles, links and summaries stored
+expected_volume: {min_per_run: 0, max_per_run: 20}
+params:
+  url: https://www.gov.uk/search/news-and-communications.atom?organisations%5B%5D=intellectual-property-office
+  lookback_days: 3

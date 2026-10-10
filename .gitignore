@@ -1,2 +1,18 @@
 # The owner's private territory context (D-006): never commit
 config/territories.context.yaml
+
+# Secrets and local environments
+.env
+.env.*
+!.env.example
+
+# Local data, caches and build outputs (the system of record is the private R2 bucket)
+data/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/

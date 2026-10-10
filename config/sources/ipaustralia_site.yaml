@@ -1,0 +1,27 @@
+id: ipaustralia_site
+name: IP Australia website
+adapter: sitemap
+rings: [core]
+domains: [D1, D4, D6]
+family: ipa_internal
+cadence: daily
+publication_lag: same day (sitemap lastmod)
+coverage: >-
+  Pages on ipaustralia.gov.au whose sitemap lastmod falls in the lookback and window: news, consultations, guidance,
+  practice changes, corporate documents. The first full snapshot of all pages is a separate backfill run.
+history_start: "the site's current sitemap (850 URLs on 2026-10-10)"
+stable_since: null
+breaks: []
+known_biases:
+  - lastmod reflects content edits, including minor ones
+  - Pages behind search forms or PDFs linked from pages are not in the sitemap
+revision_policy: pages change in place; every collected version is kept
+licence: "IP Australia website content (Commonwealth copyright; licence to confirm in the census)"
+snapshot_rights: extracted text and metadata stored; the original HTML only as its hash and size
+expected_volume: {min_per_run: 0, max_per_run: 60}
+params:
+  sitemap_url: https://www.ipaustralia.gov.au/sitemap.xml
+  lookback_days: 2
+  include_prefixes: []
+  exclude_substrings: []
+  max_pages: 50
