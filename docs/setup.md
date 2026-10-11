@@ -9,7 +9,7 @@ A key goes wherever code that uses it runs:
 | Where code runs | What it does | Where its keys go |
 |---|---|---|
 | **GitHub Actions** | The scheduled collectors and mining jobs: the system itself | Repo → **Settings → Secrets and variables → Actions → New repository secret** |
-| **Claude Code cloud sessions** | Building and testing the code against the live APIs, and reading results back to you | The session's cloud environment: **the environment menu in the session's title bar → Edit → Network secrets** (labelled "API credentials" in older app versions; if neither is offered, add it as an environment variable). A *new* session picks it up; a running one doesn't. |
+| **Claude Code cloud sessions** | Building and testing the code against the live APIs, and reading results back to you | The session's cloud environment: **the environment menu in the session's title bar → Edit → Environment variables**, one `NAME=value` per line. **Not Network secrets** (see below). A *new* session picks them up; a running one doesn't. |
 | **Kaggle or Colab notebooks** (later, optional) | One-off GPU bursts such as the embedding backfill | The notebook's own secret store (Kaggle: Add-ons → Secrets; Colab: the key icon). Add them only when we first run one. |
 
 So **the OpenAlex key goes in both GitHub Actions and the Claude Code environment,** under the same name. Actions runs
@@ -27,6 +27,12 @@ Use exactly these names in every place.
 | `R2_ACCESS_KEY_ID` | The R2 API token you create below | The same |
 | `R2_SECRET_ACCESS_KEY` | The same token. It is shown **once**, so copy it straight into the secret stores. | The same |
 
+**Why environment variables, not Network secrets.** A network secret makes the session's proxy add the key to the
+headers of web requests. R2 doesn't take keys that way: it speaks the S3 protocol, where the secret key never travels
+and the code uses it to sign each request. A header can't do that signing. The code also reads all four names from the
+environment. The trade-off is that a session can read its environment variables, which is why the R2 token is
+scoped to the `moria` bucket alone.
+
 ## Creating the R2 token
 
 The bucket `moria` already exists. It is private, Standard storage, located in Eastern North America near the
@@ -43,10 +49,10 @@ Don't enable public access on the bucket. Reports are shared another way.
 ## Checklist
 
 - [ ] `OPENALEX_API_KEY` in GitHub Actions secrets
-- [ ] `OPENALEX_API_KEY` in the Claude Code environment
+- [ ] `OPENALEX_API_KEY` in the Claude Code environment, as an environment variable
 - [ ] `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` in GitHub Actions secrets
-- [ ] The same three in the Claude Code environment
-- [ ] Start a new Claude Code session after adding environment secrets
+- [ ] The same three in the Claude Code environment, as environment variables
+- [ ] Start a new Claude Code session after adding the environment variables
 
 On day 1 the first session checks each key with one cheap call and reports which ones answered. It never prints the
 values.
