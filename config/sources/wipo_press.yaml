@@ -1,0 +1,21 @@
+id: wipo_press
+name: WIPO press releases
+adapter: feed
+rings: [core, adjacent]
+domains: [D1, D3, D5]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: WIPO's English press-release feed (the latest items only)
+history_start: "the feed holds the latest ~10 items; older releases need the press-room archive"
+stable_since: null
+breaks: []
+known_biases:
+  - Official announcements only; no committee documents
+revision_policy: none
+licence: "WIPO website terms of use (to confirm in the census)"
+snapshot_rights: titles, links and summaries stored
+expected_volume: {min_per_run: 0, max_per_run: 15}
+params:
+  url: https://www.wipo.int/pressroom/en/rss.xml
+  lookback_days: 3

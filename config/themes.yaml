@@ -1,0 +1,74 @@
+# Broad wider-world themes for the news scan (design §2.1), searched with no IP filter.
+# Draft v1 (2026-10-10), from the wider-world ring's definition. Day 2 extends it from the foresight syntheses.
+version: 1
+themes:
+  demographics_health:
+    - population ageing
+    - aged care
+    - migration policy
+    - chronic disease
+    - pandemic
+    - mental health
+  climate_energy_resources:
+    - climate change
+    - extreme weather
+    - energy transition
+    - critical minerals
+    - water security
+    - net zero
+  security_conflict:
+    - geopolitical tensions
+    - cyber attack
+    - economic security
+    - sanctions
+    - supply chain disruption
+    - defence industry
+  economy_finance:
+    - productivity
+    - inflation
+    - interest rates
+    - recession
+    - venture capital
+    - business investment
+  work_education_skills:
+    - skills shortage
+    - future of work
+    - automation jobs
+    - vocational training
+    - university funding
+    - remote work
+  society_values_trust:
+    - trust in institutions
+    - social cohesion
+    - cost of living
+    - inequality
+    - consumer protection
+    - First Nations
+  information_ecosystem:
+    - misinformation
+    - deepfakes
+    - social media regulation
+    - online safety
+    - data privacy
+    - digital platforms
+  technology_general:
+    - artificial intelligence
+    - quantum computing
+    - biotechnology
+    - robotics
+    - semiconductors
+    - space industry
+  governance_public_sector:
+    - public sector reform
+    - regulation reform
+    - digital government
+    - government AI
+    - red tape
+    - trade agreement
+  infrastructure_cities:
+    - housing affordability
+    - infrastructure investment
+    - smart cities
+    - regional development
+    - transport electrification
+    - digital infrastructure

@@ -1,0 +1,3 @@
+# Versioned prompts and question sets, each locked with its schema hash (SOP §20.2). None yet: the machinery week
+# uses no generative prompts. The first entries are the decision-model question sets (design §9).
+{}
