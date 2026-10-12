@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date
 
 import httpx
@@ -92,3 +93,78 @@ def test_documents_fail_loudly_when_nothing_is_read(http_cfg, store):
     capped = docs_card([doc("open", "https://docs.test/open.pdf", True)], max_bytes=100)
     r = run_collection(capped, store, make_client(http_cfg, handler), Window.for_day(DAY))
     assert r.status == "failed" and "above the cap" in r.error
+
+
+def test_an_owner_upload_is_read_instead_of_the_url_and_its_licence_is_checked(http_cfg, store):
+    store.put("inbox/documents/blocked.pdf", tiny_pdf("Placeholder text. Licensed under CC BY 4.0"), "application/pdf")
+    seen: list[str] = []
+
+    def recording(request):
+        seen.append(request.url.path)
+        return handler(request)
+
+    c = docs_card(
+        [doc("blocked", "https://docs.test/blocked.pdf", True), doc("open", "https://docs.test/open.pdf", True)]
+    )
+    r = run_collection(c, store, make_client(http_cfg, recording), Window.for_day(DAY))
+    assert r.status == "passed", r.error
+    assert seen == ["/open.pdf"]  # the upload replaced the refused fetch
+    recs = {x.payload["id"]: x for x in decode_bundle(store.get(r.bundle_key))}
+    up = recs["blocked"]
+    assert up.payload["obtained"] == "owner_upload" and up.payload["inbox_key"] == "inbox/documents/blocked.pdf"
+    assert up.payload["licence_statements"] == ["CC BY 4.0"] and up.payload["licence_check"] == "open_licence"
+    assert up.payload["text_stored"] is True and up.envelope.retrieval_method == "upload:document"
+    assert recs["open"].payload["obtained"] == "fetched" and recs["open"].payload["licence_check"] == "none_found"
+    counts = json.loads(store.get(r.manifest_key))["counts"]
+    assert counts["uploads_read"] == 1 and counts["licence_open_licence"] == 1 and counts["licence_none_found"] == 1
+
+
+def test_a_document_that_reserves_its_rights_is_not_stored_as_text_whatever_its_card_says(http_cfg, store):
+    store.put("inbox/documents/a.pdf", tiny_pdf("Copyright 2026 Placeholder. All rights reserved."), "application/pdf")
+    store.put(
+        "inbox/documents/b.pdf", tiny_pdf("Placeholder under the Open Government Licence v3.0"), "application/pdf"
+    )
+    store.put("inbox/documents/c.pdf", tiny_pdf("Placeholder under CC BY 4.0"), "application/pdf")
+    store.put("inbox/documents/d.pdf", tiny_pdf("Placeholder with no statement"), "application/pdf")
+    c = docs_card(
+        [
+            doc("a", "https://docs.test/a.pdf", True),
+            doc("b", "https://docs.test/b.pdf", False),
+            doc("c", "https://docs.test/c.pdf", "if_open_licence"),
+            doc("d", "https://docs.test/d.pdf", "if_open_licence"),
+        ]
+    )
+    r = run_collection(c, store, make_client(http_cfg, handler), Window.for_day(DAY))
+    assert r.status == "passed", r.error
+    recs = {x.payload["id"]: x.payload for x in decode_bundle(store.get(r.bundle_key))}
+    assert recs["a"]["licence_check"] == "rights_reserved" and recs["a"]["text_stored"] is False
+    assert "page_texts" not in recs["a"]
+    assert recs["b"]["licence_statements"] == ["Open Government Licence"] and "page_texts" not in recs["b"]
+    warnings = " ".join(r.warnings)
+    assert "a states all rights reserved and no open licence" in warnings
+    assert "b states Open Government Licence; its card keeps metadata only" in warnings
+    assert "b was uploaded but its text is not stored" in warnings
+    # if_open_licence: the document's own statement decides
+    assert recs["c"]["text_stored"] is True and "page_texts" in recs["c"]
+    assert recs["d"]["text_stored"] is False and "d states no open licence (none_found)" in warnings
+
+
+def test_licence_statements_name_the_licence_and_never_quote_the_text():
+    from moria.collectors.documents import licence_statements, licence_verdict
+
+    cases = {
+        "Licensed under a Creative Commons Attribution 4.0 International licence": ["CC BY 4.0"],
+        "see creativecommons.org/licenses/by-nc-nd/4.0 for the terms": ["CC BY-NC-ND 4.0"],
+        "Reproduction is authorised provided the source is acknowledged.": ["reuse authorised with acknowledgement"],
+        "Placeholder. All rights reserved. No part of this publication may be reproduced": [
+            "all rights reserved",
+            "no reproduction without permission",
+        ],
+        "Nothing about licences": [],
+    }
+    for text, expected in cases.items():
+        assert licence_statements([text]) == expected, text
+    assert licence_verdict(["CC BY 4.0", "all rights reserved"]) == "open_licence"  # third-party exceptions are common
+    pages = ["Licensed under CC BY 4.0"] + ["filler"] * 20 + ["All rights reserved"]
+    assert licence_statements(pages) == ["CC BY 4.0", "all rights reserved"]  # first and last pages only
+    assert licence_statements(["filler"] * 7 + ["CC BY 4.0"] + ["filler"] * 7) == []

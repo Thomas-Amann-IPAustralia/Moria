@@ -11,7 +11,8 @@ coverage: >-
   expected (design §2.5, §5.2). Read once to draft the known-trends baseline (config/baseline.yaml); re-read when a
   new edition appears. Fetching was checked from the build session on 2026-10-12: three documents answered, and the
   others' sites refused cloud addresses (industry.gov.au, dcceew.gov.au and defence.gov.au drop the connection;
-  WEF and OECD answer 403).
+  WEF and OECD answer 403). The owner downloads those (docs/wishlist.md) into the bucket's inbox/documents/; text is
+  stored only where the document itself states an open licence (store_text: if_open_licence, D-014).
 history_start: null
 stable_since: null
 breaks: []
@@ -56,30 +57,30 @@ params:
       published: "2024-08-12"
       url: https://www.industry.gov.au/sites/default/files/2024-08/australias-national-science-and-research-priorities-2024.pdf
       licence: "CC BY 4.0 (according to search results; to confirm on the document)"
-      store_text: false
-      note: Refused from the build session; URL from search results
+      store_text: if_open_licence
+      note: Refused from the build session; an owner upload is read from the inbox (D-014); URL from search results
     - id: critical_technologies_list
       title: "List of Critical Technologies in the National Interest"
       publisher: Department of Industry, Science and Resources
       url: https://www.industry.gov.au/publications/list-critical-technologies-national-interest
       licence: "to confirm (the site refused the build session)"
-      store_text: false
-      note: Refused from the build session; the landing page, not a PDF
+      store_text: if_open_licence
+      note: Refused from the build session; an owner upload is read from the inbox (D-014); the landing page, not a PDF
     - id: net_zero_plan_2025
       title: "Australia's Net Zero Plan"
       publisher: Department of Climate Change, Energy, the Environment and Water
       published: "2025-09-18"
       url: https://www.dcceew.gov.au/sites/default/files/documents/net-zero-report.pdf
       licence: "CC BY 4.0 (according to search results; to confirm on the document)"
-      store_text: false
-      note: Refused from the build session; URL from search results; minor corrections published 2025-11-25 and 2026-03-17
+      store_text: if_open_licence
+      note: Refused from the build session; an owner upload is read from the inbox (D-014); URL from search results; minor corrections published 2025-11-25 and 2026-03-17
     - id: national_defence_strategy_2026
       title: "2026 National Defence Strategy and 2026 Integrated Investment Program"
       publisher: Department of Defence
       published: "2026-04-16"
       url: https://www.defence.gov.au/about/strategic-planning/2026-national-defence-strategy-2026-integrated-investment-program
       licence: "to confirm (the site refused the build session)"
-      store_text: false
+      store_text: if_open_licence
       note: Supersedes the 2024 strategy named in the design. Refused from the build session; the landing page
     - id: wef_global_risks_report_2026
       title: "Global Risks Report 2026"
@@ -89,3 +90,11 @@ params:
       licence: "World Economic Forum terms (to confirm; WEF reports usually reserve all rights)"
       store_text: false
       note: HTTP 403 from the build session; the landing page
+    - id: oecd_sti_outlook_2025
+      title: "OECD Science, Technology and Innovation Outlook 2025"
+      publisher: OECD
+      published: "2025-10-28"
+      url: https://www.oecd.org/en/publications/oecd-science-technology-and-innovation-outlook-2025_5fe57b90-en.html
+      licence: "CC BY 4.0 (its copyright page, according to search results; checked on the document)"
+      store_text: if_open_licence
+      note: The OECD publication for the baseline (D-014). HTTP 403 from the build session; an owner upload

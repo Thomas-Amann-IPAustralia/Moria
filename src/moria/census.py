@@ -125,10 +125,19 @@ def abs_section(records: list[RawRecord]) -> list[str]:
 
 
 def documents_section(records: list[RawRecord]) -> list[str]:
-    lines = ["## Documents", "", "| Document | Format | Pages | Characters | Text stored |", "|---|---|---:|---:|---|"]
+    lines = [
+        "## Documents",
+        "",
+        "| Document | Obtained | Format | Pages | Characters | Licence stated | Check | Text stored |",
+        "|---|---|---|---:|---:|---|---|---|",
+    ]
     for r in sorted(records, key=lambda r: r.payload["id"]):
         x = r.payload
-        lines.append(f"| {x['id']} | {x['format']} | {x['pages']} | {x['chars']:,} | {x['text_stored']} |")
+        stated = ", ".join(x.get("licence_statements") or []) or "-"
+        lines.append(
+            f"| {x['id']} | {x.get('obtained', 'fetched')} | {x['format']} | {x['pages']} | {x['chars']:,} | "
+            f"{stated} | {x.get('licence_check', 'not run')} | {x['text_stored']} |"
+        )
     return [*lines, ""]
 
 

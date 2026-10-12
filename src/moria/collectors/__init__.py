@@ -65,7 +65,7 @@ def run_collection(
         params={"window_start": window.start.isoformat(), "window_end": window.end.isoformat(), "limit": limit},
         config_hash=config_hash,
     )
-    ctx = CollectContext(card=card, client=client, window=window, limit=limit)
+    ctx = CollectContext(card=card, client=client, window=window, limit=limit, store=store)
     requests_before = client.requests
     outcomes_before = dict(client.outcomes)
     started = time.monotonic()
