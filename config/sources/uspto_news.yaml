@@ -1,0 +1,28 @@
+id: uspto_news
+name: United States Patent and Trademark Office news and updates
+adapter: sitemap
+rings: [core]
+domains: [D1, D3, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day (sitemap lastmod)
+coverage: >-
+  Pages under /about-us/news-updates/ on uspto.gov whose sitemap lastmod falls in the lookback and window: press
+  releases, notices and statements (1,751 such pages among 77,740 sitemap URLs on 2026-10-12).
+history_start: "the site's current sitemap (1,751 news pages on 2026-10-12)"
+stable_since: null
+breaks: []
+known_biases:
+  - lastmod reflects edits as well as new pages
+  - Federal Register notices and the Official Gazette are separate publications, not covered here
+revision_policy: pages change in place; every collected version is kept
+licence: >-
+  US federal government works are in the public domain (USPTO website terms); acknowledge the USPTO as the source.
+  Third-party material on the site keeps its own copyright
+snapshot_rights: extracted text and metadata stored; the original HTML only as its hash and size
+expected_volume: {min_per_run: 0, max_per_run: 30}
+params:
+  sitemap_url: https://www.uspto.gov/sitemap.xml
+  lookback_days: 2
+  include_prefixes: [/about-us/news-updates/]
+  max_pages: 30

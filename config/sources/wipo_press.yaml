@@ -13,7 +13,9 @@ breaks: []
 known_biases:
   - Official announcements only; no committee documents
 revision_policy: none
-licence: "WIPO website terms of use (to confirm in the census)"
+licence: >-
+  CC BY 4.0: WIPO's open access policy issues new online content under CC BY 4.0 (checked 2026-10-12);
+  attribute WIPO as the source
 snapshot_rights: titles, links and summaries stored
 expected_volume: {min_per_run: 0, max_per_run: 15}
 params:

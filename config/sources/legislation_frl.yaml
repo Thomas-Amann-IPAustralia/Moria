@@ -17,7 +17,9 @@ known_biases:
   - Volumes follow parliamentary and administrative calendars (sitting weeks, end of financial year)
   - registeredAt carries no timezone; windows are contiguous in the API's own clock
 revision_policy: compilations supersede earlier versions; each version is kept
-licence: "Commonwealth legislation; Federal Register of Legislation terms (to confirm in the census)"
+licence: >-
+  CC BY 4.0 for most Legislation Register content (its terms of use, checked 2026-10-12); attribute the Federal
+  Register of Legislation
 snapshot_rights: titles and metadata may be stored
 expected_volume: {min_per_run: 0, max_per_run: 600}
 params:

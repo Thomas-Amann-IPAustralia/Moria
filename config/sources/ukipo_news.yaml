@@ -11,7 +11,7 @@ history_start: "the feed holds the latest 20 items; older items need GOV.UK sear
 stable_since: null
 breaks: []
 known_biases:
-  - One peer office; others are added on day 2
+  - One office's own announcements
 revision_policy: items can be updated in place (the Atom updated field)
 licence: "Open Government Licence v3.0"
 snapshot_rights: titles, links and summaries stored

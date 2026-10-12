@@ -2,6 +2,9 @@
 
 robots.txt is honoured. Pages are stored as extracted text plus metadata and the SHA-256 and size of the original
 HTML, not the full HTML: a single government page can be over 500 KB, and the free storage is 10 GB (D-007).
+
+A site whose terms don't allow storing its text sets `store_text: false`: its pages keep the URL, title, dates and
+the HTML's hash and size only, like news.
 """
 
 from __future__ import annotations
@@ -29,6 +32,7 @@ class SitemapParams(Strict):
     include_prefixes: list[str] = Field(default_factory=list)
     exclude_substrings: list[str] = Field(default_factory=list)
     max_pages: int = 50
+    store_text: bool = True
 
 
 class _TextExtractor(HTMLParser):
@@ -139,13 +143,15 @@ class SitemapCollector:
             except FetchError as e:
                 ctx.warnings.append(f"sitemap page skipped: {e}")
                 continue
-            html = resp.text
+            page = extract_page(resp.text)
+            if not self.params.store_text:
+                page = {"title": page["title"]}
             payload = {
                 "url": u["loc"],
                 "lastmod": u["lastmod"],
                 "html_sha256": sha256_hex(resp.content),
                 "html_bytes": len(resp.content),
-                **extract_page(html),
+                **page,
             }
             records.append(
                 RawRecord(

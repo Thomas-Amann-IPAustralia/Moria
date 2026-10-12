@@ -2,6 +2,9 @@
 
 Items dated within the lookback before the window and up to its end are kept. Re-collected items get the same
 evidence id when unchanged, so normalisation removes the overlap.
+
+A source whose terms don't clearly allow storing its text sets `keep_summary: false`: its items keep the title, link
+and dates only, like news (CLAUDE.md: a source whose licence is unclear is not stored as text).
 """
 
 from __future__ import annotations
@@ -22,6 +25,7 @@ ATOM = "{http://www.w3.org/2005/Atom}"
 class FeedParams(Strict):
     url: str
     lookback_days: int = 3
+    keep_summary: bool = True
 
 
 def _parse_date(value: str | None) -> datetime | None:
@@ -101,6 +105,8 @@ class FeedCollector:
             if not record_id:
                 ctx.warnings.append("feed item without an id or link, skipped")
                 continue
+            if not self.params.keep_summary:
+                item = {k: v for k, v in item.items() if k != "summary"}
             records.append(
                 RawRecord(
                     envelope=make_envelope(
