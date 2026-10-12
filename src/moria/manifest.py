@@ -19,7 +19,7 @@ from .config import REPO_ROOT
 from .records import canonical_json, sha256_hex, utc_now
 from .store import Store
 
-TRACKED_PACKAGES = ("moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer")
+TRACKED_PACKAGES = ("moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer", "duckdb")
 
 
 def _git(*args: str) -> str | None:
@@ -70,6 +70,9 @@ class Manifest:
 
     def add_output(self, key: str, data: bytes) -> None:
         self.outputs.append({"key": key, "sha256": sha256_hex(data), "bytes": len(data)})
+
+    def add_output_file(self, key: str, sha256: str, size: int) -> None:
+        self.outputs.append({"key": key, "sha256": sha256, "bytes": size})
 
     @property
     def key(self) -> str:

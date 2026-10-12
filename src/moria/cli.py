@@ -7,18 +7,26 @@ import logging
 import sys
 import time
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import typer
 
+from .census import census_markdown
 from .collectors import ADAPTERS, Window, run_collection
 from .collectors.gdelt import GdeltParams, build_groups
 from .collectors.gkg import GkgParams
-from .config import config_hash, load_config, load_sources, load_territories, load_themes
+from .config import config_hash, load_baseline, load_config, load_sources, load_territories, load_themes
 from .envcheck import run_checks
 from .http import PoliteClient
+from .ipr import refresh as ipr_refresh
 from .store import open_store
+from .terms import check as terms_check
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help=__doc__)
+ipr_app = typer.Typer(no_args_is_help=True, help="IP RAPID: the weekly bulk release, into the lake as Parquet")
+app.add_typer(ipr_app, name="ipr")
+terms_app = typer.Typer(invoke_without_command=True, help="The news query groups, and the check of every search term")
+app.add_typer(terms_app, name="terms")
 
 
 @app.callback()
@@ -54,14 +62,52 @@ def sources() -> None:
         typer.echo(f"{card.id:<22} {card.adapter:<12} {card.cadence:<8} {','.join(card.rings):<28} {card.name}")
 
 
-@app.command()
-def terms() -> None:
+@terms_app.callback()
+def terms(ctx: typer.Context) -> None:
     """Print the GDELT query groups built from the territories and the broad themes."""
+    if ctx.invoked_subcommand:
+        return
     card = next(c for c in load_sources().values() if c.adapter in ("gdelt", "gdelt_gkg"))
     groups = build_groups((GkgParams if card.adapter == "gdelt_gkg" else GdeltParams).model_validate(card.params))
     for g in groups:
         typer.echo(f"{g.group_id:<28} {g.expression}")
     typer.echo(f"{len(groups)} groups")
+
+
+@terms_app.command("check")
+def terms_check_command(
+    end: str = typer.Option(None, help="Last day sampled (YYYY-MM-DD); default yesterday (UTC)"),
+    weeks: int = typer.Option(13, help="Sample one day a week for this many weeks"),
+    samples: int = typer.Option(12, help="Hits kept per term for reading (private store only)"),
+    files_per_day: int = typer.Option(None, help="Smoke test: read only this many GKG files a day"),
+    report: str = typer.Option("reports/terms-check.md", help="Where to write the public summary (counts only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Check every territory term and theme phrase against sampled days of GDELT GKG files: volumes worldwide and in
+    .au domains, and a private sample of hits to read for noise."""
+    cfg, cards = load_config(), load_sources()
+    card = next(c for c in cards.values() if c.adapter == "gdelt_gkg")
+    territories, themes = load_territories(), load_themes()
+    client = PoliteClient(cfg.http)
+    try:
+        status, mkey, counts = terms_check(
+            card,
+            territories,
+            themes,
+            open_store(cfg.store, store),
+            client,
+            end=_parse_day(end),
+            weeks=weeks,
+            samples_per_term=samples,
+            files_per_day=files_per_day,
+            report_path=Path(report) if report else None,
+            config_hash=config_hash(cfg, territories, themes, card),
+        )
+    finally:
+        client.close()
+    typer.echo(f"{status:<7} terms check  {json.dumps(counts, sort_keys=True)}  manifest={mkey}")
+    if status != "passed":
+        raise typer.Exit(2)
 
 
 @app.command("env-check")
@@ -98,7 +144,10 @@ def _collect(source_ids: list[str], day: date, limit: int | None, store_backend:
     results = []
     try:
         for sid in source_ids:
-            r = run_collection(cards[sid], store, client, window, limit=limit, config_hash=chash)
+            if cards[sid].adapter == "ip_rapid":  # a bulk stage of its own (moria ipr refresh), not a raw bundle
+                r = ipr_refresh(cards[sid], store, client, limit=limit, config_hash=chash)
+            else:
+                r = run_collection(cards[sid], store, client, window, limit=limit, config_hash=chash)
             results.append(r)
             line = (
                 f"{r.status:<7} {sid:<22} records={r.records:<6} warnings={len(r.warnings):<3} "
@@ -138,10 +187,86 @@ def collect_daily(
         raise typer.Exit(2)
 
 
+@app.command("collect-weekly")
+def collect_weekly(
+    day: str = typer.Option(None, help="UTC day the snapshot is filed under (YYYY-MM-DD); default yesterday"),
+    limit: int = typer.Option(None, help="Smoke test: cap the work per source"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Collect every weekly source: whole-taxonomy counts, statistics and the IP RAPID release. Carries on past a
+    failed source, then exits 2 if any failed."""
+    weekly = [c.id for c in load_sources().values() if c.cadence == "weekly"]
+    results = _collect(weekly, _parse_day(day), limit, store)
+    summary = {r.source: {"status": r.status, "records": r.records, "warnings": len(r.warnings)} for r in results}
+    typer.echo(json.dumps(summary, sort_keys=True))
+    if any(r.status != "passed" for r in results):
+        raise typer.Exit(2)
+
+
+@ipr_app.command("refresh")
+def ipr_refresh_command(
+    zip_path: str = typer.Option(None, "--zip", help="Use this copy of the current release instead of downloading"),
+    work_dir: str = typer.Option(None, help="Keep the converted Parquet here (default: a temporary directory)"),
+    limit: int = typer.Option(None, help="Smoke test: convert only the first N tables, locally; uploads nothing"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Ingest the current IP RAPID release into the lake (a base, or a delta against the latest base), with
+    individuals' names hashed. Does nothing if the release is already in the store."""
+    cfg, cards = load_config(), load_sources()
+    card = next(c for c in cards.values() if c.adapter == "ip_rapid")
+    client = PoliteClient(cfg.http)
+    try:
+        r = ipr_refresh(
+            card,
+            open_store(cfg.store, store),
+            client,
+            zip_path=Path(zip_path) if zip_path else None,
+            work_dir=Path(work_dir) if work_dir else None,
+            limit=limit,
+            config_hash=config_hash(cfg, card),
+        )
+    finally:
+        client.close()
+    line = f"{r.status:<7} {card.id:<22} rows={r.records:<10} warnings={len(r.warnings):<3} manifest={r.manifest_key}"
+    typer.echo(line if r.status == "passed" else f"{line}\n        cause: {r.error}")
+    if r.status != "passed":
+        raise typer.Exit(2)
+
+
+@app.command()
+def census(
+    source: str = typer.Argument(..., help="A source id from `moria sources`"),
+    out: str = typer.Option(None, help="Where to write the report; default reports/census/<source>.md"),
+    all_runs: bool = typer.Option(False, "--all-runs", help="Combine every collection in the store, not the latest"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Profile a source's latest collection (aggregates only, safe for the public repo)."""
+    cards = load_sources()
+    if source not in cards:
+        typer.echo(f"unknown source: {source}", err=True)
+        raise typer.Exit(2)
+    text = census_markdown(open_store(load_config().store, store), cards[source], all_runs=all_runs)
+    path = Path(out or f"reports/census/{source}.md")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text + "\n", encoding="utf-8")
+    typer.echo(f"wrote {path}")
+
+
+@app.command()
+def baseline() -> None:
+    """Print the known-trends baseline (config/baseline.yaml): each trend and the documents it comes from."""
+    b = load_baseline()
+    for t in b.trends:
+        docs = sorted({s.doc for s in t.sources})
+        typer.echo(f"{t.id}  {t.name:<52} {','.join(t.pestle):<36} {', '.join(docs)}")
+    read = sum(1 for d in b.documents.values() if d.read != "not_read")
+    typer.echo(f"{len(b.trends)} trends ({b.status}); {read} of {len(b.documents)} documents read")
+
+
 @app.command()
 def adapters() -> None:
     """List the collector adapters."""
-    for name in sorted(ADAPTERS):
+    for name in sorted([*ADAPTERS, "ip_rapid"]):
         typer.echo(name)
 
 

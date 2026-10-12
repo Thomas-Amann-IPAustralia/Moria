@@ -16,7 +16,10 @@ known_biases:
   - lastmod reflects content edits, including minor ones
   - Pages behind search forms or PDFs linked from pages are not in the sitemap
 revision_policy: pages change in place; every collected version is kept
-licence: "IP Australia website content (Commonwealth copyright; licence to confirm in the census)"
+licence: >-
+  CC BY 4.0 for most website content (IP Australia's copyright page, checked 2026-10-12): "Licensed from the
+  Commonwealth of Australia under a Creative Commons Attribution 4.0 International Licence". Listed third-party
+  content is excluded
 snapshot_rights: extracted text and metadata stored; the original HTML only as its hash and size
 expected_volume: {min_per_run: 0, max_per_run: 60}
 params:

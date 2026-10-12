@@ -2,8 +2,7 @@
 
 **Design v0.3, 2026-10-09; updated 2026-10-10. Status: direction approved by the owner (D-005, D-006), with set-up
 items open (§15). It builds on
-D-003 and D-004.** Nothing is built
-yet. v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
+D-003 and D-004.** Days 1 and 2 of the machinery sprint are built (D-007, D-011 to D-014). v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
 - one purpose, with two audiences;
 - broader than the IP system;
 - free options first;
@@ -247,12 +246,13 @@ rather than reading every file.
 | **Pathway gate** | Applied to *signals*, never to items. A candidate with no nameable pathway is parked, not deleted. It is revisited if it grows. |
 | **Ring quotas** in the review queue | Core 35%, adjacent 35%, wider world 30%. Third-order pathways are at most 20% of the queue. |
 | **Review budget** (one reviewer) | Two stages per round. **Triage:** up to 40 candidates at about 1 to 2 minutes each (one-line summary, small chart, three examples), choosing keep, park or reject. **Deep review:** the 8 to 10 kept, at about 15 to 20 minutes each. About 3 to 4 hours a round. |
-| **Known-trends baseline** | Foresight syntheses (§5.2) and IP Australia's own documents, extracted once. A candidate that only restates a known trend is marked `already_known` in seconds. |
+| **Known-trends baseline** | Foresight syntheses (§5.2) and IP Australia's own documents, extracted once. A candidate that matches a known trend is tagged with it in seconds, never rejected for it: evidence that a known trend is speeding up, growing more urgent or reaching Australia's IP system still counts (owner, D-014). It doesn't count towards novelty. |
 | **Saturation rule** | Stop adding sources to a ring once its last 2 additions yielded no new validated driver in a cycle. Add to the ring that is still yielding. |
 
 ### 2.6 Written down before mining (about an hour of the owner's time)
 
-- **The known-trends baseline.** The draft is extracted from the foresight syntheses, and the owner confirms it.
+- **The known-trends baseline.** The draft is extracted from the foresight syntheses, and the owner confirms it
+  (19 trends confirmed on 2026-10-12, D-014; more are added as further syntheses are read).
 - **What counts as a meaningful signal.** All four must hold:
   1. it survives the artefact checks;
   2. it appears in at least one credible family beyond news, or in news with a primary source;
@@ -556,10 +556,11 @@ is kept, which is how persistence is tracked.
 | `artefact_check` | Pass, or the flags raised: coverage, ingestion, duplicate, news cycle, source break, label drift |
 | `dossier` | The versioned dossier (§8.4) |
 | `status` | `candidate` → `investigating` → `validated` or `rejected` → `tracked` → `strengthened`, `weakened`, `disproved` or `mainstream` |
-| `rejection_reason` | `artefact`, `news_cycle`, `duplicate`, `no_pathway` (parked, not deleted; revisited if it grows), `already_known`, `insufficient_evidence` |
+| `rejection_reason` | `artefact`, `news_cycle`, `duplicate`, `no_pathway` (parked, not deleted; revisited if it grows), `insufficient_evidence`. Not `already_known`: a known trend is a relation, below (D-014) |
 | `alternatives_considered`, `australian_relevance` | Recorded by the analyst |
 | `interpretations[]` | Each one: author (an analyst, or a model with its version), stance, impact, horizon, uncertainty, PESTLE tags (external signals only), rationale, confidence, date. Disagreements stay side by side. |
 | `novel` | Not in the known-trends baseline (§2.6) |
+| `baseline_relation` | `novel`, or `reinforces` a known trend: what the signal adds (pace, urgency, arrival in Australia or in the IP system) is recorded with it (D-014) |
 
 Other tables:
 - **Interpretation:** `drivers` (groups of validated signals), `placements` (where each driver or signal sits in each
@@ -584,7 +585,7 @@ evidence alone (§11.3).
 | Signal register | `pathways[]` | Each entry: `P1`…`P6`, `order` (1–3), `chain` (required for order 3), `probability`, `author` (a person, or a model with its version), `confirmed` |
 | Signal register | `views` | `early_warning`, `strategic`, or both |
 | Signal register | `territories[]`, `outside_territories` | Confirmed territories; whether the signal sits outside all five |
-| Signal register | `known_trend_match` | The nearest known-trends baseline entry, with its similarity, and whether a person judged it `already_known` |
+| Signal register | `known_trend_match` | The nearest known-trends baseline entry, with its similarity, and whether a person judged that the signal reinforces it |
 
 ---
 
@@ -884,6 +885,7 @@ Pass rules are proposed here and committed before the first run. The owner adopt
 | **Lead time** | Months from Moria's first candidate flag to the development's mainstream point (coverage peak, or first mention in IP Australia's own publications) | Hindsight runs | Median ≥ 6 months |
 | **Precision** | The share of reviewed candidates that analysts validate | The register | ≥ 30% of the top 40 |
 | **Novelty** | Validated signals that are in neither the known-trends baseline nor any Growth Territory | Comparison | **The sprint's success test: at least 3 validated signals outside both** |
+| **Reinforcement** | Validated signals that reinforce a known trend, and what each adds: pace, urgency, arrival in Australia or in the IP system (D-014) | The register | Reported |
 | **Breadth** | The share of validated signals per ring, and the share with pathways of order 2 or 3 | The register | Reported. No wider-world signals means the scan is too narrow; only order-3 noise means it is too broad. |
 | **Source diversity** | The share of validated signals whose evidence spans at least 2 families; the share that doesn't depend on news | The register | Reported |
 | **Decision usefulness** | Signals that changed an assumption, prompted an investigation, or informed an option or decision | The decision layer | Reported; tracked across cycles |
@@ -982,8 +984,10 @@ Candidate developments:
 
 ## 13. The one-week machinery sprint
 
-**Progress:** day 1 was built on 2026-10-10 (D-007), and the memory probe ran on a real runner (D-008). The rules
-and commands are in `CLAUDE.md`, and what's next is in `docs/handover-day1.md`.
+**Progress:** day 1 was built on 2026-10-10 (D-007), and the memory probe ran on a real runner (D-008). Day 2 was
+built on 2026-10-12 (D-011 to D-013); the BigQuery patent counts wait on a GCP project, and five foresight documents
+on a route past their sites' blocks. The rules and commands are in `CLAUDE.md`, and what's next is in
+`docs/handover-day2.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 

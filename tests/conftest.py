@@ -5,7 +5,7 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from moria.config import HttpConfig, SourceCard
+from moria.config import HttpConfig, SourceCard, TerritoriesFile, ThemesFile
 from moria.http import PoliteClient
 from moria.store import LocalStore
 
@@ -46,3 +46,28 @@ def card(adapter: str, params: dict, **overrides) -> SourceCard:
     }
     base.update(overrides)
     return SourceCard.model_validate(base)
+
+
+def terms_config(core, adjacent=(), wider_world=(), themes=None, synonyms=None, theme_synonyms=None, rings=None):
+    """A one-territory territories file and a themes file, as the real (validated) models."""
+    territories = TerritoriesFile.model_validate(
+        {
+            "version": 1,
+            "search_rules": [],
+            "territories": [
+                {
+                    "id": "T9",
+                    "name": "Test",
+                    "aim": "Test",
+                    "description": "Test",
+                    "pathways": ["P1"],
+                    "terms": {"core": list(core), "adjacent": list(adjacent), "wider_world": list(wider_world)},
+                }
+            ],
+            "synonyms": synonyms or {},
+        }
+    )
+    themes_file = ThemesFile.model_validate(
+        {"version": 1, "themes": themes or {}, "rings": rings or {}, "synonyms": theme_synonyms or {}}
+    )
+    return territories, themes_file

@@ -621,4 +621,396 @@ was size.
 - **For the owner:** a short slow spell at a source fails that source for the day, because retries give up after about
   7 minutes. A cheap remedy is for `collect-daily` to retry failed sources once at the end of the run.
 
-Next free decision number: D-011.
+## D-011 — Day 2 built: peer offices, OpenAlex and ABS counts, the IP RAPID lake with names hashed, weekly collection; BigQuery waits on a GCP project (2026-10-12)
+
+**Context.** The owner asked: "I would like you to commence the Day 2 build" (design §13, day 2: IP RAPID, ABS
+headline series, BigQuery CPC counts, OpenAlex whole-taxonomy counts, the foresight syntheses and the baseline draft,
+peer offices, `moria terms check`). All four keys were present in this session, and R2 and OpenAlex answered
+`moria env-check`. The terms check is D-012; the syntheses and the baseline are D-013.
+
+**Decision (owner: start day 2; the details below settled in the build).**
+- **Peer offices, daily** (existing adapters): `epo_news`, `epo_boards_of_appeal`, `iponz_news` and `cipo_news`
+  (feeds), and `uspto_news` and `ipos_news` (sitemaps). Each office's terms were read before any text was stored:
+  - USPTO: public domain (US federal works), so page text is stored;
+  - IPONZ: reproduction for in-house use is allowed, so summaries are stored;
+  - IPOS: reproduction is forbidden without authorisation, so titles, links and dates only (new switch
+    `store_text: false`);
+  - EPO and CIPO: no reuse licence found for web text (Canada.ca's terms page doesn't answer from here), so titles,
+    links and dates only (new switch `keep_summary: false`), until confirmed.
+  - Not added: EUIPO and JPO (HTTP 403 to this session), KIPO (no feed; an HTML list only).
+- **Licences confirmed** for day 1's cards (handover open item 3): WIPO's online content is CC BY 4.0; the Federal
+  Register of Legislation's content is CC BY 4.0; IP Australia's website is CC BY 4.0.
+- **OpenAlex whole-taxonomy counts, weekly** (`openalex_counts`): works by primary topic at all four levels (4
+  domains, 26 fields, 252 subfields, about 4,400 topics), each year from 2010 and each of the last 36 months,
+  worldwide and with an author at an Australian institution, by cursor-paged `group_by`.
+  - **Research output types only** (article, review, preprint, conference paper, book, chapter, dissertation,
+    report). The first full run counted every type and found 33.0M works dated 2026 against 14.8M for 2025: 18.9M
+    of them datasets (1.9M in 2025), a bulk ingest that would read as a research surge.
+  - **The free budget is guarded in code:** the key goes in a header, never a URL; the run reads the day's credits
+    from the free `/rate-limit` endpoint first and refuses to start if its estimate would leave under 1,000; it
+    stops at the same reserve; and it refuses a key with a prepaid balance, so it can never be billed.
+- **ABS headline series, weekly** (`abs_headline`): eleven SDMX queries, chosen and tested one by one against the API:
+  population by single year of age, components of population change, labour force, job vacancies, the wage price
+  index, the CPI (the new monthly CPI; the old monthly indicator `CPI_M` ends 2025-09), national accounts and
+  productivity, output by industry, industry structure, trade in services by partner country (charges for the use of
+  IP and its parts, computer and R&D services) and business innovation. One record per series with all its
+  observations; a revised series gets a new evidence id, an unchanged one keeps its id.
+  - Left out: business turnover (ends 2025-09). Business entries and exits (CABEE) and business R&D (BERD) are
+    spreadsheet releases, not in the API.
+- **IP RAPID, weekly** (`moria ipr refresh`, also run by `collect-weekly`):
+  - The 1.35 GB zip is downloaded by stream, hashed, and read one table at a time. DuckDB converts each CSV to typed
+    zstd Parquet (dates by strict `strptime`; flags as booleans). The CSV escapes quotes with a backslash.
+  - **Privacy, inside the conversion query, before anything is written:** every party that is not an organisation
+    (individuals, and parties with no type) has its name replaced by `'sha256:' + sha256('moria-ipr-person-v1|' +
+    lower-cased name with spaces collapsed)`, and its postcode dropped; the state is kept, and so is IP Australia's
+    own `party_id`. Every table's columns are checked against the published schema first, so a renamed name column
+    fails the run rather than slipping past the hashing.
+  - The hash pseudonymises; it does not anonymise: anyone holding the public file can hash its names too. Its
+    purpose is that Moria's lake and outputs never carry a person's name. A secret key (HMAC) would add little while
+    the source is public; it can be added if the owner wants it.
+  - **The lake:** a base about quarterly (`rebase_days: 91`), and weekly deltas against it (`EXCEPT ALL` both ways,
+    `_change` added or removed). A base is about 1.0 GB, so weekly full copies would fill the free 10 GB in about
+    ten weeks. The zip is not kept; its SHA-256 and the catalogue's metadata go in an immutable release manifest.
+- **BigQuery patent counts** (`patent_cpc_counts`, monthly): patent families by CPC subclass and earliest priority
+  year, worldwide and with an Australian member, in one aggregate query on Google Patents Public Datasets. Built and
+  tested, not run: **no GCP project or credentials exist yet.**
+  - The card defaults to `dry_run: true`: the run records BigQuery's byte estimate in its manifest and stops.
+  - Every real query carries `maximumBytesBilled` (200 GB; the free tier is 1 TiB a month).
+  - The recommended project is a **BigQuery sandbox with no billing account**, so nothing can be billed at all
+    (`docs/setup.md`, six steps).
+- **Peer offices' strategies** (`peer_office_strategies`, documents read once a year): the UKIPO's Corporate Plan
+  2026 to 2027 (OGL, text stored), the EPO's Strategic Plan 2028 (metadata only) and the USPTO's strategy page
+  (public domain).
+- **Collection:** `moria collect-weekly` and `collect-weekly.yml` (Mondays 03:41 UTC, after IP Australia rebuilds
+  IP RAPID and OpenAlex's budget resets); `collect-source.yml` collects one source by hand on a runner; `moria census`
+  writes aggregate-only reports to `reports/census/`.
+- **Infrastructure:** streamed downloads (`PoliteClient.download`) and POST with headers; `put_file` and `get_file`
+  on both stores (R2 through boto3's multipart transfer); collectors may add their own manifest counts (OpenAlex
+  credits, BigQuery bytes). New dependencies: duckdb, pypdf and google-auth (which brings cryptography).
+
+**Rejected, a line each:**
+- **Storing the IP RAPID zip, or a full weekly lake copy:** storage (above).
+- **DuckDB's `CAST` for dates:** it is lenient (`'1993-02-3x'` becomes 1993-02-03). Strict `strptime` fails loudly.
+- **Counting every OpenAlex work type:** the 2026 dataset ingest (above).
+- **A browser user agent to get past the sites that refuse this session:** Moria identifies itself honestly; the
+  blocks are reported as gaps.
+
+**Checked:**
+- **Tests:** 62 pass (25 at day 1), with hand-built replicas of every format: SDMX-CSV, OpenAlex `group_by` pages,
+  a six-table IP RAPID zip, BigQuery's REST answers, a one-page PDF. Lint and format clean; CI green on the branch.
+- **Real runs, 2026-10-12** (each from a clean commit unless said):
+
+  | Source | Result |
+  |---|---|
+  | `ip_rapid` | Release 2026-10-12 (zip 1,345,756,191 bytes, SHA-256 `6606cb1f…`): 92,704,007 rows in six tables, in 93 s; a 1.00 GB base. Into the bucket too (manifest `20261012T043841Z-79f13c49`, commit `cf7494d`), because data.gov.au offers only the latest release. |
+  | IP RAPID privacy | Individuals: 1,816,579 rows, every name hashed, no postcode. No type: 17,874 rows, the same. Organisations: 10,672,114 rows, names kept. |
+  | IP RAPID delta | On the real events table (49.3M rows), a planted release with 968 rows dropped and 2,000 added: the delta found exactly those, in 158 s, a 22 KB file. |
+  | `openalex_counts` | 424 records (53 periods × 2 scopes × 4 levels), 2,424 credits, 2.2 MB; commit `906c7ea`; copied byte for byte into the bucket (hashes checked). Australia's share of works rose from 1.05% (2010) to 1.65% (2022), then 1.35% (2025). |
+  | `abs_headline` | 11 queries, 839 series, 49,335 observations, 0.3 MB, 18 s; into the bucket (manifest `20261012T050437Z-0ce6d86c`). |
+  | Peer offices | Each collected locally from `047b918`, for 2026-10-11 and for a day with a known item: EPO 1, EPO Boards of Appeal 1, IPONZ 1, CIPO 1 (its newest item is 2025-11-26), USPTO 2, IPOS 1 (title only). USPTO's sitemap lists removed pages: each 404 is a warning. |
+  | `peer_office_strategies` | 3 documents into the bucket (manifest `20261012T051747Z-7ae74cfb`): the UKIPO's plan (34,066 characters, text stored), and the EPO's and USPTO's pages, which are short landing pages (about 2,000 characters each; the EPO's as metadata only). Their full plans are separate files, to add. |
+  | `patent_cpc_counts` | Not run: no GCP project. |
+
+- **Census reports** for the new sources: `reports/census/*.md`. Sentinel dates in IP RAPID are few (for example 101
+  `effective_from_date` values of 1800-01-01).
+- **Bucket:** 1.00 GB of the free 10 GB, almost all the IP RAPID base.
+
+**Runs, disclosed in order:**
+- The first full OpenAlex run counted every work type and started before its code was committed, so its manifest
+  is dirty. It found the dataset ingest and is superseded by the filtered run from `906c7ea`.
+- The first ABS run (04:18) also preceded its commit; the bucket's copy is a re-run from a clean commit.
+- The first IP RAPID attempt never started: the shell wrapper called a missing `time` binary. The ingest then ran
+  as recorded.
+- The peer offices were first collected as smoke tests before their cards were committed (dirty manifests, local
+  store); the runs above repeat them from a clean commit, with the same counts.
+
+**Spend:** $0. OpenAlex used 5,759 of the day's free 10,000 credits, about 4,900 of them by this session (853 were
+used before it began); the key's prepaid balance is $0, so it cannot be billed. R2: 1.00 GB stored, within the free
+tier. BigQuery: none. GKG: about 7 GB downloaded for two terms checks, free.
+
+**Consequences.**
+- After the merge, `collect-daily` collects eleven sources and `collect-weekly` three. The first weekly run writes a
+  delta against the 2026-10-12 base, if IP Australia has published a new release.
+- `ipr metrics` (demand, timeliness and outcome measures from IP RAPID) comes with day 3's normalisation.
+- **For the owner:**
+  1. **Merge this branch** (or ask for a pull request): the weekly schedule and the new daily sources start from
+     `main`.
+  2. **The daily schedule didn't fire.** `collect-daily` has run only by hand (twice): no run appeared at or after
+     02:23 UTC today (checked at 08:57 UTC), although the workflow has been on `main` since 2026-10-11 17:21 UTC.
+     GitHub drops scheduled runs under load, and a schedule sometimes registers only once its file is saved again
+     on `main`. If tomorrow's run doesn't appear either, I'll put a one-line change to the workflow in a pull request
+     for you to merge.
+  3. **BigQuery:** create a sandbox project and a key (`docs/setup.md`, about ten minutes), then run `collect-source`
+     with `patent_cpc_counts`. I'll report the dry run's estimate; you say whether to switch the dry run off.
+  4. **Your territory context** is not in this container or the bucket (it was in day 1's container only). Paste it
+     again when convenient, and I'll put it in the bucket at `interpretation/territories/context.yaml`.
+  5. **Optional:** EPO's and Canada.ca's terms for storing their text, if you know them; until then, titles only.
+
+## D-012 — The terms check: 92 of 207 terms never match, in either spelling; names-only matches are often incidental, which corrects D-010's reading (2026-10-12)
+
+**Context.** Design §2.4: every term is checked on day 2 for its volume worldwide and in Australian sources over the
+last three months, and a sample of its hits is read for noise; noisy terms are narrowed or dropped ("Otherwise the
+day-2 check prunes them", design §15). GDELT's API throttles cloud addresses (D-009), so the check reads GKG bulk
+files, matching every term as the daily collector does.
+
+**Decision (settled in the build, under the design's day-2 check; the recommendations on terms are the owner's to
+adopt).**
+- **`moria terms check`:** one GKG day a week for 13 weeks (2026-07-19 to 2026-10-11), every territory term and theme
+  phrase, worldwide and for `.au` domains, with up to 12 hits per term kept by seeded reservoir sampling. The hit
+  samples are news titles, so they stay in the bucket (`reports/terms-check/<run_id>.json`); the repo gets counts and
+  triage flags only (`reports/terms-check.md`). `terms-check.yml` re-runs it by hand.
+- **First run (matcher v1, run `20261012T044357Z-72f39b02`):** 686,681 English web documents (37,344 from `.au`
+  domains); 207 distinct terms.
+  - **94 terms never matched**, 23 more were rare (under one hit in five sampled days), 29 were names-heavy (over
+    60% of hits only in GDELT's named entities), none was too broad. 50 of the 65 core (IP-language) territory terms
+    never matched.
+  - Of 18,191 term hits, 46% were names-only and 37% were in titles.
+- **Diagnosis, from the silent list and from reading the samples:**
+  1. **Whole-word matching missed plurals and US spellings** (a small effect, the second run shows). The terms are
+     mostly in Australian spelling ("commercialisation", "monetisation", "organised crime", "population ageing")
+     while most news is in US spelling, and a term in the singular missed the plural. The territories' search rule
+     already asked for both spellings; the matcher didn't apply it.
+  2. **Names-only matches are often incidental.** GDELT's named entities list proper names from the whole article,
+     so a generic phrase matches inside unrelated names. In the samples, "industry association" hit stories naming
+     some "…Industry Association"; "consumer protection" hit stories on other subjects; "recession", "open science",
+     "open data", "infrastructure investment", "regional development", "migration policy", "venture capital" and
+     "smart cities" were mostly off-topic. For proper nouns they do help: "online safety" (Australia's online
+     safety regulator's actions), "First Nations", "consumer product safety" (US product recalls by the agency of
+     that name). "research translation" was one syndicated story across 57 regional `.au` mastheads.
+- **Changes (parser `gdelt-gkg-v2`; the card records the break):**
+  - every phrase also matches in the other spelling (explicit word lists, -isation and -ization always, and -ise
+    forms for known stems only, so words like "enterprise" are untouched) and with a plural last word; word order is
+    not varied;
+  - each group's daily volume also counts documents **about** it (a phrase in the title or URL) and
+    **names-only** documents. `about_documents` is the series day 4's detectors should use; nothing is dropped.
+- **Second run (matcher v2, run `20261012T050858Z-2e48c391`, commit `42be77e`), the same 13 days:**
+  - **The variants added 2.5% of hits** (18,646 against 18,191), mostly to terms that already matched: "organised
+    crime" 344 to 488 ("organized"), "defence industry" 46 to 106 ("defense"), "trade agreement" 364 to 447 and
+    "skills shortage" 4 to 16 (plurals).
+  - **Two silent terms matched:** "trade mark infringement" (6, as "trademark infringement") and "supply chain
+    disruption" (1). **92 terms stay silent**, 49 of them core; 24 are rare and 29 names-heavy. So the silence is in
+    the phrasing, not the spelling: "population ageing" has 2 hits in 13 days, and "patent monetisation" and
+    "intellectual property commercialisation" none, in either spelling.
+  - Of the hits, 45% are in a title or URL (about the term) and 46% are names-only.
+  - The -isation rule committed after this run began (`831bd5e`) changes none of these 207 terms' variants
+    (checked); the four new themes (24 phrases) are not yet checked.
+- **Correction of D-010.** D-010 said name-only matches "were checked by phrase and look genuine". That came from a
+  few spot checks of common phrases ("extreme weather", "mental health", "climate change", "artificial
+  intelligence"). Twelve samples per term over thirteen days show they are often incidental for generic phrases.
+  The named entities still add recall for proper nouns.
+
+**Recommendations for the owner (the terms are yours; nothing is pruned without your yes):**
+1. **Keep the silent terms.** A silent term costs nothing and can't add noise; it waits for a rare event, which is
+   what weak signals are. Nothing needs dropping for noise either, now that the about series is separate.
+2. **Add a broad IP-system theme**, so the core ring has a news volume of its own: for example "intellectual
+   property", "patent", "trade mark", "copyright", "plant breeder's rights", "IP Australia", each checked for breadth
+   first ("patent" also matches "patent leather"). Without it, the core ring's news rests on its 65 territory
+   terms, 49 of which never match.
+3. **Rephrase a few core terms the way news writes them,** for example "AI inventor" beside "AI inventorship" and
+   "TRIPS waiver" beside "patent waiver" (both silent now). I can draft a list for you to edit.
+4. The four new themes from the baseline (D-013, themes v2) are checked on the next run (`terms-check` on Actions).
+
+**Spend:** $0 (about 7 GB of GKG files downloaded for the two runs; free).
+
+**Consequences.** Volumes before 2026-10-12 aren't comparable with later ones (the card's `breaks`). Day 4's
+detectors use `about_documents`; names-only counts feed the artefact checks.
+
+## D-013 — The foresight syntheses: three of eight read; a 19-trend known-trends baseline drafted for the owner (2026-10-12)
+
+**Context.** Day 2 includes "the foresight syntheses ingested and the baseline draft" (design §13). The baseline is
+what is already widely expected: a candidate that only restates it is marked `already_known` at triage, and a
+validated signal outside it and outside every Growth Territory counts towards the sprint's novelty test (design
+§2.5, §11.1). The owner confirms the baseline before mining (design §2.6).
+
+**Decision (a recommendation; the owner decides adoption).**
+- **`foresight_syntheses`, a `documents` source read once** (a new `once` cadence keeps it out of the daily and weekly
+  runs). It fetches PDF or HTML, caps size and pages, and stores page texts only where the document's own licence
+  allows; otherwise the title, URL, hash, size and page count. Eight documents are listed:
+
+  | Document | From the build session | Text stored |
+  |---|---|---|
+  | CSIRO, *Our Future World* (2022) | read (60 pages) | no: "all rights reserved" |
+  | JRC, Megatrends Hub booklet (2018) | read (9 pages) | yes: the Commission's reuse policy |
+  | Treasury, *Intergenerational Report 2023* | read (296 pages) | yes: CC BY 3.0 AU |
+  | National Science and Research Priorities (2024) | refused: the connection drops after TLS | (CC BY 4.0 by search results) |
+  | List of Critical Technologies in the National Interest | refused, the same | to confirm |
+  | Australia's Net Zero Plan (2025) | refused, the same | (CC BY 4.0 by search results) |
+  | 2026 National Defence Strategy (16 April 2026; supersedes the 2024 strategy the design names) | refused, the same | to confirm |
+  | WEF, *Global Risks Report 2026* | HTTP 403 | no: WEF reserves rights (to confirm) |
+
+  The three refusing sites (industry.gov.au, dcceew.gov.au, defence.gov.au) complete the TLS handshake and then
+  close the connection; industry.gov.au also answered 503 to the fetch tool. It looks like a block on cloud
+  addresses, like Parliament's (D-004). The OECD is left out until a specific publication is chosen.
+- **`config/baseline.yaml`: 19 known trends, drafted from the three documents read.** Each trend cites the
+  documents' own names for it, with paraphrased statements (no quotations, since CSIRO reserves its rights), PESTLE
+  origins and rings. The CSIRO and IGR items were checked against their text; the JRC items are the booklet's 14
+  names, and their statements are paraphrases of those names. Validated by pydantic: a trend may cite only a
+  document that was read. `moria baseline` prints it.
+  - KT01 to KT04, climate and environment: adaptation; the net zero transformation; resource scarcity;
+    biodiversity loss.
+  - KT05 and KT06: population ageing; rising demand for health, care and support.
+  - KT07 to KT09: geopolitical competition and fragmentation; economic weight shifting east and south; a changing
+    security paradigm.
+  - KT10 and KT11: the digital and data economy; artificial intelligence and autonomous systems.
+  - KT12 to KT19: the changing nature of work; diversifying education; inequalities; diversity, equity and
+    transparency; urbanisation; consumerism; migration; new governing systems.
+- **Themes v2** (`config/themes.yaml`): four wider-world themes for known trends the v1 themes missed: nature and
+  circularity (KT03, KT04), the shift east and south (KT08), cities and consumption (KT16, KT17), and care and
+  migration (KT06, KT18). 45 query groups in all; the terms check hasn't read the new themes yet (D-012).
+
+**Checked:** the three documents went into the bucket (manifest `20261012T045244Z-7574c849`): CSIRO as metadata
+only, the JRC booklet and the IGR with their page texts. Tests cover the adapter (a hand-built PDF, an HTML page, a
+refused document, the size cap) and the baseline's citations.
+
+**Spend:** $0.
+
+**Consequences.**
+- The five refused documents can be read from a runner (`collect-source` with `foresight_syntheses`), if the sites
+  let runners through, or from files you download. Their trends are added to the baseline when read.
+- Day 3 embeds the trend statements, so candidates can be compared with them.
+- **For the owner:** confirm, edit or cut the 19 trends (about 15 minutes; `config/baseline.yaml`). In particular:
+  are national priorities (the science priorities, critical technologies, net zero, defence) part of "already
+  known", or should signals that confirm them still count as new evidence?
+
+## D-014 — The owner's answers on day 2: the baseline confirmed, and known trends still count; synonyms and an IP-system theme; a document wishlist with owner uploads and a licence check (2026-10-12)
+
+**Context.** The owner answered the day-2 report (D-011 to D-013) in one message:
+- BigQuery: "I've added the credentials to Github Secrets. Are you SURE you mean the WHOLE JSON that downloaded?"
+- The baseline: "19 intial trends confirmed." And: "just because trends are already 'known' in the sense of them
+  being national priorities, it's entirely feasible that they may not be priorities or even front of mind for
+  IPAVentures or IP Australia's strategic leadership. Hearing something is a priority and understanding its urgency
+  are two very different things. Reinforcement of what is already known is still valuable. I'm sure we'll be adding
+  several new trends over the next few days."
+- Documents: "Are you able to produce a write a wishlist of the public documents in the Github repo and I can go to
+  the sites and get the documents for you? I'll make sure to only upload them if their licensing allows and maybe
+  you can run a check too so we can have it on record." EPO's and Canada.ca's terms: "I'll have a look when gathering
+  the documents from your wish list. Please include it on the list so I don't forget."
+- Terms: "For now, keep the search terms that never matched. We'll revisit the search strategy once we've got all of
+  the plumbing and infrastructure set up." "Sure, please add a a broad IP-system theme so the core ring gets a news
+  count of its own". "As long as the any new terms are treated as synonyms then sure, feel free to add terms the way
+  news writes them."
+- The owner pasted the territory context again.
+
+**Decision (the owner's, in the words above; the details below were settled in the build).**
+- **The baseline is confirmed:** `config/baseline.yaml` is `status: confirmed`, 19 trends. **A known trend is never a
+  reason to reject a signal.** The design changes accordingly (§2.5, §2.6, §6, §11.1): `already_known` is no longer
+  a rejection reason; a signal records its `baseline_relation`, `novel` or `reinforces` (with what it adds: pace,
+  urgency, arrival in Australia or in the IP system); reinforcement is reported beside novelty. Novelty (the sprint's
+  success test) is unchanged: outside both the baseline and every territory.
+- **The silent terms stay.** No term is pruned; the search strategy is revisited once the machinery is built.
+- **Synonyms, counted as the term** (`synonyms` in `config/territories.yaml` v2 and `config/themes.yaml` v3): 173
+  wordings for 72 terms, drafted the way news writes them ("TRIPS waiver" for "patent waiver", "DABUS" and "AI
+  inventor" for "AI inventorship", the singular of terms written in the plural). The terms themselves are unchanged.
+  A synonym must be a new wording of exactly one term (validated); a match on it counts as the term, and the match
+  record names it. Left out on purpose: boilerplate and figurative wordings ("registered trademark", "patent
+  pending", "trademarked", "knock off") and "IP" wordings that are also networking terms.
+- **An IP-system theme, `ip_system`, in the core ring:** intellectual property, patent, trade mark, copyright,
+  registered design, plant breeders rights, geographical indications, intellectual property office, IP Australia,
+  WIPO (with their synonyms). Themes gain a `rings` map (default wider world), and every volume record carries its
+  group's ring. Parser `gdelt-gkg-v3`; the card records the break.
+- **A wishlist, owner uploads, and a licence check** (`docs/wishlist.md`):
+  - The owner downloads what the build session can't reach and puts it in the private bucket at
+    `inbox/documents/<document id>.pdf` (or `.html`); never in the repo, which is public. The `documents` collector
+    reads an upload instead of the URL, and the record says so (`obtained: owner_upload`).
+  - **Every document's licence is checked:** its first six and last four pages are searched, in memory, for licence
+    statements (Creative Commons with version, the Open Government Licence, the EU reuse notice, "all rights
+    reserved", "no part may be reproduced", public domain). The statements and a verdict go in the record, the
+    manifest and the census report (names only). A document that reserves its rights with no open licence is never
+    stored as text, whatever its card says; `store_text: if_open_licence` stores text only when the document itself
+    states an open licence. The refused foresight documents move to `if_open_licence`.
+  - New card entries: the OECD *STI Outlook 2025* (the OECD publication for the baseline), the EPO's *Annual Work
+    Plan 2026*, the EUIPO's *Strategic Plan 2030*, the JPO's *Status Report 2026* and CIPO's *2023-2028 Business
+    Strategy*.
+  - **Terms read for the owner to confirm:** the EPO's website terms of use, section 6 (read from here): its own
+    information may be downloaded, printed and processed "for private and commercial purposes", displayed accurately
+    and citing the website; third-party content, logos and images excluded. Canada.ca's terms (from search results;
+    the site refuses this session): non-commercial reproduction "without charge or further permission", with title,
+    author and a not-an-official-version statement. EPO and CIPO stay titles and links only until the owner confirms.
+- **The territory context** is back in the private bucket (`interpretation/territories/context.yaml`, 8,486 bytes,
+  hash checked) and in the git-ignored local file. It is not in the repo. The public wishlist leaves out the
+  documents that the context cites, since listing them would hint at it; they are put to the owner in the chat.
+- **BigQuery:** yes, the whole JSON key file, as downloaded (its private key, the account's email and the token
+  address are all needed to sign in). The dry run waits on the merge: `collect-source` runs only from `main`.
+
+**Rejected, a line each:**
+- **Uploads to the repo:** it is public, so an upload would republish the document.
+- **Adding news wordings as new terms:** the owner asked for synonyms; a synonym keeps the term list, and its
+  counts, unchanged.
+- **Trusting the cards' licences alone:** the check costs nothing and catches a document whose own notice disagrees.
+
+**Checked:**
+- **Tests:** 69 pass, with synonyms in the matcher and the terms check, validation of synonyms and theme rings,
+  owner uploads, the licence patterns and the census across runs.
+- **Third terms check** (run `20261012T131633Z-cdd72551`, commit `3485769`, the same 13 days as D-012): 239 terms.
+  - On the 207 earlier terms: silent 92 to 75, rare 24 to 35, names-heavy 29 (unchanged). Core terms silent: 49 to
+    38 of 65. 17 silent terms matched through a synonym, each a handful of times (for example "intellectual property
+    enforcement" 3, "trade mark application" 3, "knock-off products" 5).
+  - Synonyms added 140 documents that only they found (0.7% of hits). The largest by far: "geographical indication"
+    in the singular (geographical indications 14 to 103 documents, mostly India's GI tags, in named entities).
+  - The IP-system theme: at most about 16 documents a day are about one of its terms (title or URL; the sum over
+    terms, which overlap), at most 59 a day mention one, and 0.2 a day in `.au` domains. "IP Australia" never
+    appeared in the 13 sampled days.
+  - Themes v2 (24 phrases): 3 silent (aged care workforce, deglobalisation, megacities), 1 rare.
+  - **Read from the samples** (12 per term) for patent, trade mark, copyright and intellectual property: title or URL
+    hits were on topic in 17 of 19; names-only hits in about 4 of 23. So `about_documents` stays the series to use
+    (D-012). The synonym "takedown request" was off topic in all 4 samples (government content takedowns) and is
+    removed (`c68f5af`, after the run).
+- **Document runs** (commit `cc8c54f`, into the bucket): `peer_office_strategies` 6 records (manifest
+  `20261012T132413Z-24fe112c`), `foresight_syntheses` 2 records (`20261012T132431Z-d312b25a`; CSIRO's site failed this
+  time, its morning record stands). The licence check agrees with the cards for the UKIPO plan (Open Government
+  Licence) and the Intergenerational Report (CC BY 3.0). For the JRC booklet it found CC BY 2.0 and CC BY-SA 2.0,
+  most likely photo credits: the statements are evidence for a person, not a verdict. The EUIPO plan, the EPO's work
+  plan and pages, CIPO's release and the USPTO page state none; the EUIPO plan's text is therefore not stored.
+- The census of a document card across runs shows the newest record of each document.
+
+**Runs and slips, disclosed:**
+- Commit `97f02ad` went in while a census test failed in the full suite: the command piped pytest's output and lost
+  its exit code. The test was order-dependent (two runs in one second); fixed in `87a3d3e`, which CI checks.
+- The public terms report was regenerated from the run's own result after a formatting fix (one header line); its
+  numbers are the run's.
+
+**Spend:** $0. GKG: about 3.5 GB downloaded for the third check, free. OpenAlex: no credits used.
+
+**Consequences.**
+- After the merge: `collect-source` with `patent_cpc_counts` (the dry run), then with `foresight_syntheses` and
+  `peer_office_strategies` once uploads are in the inbox.
+- Day 3 reads `ring` from volume records and embeds the trend statements for `known_trend_match`.
+- **For the owner:**
+  1. **Merge this branch** (or ask for a pull request): the BigQuery dry run, the weekly schedule and the
+     terms-check workflow all start from `main`.
+  2. **The wishlist** (`docs/wishlist.md`): five foresight documents, two peer-office documents, WEF's two top-10
+     lists pasted in the chat, and the EPO's and Canada.ca's terms to confirm.
+  3. Whether the documents your territory context cites may go on the public wishlist.
+
+## D-015 — The public documents the territory context cites go on the public wishlist; a pull request for days 1 and 2 (2026-10-12)
+
+**Context.** The owner's territory context is private (D-006). It cites four public documents, and D-014 kept them off
+the public wishlist because listing them hints at the context. Asked whether they could go on it, the owner said:
+"Add them to the public wishlist then open a PR".
+
+**Decision (the owner's).**
+- **A new `documents` card, `territory_evidence`** (read once), and section 3 of `docs/wishlist.md`. Only the
+  documents' titles, publishers and links are public, with a one-line description each; the context itself stays
+  private. The documents:
+  - the AIC's *Estimating the costs of serious and organised crime in Australia, 2020-21* (Statistical Report 38),
+    and its newer edition, *2023-24* (Statistical Report 55): owner uploads (aic.gov.au refuses this session);
+  - the Productivity Commission's *Innovation for the 98%*: the 2022 interim report and Volume 5 of the 2023 final
+    report, fetched from here;
+  - the *Patents Accessibility Review: Final report* (2021, offered as Word: saved as PDF for upload) and the
+    Government's response (2022): owner uploads (industry.gov.au refuses this session);
+  - IP Australia's *Australian IP Report 2026*, fetched from here.
+- Text is stored only where the document states an open licence, except the IP Report: its PDF states none, and it
+  is stored under IP Australia's website licence (CC BY 4.0, D-011), as IP Australia's pages already are.
+- **A pull request** for the branch, as the owner asked.
+
+**Checked:** both Productivity Commission PDFs state CC BY 4.0, so their text is stored (99 and 105 pages); the IP
+Report (86 pages) states no licence anywhere in its text. Runs into the bucket: `20261012T140358Z-e1fa4b2e`
+(commit `7cd731f`; the IP Report's text not stored) and `20261012T140936Z-1151738a` (commit `c7492f8`, stored).
+`reports/census/territory_evidence.md`. Tests: 69 pass.
+
+**Spend:** $0.
+
+**Consequences.** The four uploads join the wishlist. The documents serve the territories' "what changed since 2022"
+comparisons (design §2.4).
+
+Next free decision number: D-016.

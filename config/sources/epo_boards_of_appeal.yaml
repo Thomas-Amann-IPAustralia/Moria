@@ -1,0 +1,26 @@
+id: epo_boards_of_appeal
+name: EPO Boards of Appeal communications
+adapter: feed
+rings: [core]
+domains: [D1, D5]
+family: legal
+cadence: daily
+publication_lag: same day
+coverage: >-
+  Communications of the EPO's Boards of Appeal: press communiqués on Enlarged Board decisions, referrals, and case
+  law publications (113 items on 2026-10-12).
+history_start: "the feed's archive (113 items on 2026-10-12)"
+stable_since: null
+breaks: []
+known_biases:
+  - Announcements of decisions, not the decisions themselves
+revision_policy: none
+licence: >-
+  EPO website: no general reuse licence found for its web text. Titles, links and dates are stored until the terms
+  are confirmed
+snapshot_rights: titles, links and dates only (the summaries are dropped)
+expected_volume: {min_per_run: 0, max_per_run: 10}
+params:
+  url: https://www.epo.org/en/law-and-practice/boards-of-appeal/communications/feed
+  lookback_days: 3
+  keep_summary: false

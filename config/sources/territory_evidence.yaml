@@ -1,0 +1,77 @@
+id: territory_evidence
+name: Public documents that the Growth Territories' context cites (read once; again with each new edition)
+adapter: documents
+rings: [core, adjacent]
+domains: [D1, D2, D4]
+family: policy
+cadence: once
+publication_lag: "not applicable: each document is read once, and again when a new edition appears"
+coverage: >-
+  Public reports that the owner's private territory context cites as evidence, listed with the owner's approval
+  (D-015): the AIC's estimates of the cost of serious and organised crime (counterfeit and pirated goods), the
+  Productivity Commission's "Innovation for the 98%", the Patents Accessibility Review and IP Australia's Australian
+  IP Report 2026. Each tests a claim the territories rest on (design §2.4, "what changed since 2022"). Sites that
+  refuse cloud addresses (aic.gov.au, industry.gov.au) are owner uploads (docs/wishlist.md).
+history_start: null
+stable_since: null
+breaks: []
+known_biases:
+  - Government and agency estimates, with their own methods and revisions; editions are not always comparable
+revision_policy: each new edition is a new document
+licence: "per document (see each entry); text stored only where the document itself states an open licence"
+snapshot_rights: per document; otherwise the title, URL, hash, size and page count only
+expected_volume: {min_per_run: 1, max_per_run: 10}
+params:
+  max_bytes: 60000000
+  max_pages: 800
+  documents:
+    - id: aic_sr38_serious_organised_crime_costs_2020_21
+      title: "Estimating the costs of serious and organised crime in Australia, 2020-21 (Statistical Report 38)"
+      publisher: Australian Institute of Criminology
+      url: https://www.aic.gov.au/sites/default/files/2022-04/sr38_estimating_the_costs_of_serious_and_organised_crime_v2.pdf
+      licence: "to confirm (aic.gov.au refuses the build session); checked on the document"
+      store_text: if_open_licence
+      note: Values counterfeit and pirated goods in the Australian market in 2021. An owner upload
+    - id: aic_sr55_serious_organised_crime_costs_2023_24
+      title: "The costs of serious and organised crime in Australia, 2023-24 (Statistical Report 55)"
+      publisher: Australian Institute of Criminology
+      url: https://www.aic.gov.au/sites/default/files/2025-11/sr55_costs_of_serious_and_organised_crime_in_australia_2023-24.pdf
+      licence: "to confirm (aic.gov.au refuses the build session); checked on the document"
+      store_text: if_open_licence
+      note: The newer edition of Statistical Report 38. An owner upload
+    - id: pc_innovation_for_the_98_interim_2022
+      title: "5-year Productivity Inquiry: Innovation for the 98% (Interim Report)"
+      publisher: Productivity Commission
+      url: https://assets.pc.gov.au/inquiries/completed/productivity/interim3-innovation/productivity-interim3-innovation.pdf
+      licence: "Productivity Commission publication (usually CC BY 4.0); checked on the document"
+      store_text: if_open_licence
+      note: September 2022, the third interim report
+    - id: pc_advancing_prosperity_volume5_2023
+      title: "5-year Productivity Inquiry: Advancing Prosperity, Volume 5 (innovation for the 98%)"
+      publisher: Productivity Commission
+      url: https://assets.pc.gov.au/inquiries/completed/productivity/report/productivity-volume5-innovation-diffusion.pdf
+      licence: "Productivity Commission publication (usually CC BY 4.0); checked on the document"
+      store_text: if_open_licence
+      note: The final report's volume on innovation diffusion (2023)
+    - id: patents_accessibility_review_2021
+      title: "Patents Accessibility Review: Final report"
+      publisher: Department of Industry, Science, Energy and Resources
+      published: "2021-05-01"
+      url: https://www.industry.gov.au/publications/patents-accessibility-review
+      licence: "to confirm (industry.gov.au refuses the build session); checked on the document"
+      store_text: if_open_licence
+      note: By Emeritus Professor Raoul Mortley AO, February 2021. An owner upload (offered as Word; saved as PDF)
+    - id: patents_accessibility_review_government_response_2022
+      title: "Australian Government response to the Patents Accessibility Review"
+      publisher: Department of Industry, Science and Resources
+      url: https://www.industry.gov.au/sites/default/files/2022-06/iga_patents_accessibility_review.pdf
+      licence: "to confirm (industry.gov.au refuses the build session); checked on the document"
+      store_text: if_open_licence
+      note: June 2022. An owner upload
+    - id: ip_australia_ip_report_2026
+      title: "Australian IP Report 2026"
+      publisher: IP Australia
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/IP-Reports/Australian-IP-Report-2026.pdf
+      licence: "IP Australia website: CC BY 4.0 (D-011); the PDF itself states no licence (checked 2026-10-12)"
+      store_text: true
+      note: Chapter 1 links a first patent grant or trade mark registration with later income and productivity

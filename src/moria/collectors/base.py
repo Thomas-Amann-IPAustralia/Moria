@@ -8,11 +8,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time, timedelta
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from ..config import SourceCard
 from ..http import PoliteClient
 from ..records import RawRecord, canonical_json
+
+if TYPE_CHECKING:
+    from ..store import Store
 
 
 @dataclass(frozen=True)
@@ -42,6 +45,7 @@ class CollectContext:
     window: Window
     limit: int | None = None
     warnings: list[str] = field(default_factory=list)
+    store: Store | None = None  # the run's store, for collectors that read owner uploads (inbox/)
 
 
 class Collector(Protocol):

@@ -1,0 +1,53 @@
+name: collect-source
+
+# Collects one source by hand into the private R2 bucket: for example the BigQuery patent counts (a dry run until the
+# owner switches it on), the foresight syntheses (to see whether a runner gets past sites that refuse the build
+# session), or a re-run after a source failed. Logs are public: commands print counts and keys, never content.
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "A source id from `moria sources`, e.g. patent_cpc_counts or foresight_syntheses"
+        required: true
+      day:
+        description: "UTC day (YYYY-MM-DD); empty means yesterday"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      PYTHONUNBUFFERED: "1"
+      OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: python -m pip install --quiet uv
+      - name: Install dependencies (from the lockfile)
+        run: uv sync --frozen
+      - name: Environment check (the bucket must answer)
+        run: uv run moria env-check --require store:r2
+      - name: Collect
+        env:
+          SOURCE: ${{ inputs.source }}
+          DAY: ${{ inputs.day }}
+        run: |
+          if [[ ! "$SOURCE" =~ ^[a-z0-9_]+$ ]]; then echo "source must be a source id"; exit 2; fi
+          if [ -n "$DAY" ]; then
+            uv run moria collect "$SOURCE" --store r2 --day "$DAY"
+          else
+            uv run moria collect "$SOURCE" --store r2
+          fi

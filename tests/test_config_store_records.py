@@ -4,9 +4,20 @@ import pytest
 from pydantic import ValidationError
 
 from moria.collectors import ADAPTERS
-from moria.config import MoriaConfig, load_config, load_sources, load_territories, load_themes
+from moria.config import (
+    MoriaConfig,
+    load_baseline,
+    load_config,
+    load_sources,
+    load_territories,
+    load_themes,
+    synonym_map,
+)
+from moria.ipr import IprParams
 from moria.records import RawRecord, decode_bundle, encode_bundle, make_envelope
 from moria.store import StoreError
+
+from .conftest import terms_config
 
 
 def test_repo_config_files_validate():
@@ -15,11 +26,46 @@ def test_repo_config_files_validate():
     cards = load_sources()
     assert {"gdelt_news", "legislation_frl", "ipaustralia_site", "wipo_press", "ukipo_news"} <= set(cards)
     for c in cards.values():
-        ADAPTERS[c.adapter](c)  # each adapter validates its card's params
+        if c.adapter == "ip_rapid":  # a bulk stage of its own, not a collector
+            IprParams.model_validate(c.params)
+        else:
+            ADAPTERS[c.adapter](c)  # each adapter validates its card's params
     territories = load_territories().territories
     assert [t.id for t in territories] == ["T1", "T2", "T3", "T4", "T5"]
     assert all(t.terms.core and t.terms.adjacent and t.terms.wider_world for t in territories)
-    assert load_themes().themes
+    themes = load_themes()
+    assert themes.themes and themes.ring("ip_system") == "core"
+    assert synonym_map(load_territories(), themes)["patent waiver"][0] == "trips waiver"
+
+
+def test_synonyms_must_be_new_wordings_of_one_term():
+    ok_t, ok_th = terms_config(["widget licensing"], themes={"x": ["net zero"]}, synonyms={"widget licensing": ["a b"]})
+    assert synonym_map(ok_t, ok_th) == {"widget licensing": ("a b",)}
+    bad = [
+        ({"no such term": ["a b"]}, "not a term in this file"),
+        ({"widget licensing": ["gizmo"]}, "already a term"),
+        ({"widget licensing": ["a b"], "gizmo": ["A  b"]}, "listed under both"),
+        ({"widget licensing": ["IP"]}, "bare 'IP'"),
+        ({"widget licensing": []}, "empty list"),
+    ]
+    for synonyms, message in bad:
+        with pytest.raises(ValidationError, match=message):
+            terms_config(["widget licensing", "gizmo"], synonyms=synonyms)
+    t, th = terms_config(["widget licensing"], themes={"x": ["net zero"]}, synonyms={"widget licensing": ["net zero"]})
+    with pytest.raises(ValueError, match="a term in the other file"):
+        synonym_map(t, th)
+    with pytest.raises(ValidationError, match="unknown themes"):
+        terms_config(["widget licensing"], themes={"x": ["net zero"]}, rings={"y": "core"})
+
+
+def test_baseline_cites_only_documents_read_and_listed_in_the_foresight_card():
+    baseline = load_baseline()
+    card_docs = {d["id"] for d in load_sources()["foresight_syntheses"].params["documents"]}
+    assert set(baseline.documents) <= card_docs
+    assert {s.doc for t in baseline.trends for s in t.sources} <= {
+        k for k, d in baseline.documents.items() if d.read != "not_read"
+    }
+    assert len(baseline.trends) >= 10 and baseline.status in ("draft", "confirmed")
 
 
 def test_unknown_config_keys_are_errors():

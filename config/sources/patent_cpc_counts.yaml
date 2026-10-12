@@ -1,0 +1,30 @@
+id: patent_cpc_counts
+name: Patent families by CPC subclass and priority year, worldwide and with an Australian member (BigQuery)
+adapter: bigquery_cpc
+rings: [adjacent]
+domains: [D1, D3, D5]
+family: patent
+cadence: monthly
+publication_lag: "18 months from priority to publication, plus Google's refresh of the public dataset"
+coverage: >-
+  Every patent family in Google Patents Public Datasets (patents-public-data.patents.publications) with a priority
+  date from 2000, counted once per CPC subclass it carries (about 650 subclasses), by earliest priority year; and
+  the families with at least one Australian publication. Counts only; the query is aggregate SQL.
+history_start: "2000 here (configurable)"
+stable_since: null
+breaks: []
+known_biases:
+  - The last two to three priority years are incomplete, because applications publish about 18 months after priority
+  - CPC is applied unevenly by offices, and some older or non-EPO/USPTO documents lack CPC codes
+  - A family counts once in each subclass it carries, so subclass counts don't add up to the total
+revision_policy: Google refreshes the dataset periodically; each run is kept as a vintage
+licence: "Google Patents Public Datasets: CC BY 4.0 (attribute IFI CLAIMS Patent Services and Google)"
+snapshot_rights: counts stored
+expected_volume: {min_per_run: 500, max_per_run: 800}
+params:
+  project_env: GCP_PROJECT_ID
+  table: patents-public-data.patents.publications
+  from_year: 2000
+  location: US
+  dry_run: true            # estimate only, until the owner has seen the estimate and switches this off (D-011)
+  max_bytes_billed: 200000000000

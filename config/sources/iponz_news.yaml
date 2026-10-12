@@ -1,0 +1,25 @@
+id: iponz_news
+name: Intellectual Property Office of New Zealand news
+adapter: feed
+rings: [core]
+domains: [D1, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  IPONZ news: practice and fee changes, Commissioner decisions (monthly lists), the Plant Variety Rights Journal,
+  consultations and system notices. The feed holds the latest 80 items.
+history_start: "the feed holds the latest 80 items"
+stable_since: null
+breaks: []
+known_biases:
+  - Monthly lists (decisions, journals) recur and say little on their own
+revision_policy: none
+licence: >-
+  IPONZ website copyright: may be reproduced for personal or in-house use free of charge, accurately, from the latest
+  version, acknowledging IPONZ as the source. Moria's private store is in-house use
+snapshot_rights: titles, links, dates and summaries stored (in-house use)
+expected_volume: {min_per_run: 0, max_per_run: 15}
+params:
+  url: https://www.iponz.govt.nz/news/rss
+  lookback_days: 3

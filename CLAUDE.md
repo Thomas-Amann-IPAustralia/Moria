@@ -6,13 +6,20 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Day 1 is built.**
-- **Built:** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP client,
-  five daily collectors (`gdelt_news`, `legislation_frl`, `ipaustralia_site`, `wipo_press`, `ukipo_news`), the
-  environment check, and the CI, collect-daily and probe workflows.
-- **Next:** day 2 (IP RAPID, ABS, BigQuery CPC counts, OpenAlex counts, foresight syntheses, peer offices,
-  `moria terms check`), then day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors, artefact
-  checks), day 5 (dossiers, register export).
+**Current scope: the one-week machinery sprint (design §13). Days 1 and 2 are built.**
+- **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
+  client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
+- **Built (day 2, D-011 to D-013):** six peer-office sources (daily); OpenAlex whole-taxonomy counts, the ABS headline
+  series and the IP RAPID lake (weekly, `collect-weekly`); patent counts by CPC subclass on BigQuery (built, dry run
+  only: it waits on a GCP project); the foresight syntheses and a draft known-trends baseline; `moria terms check`;
+  `moria census` and its reports; the collect-weekly and terms-check workflows.
+- **The owner's answers (D-014):** the 19-trend baseline is confirmed, and a known trend is a tag, never a reason to
+  reject a signal (reinforcement counts); synonyms for the territory terms and an `ip_system` theme for the core ring;
+  owner uploads of refused documents (`docs/wishlist.md`) with a licence check on every document. The public documents
+  the territory context cites are on the wishlist with the owner's approval (`territory_evidence`, D-015); the context
+  itself stays private.
+- **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors, artefact checks), day 5
+  (dossiers, register export). Day-2 leftovers are in `docs/handover-day2.md`.
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
   agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
@@ -31,9 +38,12 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 5. **Tests.** CI uses fixtures only: no network, no secrets, no model downloads. Every HTTP exchange in a test goes
    through `httpx.MockTransport` with hand-built replicas of each format (placeholder text, never real source text).
 6. **Secrets.** Only in GitHub Actions secrets and the Claude Code environment (`docs/setup.md`):
-   `OPENALEX_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`. Never in git, chat or logs.
+   `OPENALEX_API_KEY`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`; for BigQuery, once set up,
+   `GCP_PROJECT_ID` and `GCP_SA_KEY` (a service account key's JSON). Never in git, chat or logs.
    `moria env-check` reports presence, never values.
-7. **Decisions.** `docs/decisions.md` is append-only. A recommendation is distinct from the owner's adoption. The
+7. **Free budgets are guarded in code.** OpenAlex: the run checks the day's free credits first, caps itself, and
+   refuses a key with a prepaid balance. BigQuery: dry run by default, and `maximumBytesBilled` on every query.
+8. **Decisions.** `docs/decisions.md` is append-only. A recommendation is distinct from the owner's adoption. The
    next free number is in its last entry.
 
 ## Security rules (non-negotiable)
@@ -49,7 +59,14 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 - robots.txt is honoured for web pages. Per-host minimum intervals are in `config/moria.yaml`: GDELT at 5.5 s.
 - Third-party model code (for example, a model repo's own runtime) is read before it is run, pinned and hashed.
   `trust_remote_code` needs the owner's exception.
-- Individuals' names in IP RAPID are hashed at ingest (day 2).
+- IP RAPID: every party that is not an organisation has its name hashed and its postcode dropped inside the
+  conversion query, before anything is written; each table's columns are checked against the published schema
+  first (D-011).
+- A source whose terms don't clearly allow storing its text keeps titles, links and dates only (`keep_summary:
+  false` for feeds, `store_text: false` for sitemaps and documents).
+- Owner uploads go to `inbox/documents/` in the private bucket, never into the repo. Every document's own licence
+  statements are checked; one that reserves its rights is never stored as text, and `store_text: if_open_licence`
+  stores text only when the document states an open licence (D-014).
 
 ## Pipeline
 
@@ -58,14 +75,21 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 | Environment check | `moria env-check [--require store:r2,...]` | environment | nothing (prints the status) |
 | Collect one source | `moria collect <source> [--day D] [--limit N] [--store local\|r2]` | the source | `raw/<source>/<yyyy>/<mm>/<dd>/<run_id>.jsonl.zst`, a monitor entry, a manifest |
 | Collect daily sources | `moria collect-daily [--day D] [--store r2]` | daily sources | the same, per source |
-| Inspect | `moria sources`, `moria terms`, `moria adapters` | config | nothing |
+| Collect weekly sources | `moria collect-weekly [--store r2]` | OpenAlex, ABS, IP RAPID | the same; IP RAPID as below |
+| IP RAPID | `moria ipr refresh [--zip PATH] [--limit N] [--store r2]` | data.gov.au's weekly zip | `lake/ip_rapid/base=<release>/<table>.parquet` or `delta=<release>/…`, `raw/ip_rapid/<release>/manifest.json` |
+| Terms check | `moria terms check [--end D] [--weeks 13] [--store r2]` | sampled GKG days | `reports/terms-check/<run_id>.json` (with hit samples); `reports/terms-check.md` in the repo (counts only) |
+| Census | `moria census <source> [--all-runs]` | the store | `reports/census/<source>.md` in the repo (aggregates only) |
+| Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` | config | nothing |
 
 Local runs default to `--store local`, which writes to `data/store/` (git-ignored). GitHub Actions passes
-`--store r2`.
+`--store r2`. The `documents` adapter reads an owner upload at `inbox/documents/<document id>.pdf` (or `.html`) in the
+store instead of the document's URL.
 
 **Workflows** (`.github/workflows/`):
 - `ci.yml`: lint, format and tests on every push.
 - `collect-daily.yml`: 02:23 UTC daily, for the previous UTC day. Schedules run from the default branch only.
+- `collect-weekly.yml`: Mondays 03:41 UTC (after IP Australia rebuilds IP RAPID and OpenAlex's budget resets).
+- `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
 
 ## Data model (summary; detail in design §6)
@@ -75,15 +99,29 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
   `event_at`, `observable_at`, retrieved_at, the request hash, the tool identity, the content hash, the licence and
   the parser version.
 - **Point-in-time logic uses `observable_at`, never `event_at`.**
+- Counts and statistics (OpenAlex, ABS, BigQuery) are `observation` records; each weekly run is a vintage, and an
+  unchanged series keeps its evidence id.
+- IP RAPID lives in the lake as typed Parquet: a base about quarterly and weekly deltas against it (`_change` is
+  `added` or `removed`). The zip is not kept; its SHA-256 is in the release manifest.
+- `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
+  documents read. A signal records whether it is `novel` or `reinforces` a known trend.
 
 ## Sources (config/sources/*.yaml; design §5)
 
 | Id | Adapter | Notes |
 |---|---|---|
-| `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 41 query groups (`config/territories.yaml`, `config/themes.yaml`) in title, URL, quotations and named entities; matches are kept, with daily volumes worldwide and for `.au` domains against every document. Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
+| `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 47 query groups (`config/territories.yaml`, `config/themes.yaml`, including the `ip_system` theme for the core ring) in title, URL, quotations and named entities, in Australian and US spelling, with a plural last word, and with each term's synonyms counted as the term (D-014); matches are kept, with daily volumes worldwide and for `.au` domains against every document. Each volume also counts documents about the group (title or URL) and names-only ones, which are often incidental: `about_documents` is the cleaner series (D-012). Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
 | `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. A full first snapshot is a separate backfill. |
-| `wipo_press`, `ukipo_news` | feed | Items dated in the window plus a 3-day lookback |
+| `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO and CIPO keep titles and links only until the owner confirms their terms (`docs/wishlist.md`). |
+| `uspto_news`, `ipos_news` | sitemap | News pages by lastmod. IPOS keeps titles only: its terms forbid reproduction. |
+| `openalex_counts` | openalex_counts | Weekly. Works by primary topic at four taxonomy levels, each year from 2010 and each of the last 36 months, worldwide and with an Australian author; research output types only (D-011). About 2,400 of the 10,000 free daily credits. |
+| `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
+| `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
+| `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. `dry_run: true` until the owner has a GCP project and has seen the estimate. |
+| `foresight_syntheses` | documents | Once. Nine documents; three fetched (CSIRO as metadata only); the other six wait on owner uploads (`docs/wishlist.md`), stored as text only where the document states an open licence. |
+| `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5) and IP Australia's *Australian IP Report 2026* read; the AIC's crime-cost reports and the Patents Accessibility Review wait on owner uploads. |
+| `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the USPTO's strategy page, the EPO's strategic plan and work plan and the EUIPO's plan (metadata only); the JPO's report and CIPO's strategy wait on owner uploads. |
 
 ## Model choice
 Free first (design §9):

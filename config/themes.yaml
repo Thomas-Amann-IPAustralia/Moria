@@ -1,6 +1,11 @@
 # Broad wider-world themes for the news scan (design §2.1), searched with no IP filter.
-# Draft v1 (2026-10-10), from the wider-world ring's definition. Day 2 extends it from the foresight syntheses.
-version: 1
+# Draft v1 (2026-10-10), from the wider-world ring's definition. v2 (2026-10-12) adds four themes for known trends the
+# v1 themes missed (config/baseline.yaml, D-013): biodiversity and circularity (KT03, KT04), the shift east and south
+# (KT08), cities and consumption (KT16, KT17), and care and migration (KT06, KT18). Phrases match in Australian and US
+# spelling and with a plural last word (D-012). v3 (2026-10-12) adds `ip_system`, a broad theme in IP-system language,
+# so the core ring has a news volume of its own (owner, D-014), and `synonyms`: other wordings of a phrase, counted as
+# the phrase itself.
+version: 3
 themes:
   demographics_health:
     - population ageing
@@ -72,3 +77,54 @@ themes:
     - regional development
     - transport electrification
     - digital infrastructure
+  nature_circularity:
+    - biodiversity
+    - nature positive
+    - ecosystem restoration
+    - deforestation
+    - invasive species
+    - circular economy
+  global_shifts:
+    - global south
+    - brics
+    - indo-pacific
+    - multipolar
+    - deglobalisation
+    - reshoring
+  cities_consumption:
+    - urbanisation
+    - megacities
+    - consumer spending
+    - fast fashion
+    - middle class
+    - e-commerce
+  care_migration:
+    - care economy
+    - disability support
+    - childcare
+    - international students
+    - skilled migration
+    - aged care workforce
+  ip_system:
+    - intellectual property
+    - patent
+    - trade mark
+    - copyright
+    - registered design
+    - plant breeders rights
+    - geographical indications
+    - intellectual property office
+    - IP Australia
+    - WIPO
+
+# A theme's ring when it is not wider_world
+rings:
+  ip_system: core
+
+# Other wordings of a phrase, counted as the phrase itself (D-014). Synonyms of territory terms that are also theme
+# phrases ("plant breeders rights", "geographical indications") are in config/territories.yaml.
+synonyms:
+  intellectual property: [IP rights, IP law]
+  registered design: [design right]
+  intellectual property office: [patent office, trademark office, USPTO, EUIPO, UKIPO]
+  WIPO: [World Intellectual Property Organization]

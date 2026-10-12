@@ -1,0 +1,31 @@
+id: ip_rapid
+name: IP RAPID (IP Australia's open data on patents, trade marks, designs and plant breeder's rights)
+adapter: ip_rapid
+rings: [core]
+domains: [D1, D4, D6]
+family: patent
+cadence: weekly
+publication_lag: "about a week: the zip is rebuilt weekly (Monday about 00:30 UTC), as of the previous day"
+coverage: >-
+  Every application for an Australian patent, trade mark, design or plant breeder's right since 1904 that is open to
+  public inspection: the application, its parties (applicants, owners, agents, opponents), events, classifications,
+  descriptions (titles, trade mark words) and links to other rights, including PCT and Madrid. Six tables, about 93M
+  rows (2026-10-12). Applications not yet open to public inspection are cut down to their filing record.
+history_start: "1904 (applications); events and parties as recorded by IP Australia's systems over time"
+stable_since: "IP RAPID's weekly form since August 2023 (it replaced the annual IPGOD)"
+breaks: []
+known_biases:
+  - Applications before publication show only filing events (non-OPI rows are removed by IP Australia)
+  - Sentinel dates (1800-01-01, 1901-01-01) stand for unknown dates
+  - The party grouping (party_id) is IP Australia's own name and address matching
+  - Agents and attorneys are parties too; most analysis wants applicants (party_role_category)
+revision_policy: rebuilt weekly in full; history can change retroactively (is_standing); kept as a base and weekly deltas
+licence: "CC BY 4.0 (data.gov.au; attribute IP Australia, IP RAPID)"
+snapshot_rights: all tables stored in the private bucket, with individuals' names hashed and their postcodes dropped
+expected_volume: {min_per_run: 80000000, max_per_run: 130000000}
+params:
+  ckan_package_url: https://data.gov.au/data/api/3/action/package_show?id=423000b8-5735-4447-bcb9-792644bcd7ea
+  resource_name: IPRAPID.zip
+  rebase_days: 91
+  memory_limit: 2GB
+  threads: 4

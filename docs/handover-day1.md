@@ -1,5 +1,7 @@
 # Handover: the machinery sprint after day 1
 
+**Superseded by `docs/handover-day2.md` (2026-10-12).** Kept as the record of day 1.
+
 For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-006 to D-008 in `docs/decisions.md`.
 Build day 2 when the owner asks. Nothing in the machinery spends money.
 

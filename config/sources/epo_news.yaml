@@ -1,0 +1,26 @@
+id: epo_news
+name: European Patent Office news
+adapter: feed
+rings: [core]
+domains: [D1, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  The EPO's English news feed: announcements, co-operation, studies, statistics and events. The feed carries its
+  whole archive (982 items on 2026-10-12), so a one-off backfill is possible.
+history_start: "the feed's archive (982 items on 2026-10-12)"
+stable_since: null
+breaks: []
+known_biases:
+  - One office's own announcements; many items are meetings and events
+revision_policy: none
+licence: >-
+  EPO website: no general reuse licence found for its web text (the press centre licenses its media only). Titles,
+  links and dates are stored until the terms are confirmed
+snapshot_rights: titles, links and dates only (the summaries are dropped)
+expected_volume: {min_per_run: 0, max_per_run: 15}
+params:
+  url: https://www.epo.org/en/news-events/news/feed
+  lookback_days: 3
+  keep_summary: false

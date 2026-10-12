@@ -1,0 +1,228 @@
+# The known-trends baseline (design §2.5, §2.6): what is already widely expected. A candidate signal is tagged with
+# the known trend it matches, never rejected for it: "Hearing something is a priority and understanding its urgency are
+# two very different things. Reinforcement of what is already known is still valuable" (owner, D-014). A validated
+# signal outside every trend here and outside every Growth Territory counts towards novelty, the sprint's success test
+# (design §11.1); one that reinforces a trend is reported as reinforcement.
+#
+# Status: CONFIRMED by the owner on 2026-10-12 ("19 initial trends confirmed", D-014). Drafted by Claude on 2026-10-12
+# from the three syntheses read in full in the build session (each `item` below is the document's own name for its
+# trend). The statements are paraphrases, not quotations. The other documents in
+# config/sources/foresight_syntheses.yaml could not be fetched from the build session; they are listed as not read,
+# and their trends are added once they are read (the owner expects several more).
+version: 1
+status: confirmed
+
+documents:
+  csiro_our_future_world_2022: {read: full, items: 7, note: "seven global megatrends to 2042"}
+  jrc_megatrends_hub: {read: full, items: 14, note: "the 14 megatrends (the booklet lists names; the hub has detail)"}
+  treasury_intergenerational_report_2023: {read: full, items: 5, note: "five major forces shaping the economy to 2063"}
+  national_science_research_priorities_2024: {read: not_read, note: "refused from the build session"}
+  critical_technologies_list: {read: not_read, note: "refused from the build session"}
+  net_zero_plan_2025: {read: not_read, note: "refused from the build session"}
+  national_defence_strategy_2026: {read: not_read, note: "refused from the build session"}
+  wef_global_risks_report_2026: {read: not_read, note: "HTTP 403 from the build session"}
+  oecd_sti_outlook_2025: {read: not_read, note: "HTTP 403 from the build session; on the wishlist"}
+
+trends:
+  - id: KT01
+    name: Climate change and adaptation
+    statement: >-
+      Extreme and compound weather grows more frequent and costly, so adapting infrastructure, health systems,
+      settlements and livelihoods becomes routine work for governments, businesses and communities.
+    pestle: [environmental, social, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: csiro_our_future_world_2022, item: Adapting to a changing climate}
+      - {doc: jrc_megatrends_hub, item: Climate change and environmental degradation}
+      - {doc: treasury_intergenerational_report_2023, item: Climate change and the net zero transformation}
+
+  - id: KT02
+    name: The net zero transformation
+    statement: >-
+      Economies decarbonise towards net zero: clean energy, electrification and low-emission industries grow, while
+      demand for some traditional exports declines and new markets emerge.
+    pestle: [environmental, economic, technological]
+    rings: [wider_world, adjacent]
+    sources:
+      - {doc: csiro_our_future_world_2022, item: "Leaner, cleaner and greener"}
+      - {doc: treasury_intergenerational_report_2023, item: Climate change and the net zero transformation}
+
+  - id: KT03
+    name: Resource scarcity and efficiency
+    statement: >-
+      Demand for food, water, energy and minerals strains supply, so efficiency, recycling, substitutes and the
+      competition for critical resources all intensify.
+    pestle: [environmental, economic, political]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Aggravating resource scarcity}
+      - {doc: csiro_our_future_world_2022, item: "Leaner, cleaner and greener"}
+
+  - id: KT04
+    name: Biodiversity loss and environmental degradation
+    statement: >-
+      Ecosystems and biodiversity keep declining, and protecting and restoring them becomes a policy and investment
+      priority alongside emissions.
+    pestle: [environmental]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Climate change and environmental degradation}
+      - {doc: csiro_our_future_world_2022, item: "Leaner, cleaner and greener"}
+
+  - id: KT05
+    name: Population ageing
+    statement: >-
+      People live longer and fertility stays low, so populations age: many more people over 65 and 85, with
+      lasting economic and fiscal pressure.
+    pestle: [social, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: treasury_intergenerational_report_2023, item: Population ageing}
+      - {doc: jrc_megatrends_hub, item: Increasing demographic imbalances}
+      - {doc: csiro_our_future_world_2022, item: The escalating health imperative}
+
+  - id: KT06
+    name: Rising demand for health, care and support
+    statement: >-
+      Ageing, chronic and emerging diseases and rising expectations lift demand for health, care and support
+      services, which grow as a share of the economy and the workforce.
+    pestle: [social, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: treasury_intergenerational_report_2023, item: Rising demand for care and support services}
+      - {doc: csiro_our_future_world_2022, item: The escalating health imperative}
+      - {doc: jrc_megatrends_hub, item: Shifting health challenges}
+
+  - id: KT07
+    name: Geopolitical competition and fragmentation
+    statement: >-
+      Strategic competition between powers grows, trade and investment fragment along security lines, and
+      governments work harder to secure stability, supply and growth.
+    pestle: [political, economic]
+    rings: [wider_world, adjacent]
+    sources:
+      - {doc: treasury_intergenerational_report_2023, item: Geopolitical risk and fragmentation}
+      - {doc: csiro_our_future_world_2022, item: Geopolitical shifts}
+
+  - id: KT08
+    name: Economic weight shifting east and south
+    statement: >-
+      The economic and political influence of Asia and the global south keeps growing relative to Europe and North
+      America.
+    pestle: [political, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Expanding influence of east and south}
+
+  - id: KT09
+    name: A changing security paradigm
+    statement: >-
+      Security threats widen beyond conventional military ones, and defence and security spending and planning
+      change with them.
+    pestle: [political, technological]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Changing security paradigm}
+      - {doc: treasury_intergenerational_report_2023, item: Geopolitical risk and fragmentation}
+
+  - id: KT10
+    name: The digital and data economy
+    statement: >-
+      Digitisation of services, commerce, work and government keeps accelerating, and data becomes a core asset of
+      organisations and economies.
+    pestle: [technological, economic]
+    rings: [adjacent, wider_world]
+    sources:
+      - {doc: csiro_our_future_world_2022, item: Diving into digital}
+      - {doc: treasury_intergenerational_report_2023, item: Technological and digital transformation}
+      - {doc: jrc_megatrends_hub, item: Accelerating technological change and hyperconnectivity}
+
+  - id: KT11
+    name: Artificial intelligence and autonomous systems
+    statement: >-
+      Artificial intelligence and autonomous systems spread across industries, raising productivity and changing
+      which tasks people do.
+    pestle: [technological, economic, social]
+    rings: [adjacent, wider_world]
+    sources:
+      - {doc: csiro_our_future_world_2022, item: Increasingly autonomous}
+      - {doc: treasury_intergenerational_report_2023, item: Technological and digital transformation}
+      - {doc: jrc_megatrends_hub, item: Accelerating technological change and hyperconnectivity}
+
+  - id: KT12
+    name: The changing nature of work
+    statement: >-
+      Work changes in form and content: new skills are in demand, employment becomes more varied, and technology
+      reshapes jobs.
+    pestle: [economic, social]
+    rings: [wider_world, adjacent]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Changing nature of work}
+      - {doc: treasury_intergenerational_report_2023, item: Technological and digital transformation}
+
+  - id: KT13
+    name: Diversifying education and learning
+    statement: >-
+      Education and training diversify in form, provider and timing, towards learning throughout working life.
+    pestle: [social]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Diversification of education and learning}
+
+  - id: KT14
+    name: Diversifying inequalities
+    statement: >-
+      Inequalities of income, wealth and opportunity persist and take new forms, within and between countries.
+    pestle: [social, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Diversifying inequalities}
+
+  - id: KT15
+    name: Diversity, equity and transparency in decisions
+    statement: >-
+      Diversity, equity and transparency matter more in business, policy and community decisions, and trust depends
+      on them.
+    pestle: [social, political]
+    rings: [wider_world]
+    sources:
+      - {doc: csiro_our_future_world_2022, item: Unlocking the human dimension}
+
+  - id: KT16
+    name: Continuing urbanisation
+    statement: >-
+      More of the world's people live in cities, which concentrates demand for housing, infrastructure and
+      services.
+    pestle: [social, environmental, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Continuing urbanisation}
+
+  - id: KT17
+    name: Growing consumerism
+    statement: >-
+      Consumption keeps growing with a rising global middle class, with consequences for resources, waste and
+      markets.
+    pestle: [economic, social, environmental]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Growing consumerism}
+
+  - id: KT18
+    name: The increasing significance of migration
+    statement: >-
+      Migration grows in scale and political salience, shaping labour markets, skills and societies.
+    pestle: [social, political, economic]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Increasing significance of migration}
+
+  - id: KT19
+    name: The increasing influence of new governing systems
+    statement: >-
+      Governance shifts beyond the nation state: networks, platforms, cities and other non-state actors gain
+      influence over rules and decisions.
+    pestle: [political]
+    rings: [wider_world]
+    sources:
+      - {doc: jrc_megatrends_hub, item: Increasing influence of new governing systems}

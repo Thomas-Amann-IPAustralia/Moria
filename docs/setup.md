@@ -26,6 +26,8 @@ Use exactly these names in every place.
 | `R2_ACCOUNT_ID` | Cloudflare dashboard: your account ID, also shown in the R2 S3 endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` | Every job that reads or writes the bucket |
 | `R2_ACCESS_KEY_ID` | The R2 API token you create below | The same |
 | `R2_SECRET_ACCESS_KEY` | The same token. It is shown **once**, so copy it straight into the secret stores. | The same |
+| `GCP_PROJECT_ID` | Your Google Cloud project with no billing account (below) | The patent counts on BigQuery |
+| `GCP_SA_KEY` | The JSON key of a service account with BigQuery Job User (below) | The same |
 
 **Why environment variables, not Network secrets.** A network secret makes the session's proxy add the key to the
 headers of web requests. R2 doesn't take keys that way: it speaks the S3 protocol, where the secret key never travels
@@ -46,6 +48,28 @@ GitHub Actions runners, and was created on 2026-10-10.
 
 Don't enable public access on the bucket. Reports are shared another way.
 
+## BigQuery, for the patent counts (not set up yet)
+
+Moria counts patent families by CPC subclass from Google's public patent data on BigQuery (D-011). The data is free,
+and so are the first 1 TiB of queries each month, but every query needs a Google Cloud project to run in. Use a
+**BigQuery sandbox**: a project with **no billing account**. Then nothing can ever be billed, whatever happens.
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → create a project, for example `moria-patents`.
+   **Don't link a billing account.** Note its project id.
+2. Open **BigQuery** in that project once, so the BigQuery API is on (the page shows a sandbox banner).
+3. **IAM & Admin → Service accounts → Create service account:** `moria-bigquery`. Grant it the role
+   **BigQuery Job User** on the project, and nothing else. The public patent data needs no further role.
+4. Open the service account → **Keys → Add key → Create new key → JSON**. The file downloads once.
+5. Add two **GitHub Actions secrets** (the counts run on Actions, so the Claude Code environment doesn't need them):
+   - `GCP_PROJECT_ID`: the project id;
+   - `GCP_SA_KEY`: the **whole content** of the JSON file, pasted as it is. Then delete the downloaded file.
+6. Run **Actions → collect-source → Run workflow** with source `patent_cpc_counts`. It is a **dry run**: it records how
+   many bytes the query would scan, in its manifest, and collects nothing. I then report the estimate, and you say
+   whether to switch the dry run off.
+
+The key can only run queries in a project that can't be billed. A keyless alternative, workload identity federation
+from GitHub, is more secure but takes about ten more steps; it can replace the key later.
+
 ## Checklist
 
 - [ ] `OPENALEX_API_KEY` in GitHub Actions secrets
@@ -53,6 +77,7 @@ Don't enable public access on the bucket. Reports are shared another way.
 - [ ] `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY` in GitHub Actions secrets
 - [ ] The same three in the Claude Code environment, as environment variables
 - [ ] Start a new Claude Code session after adding the environment variables
+- [ ] Later, for the patent counts: `GCP_PROJECT_ID` and `GCP_SA_KEY` in GitHub Actions secrets (above)
 
 On day 1 the first session checks each key with one cheap call and reports which ones answered. It never prints the
 values.

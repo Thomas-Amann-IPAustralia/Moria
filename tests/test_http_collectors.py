@@ -61,6 +61,7 @@ def test_query_groups_are_balanced_and_quoted():
     groups = build_groups(GdeltParams(phrases_per_query=6))
     assert all(1 <= len(gr.phrases) <= 6 for gr in groups)
     assert not any(p.lower() == "ip" for gr in groups for p in gr.phrases)
+    assert not any(s.lower() == "ip" for gr in groups for _, syn in gr.synonyms for s in syn)
 
 
 def test_gdelt_collects_articles_and_volumes(http_cfg, store):
@@ -119,6 +120,16 @@ def test_feeds_keep_items_in_the_lookback_window(http_cfg, body, expected_ids):
     assert [x.envelope.provider_record_id for x in recs] == expected_ids
 
 
+def test_feed_without_a_clear_licence_keeps_titles_and_links_only(http_cfg):
+    c = card("feed", {"url": "https://feed.test/rss", "lookback_days": 3, "keep_summary": False})
+    ctx = CollectContext(
+        card=c, client=make_client(http_cfg, lambda r: httpx.Response(200, content=RSS)), window=Window.for_day(DAY)
+    )
+    [rec] = FeedCollector(c).collect(ctx)
+    assert "summary" not in rec.payload and rec.payload["title"] == "Inside window"
+    assert rec.payload["link"] == "https://feed.test/1"
+
+
 SITEMAP = b"""<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://site.test/news/new</loc><lastmod>2026-10-09</lastmod></url>
 <url><loc>https://site.test/old</loc><lastmod>2025-01-01</lastmod></url></urlset>"""
@@ -144,6 +155,21 @@ def test_sitemap_fetches_changed_pages_as_text(http_cfg):
     assert p["title"] == "Placeholder page" and p["description"] == "A summary"
     assert "Body text here." in p["text"] and "menu" not in p["text"] and "var x" not in p["text"]
     assert len(p["html_sha256"]) == 64 and "html" not in p
+
+
+def test_sitemap_without_text_rights_keeps_the_title_only(http_cfg):
+    def handler(request):
+        if request.url.path == "/sitemap.xml":
+            return httpx.Response(200, content=SITEMAP)
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        return httpx.Response(200, text=PAGE)
+
+    c = card("sitemap", {"sitemap_url": "https://site.test/sitemap.xml", "store_text": False})
+    ctx = CollectContext(card=c, client=make_client(http_cfg, handler), window=Window.for_day(DAY))
+    [rec] = SitemapCollector(c).collect(ctx)
+    assert rec.payload["title"] == "Placeholder page" and len(rec.payload["html_sha256"]) == 64
+    assert "text" not in rec.payload and "description" not in rec.payload
 
 
 def test_extract_page_handles_entities():

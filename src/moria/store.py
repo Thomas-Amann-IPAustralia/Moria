@@ -7,6 +7,7 @@ key under raw/ fails loudly.
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Protocol
@@ -25,6 +26,8 @@ class Store(Protocol):
     def get(self, key: str) -> bytes: ...
     def exists(self, key: str) -> bool: ...
     def list(self, prefix: str) -> list[str]: ...
+    def put_file(self, key: str, path: Path, content_type: str = "application/octet-stream") -> None: ...
+    def get_file(self, key: str, path: Path) -> None: ...
 
 
 def _check_key(key: str) -> None:
@@ -57,6 +60,24 @@ class LocalStore:
 
     def get(self, key: str) -> bytes:
         return self._path(key).read_bytes()
+
+    def put_file(self, key: str, path: Path, content_type: str = "application/octet-stream") -> None:
+        target = self._path(key)
+        if key.startswith(IMMUTABLE_PREFIXES) and target.exists():
+            raise StoreError(f"refusing to overwrite immutable object: {key}")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=target.parent, prefix=".tmp-")
+        try:
+            with os.fdopen(fd, "wb") as dst, open(path, "rb") as src:
+                shutil.copyfileobj(src, dst, 16 * 1024 * 1024)
+            os.replace(tmp, target)
+        except BaseException:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
+            raise
+
+    def get_file(self, key: str, path: Path) -> None:
+        shutil.copyfile(self._path(key), path)
 
     def exists(self, key: str) -> bool:
         return self._path(key).exists()
@@ -100,6 +121,16 @@ class R2Store:
     def get(self, key: str) -> bytes:
         _check_key(key)
         return self._s3.get_object(Bucket=self.bucket, Key=key)["Body"].read()
+
+    def put_file(self, key: str, path: Path, content_type: str = "application/octet-stream") -> None:
+        _check_key(key)
+        if key.startswith(IMMUTABLE_PREFIXES) and self.exists(key):
+            raise StoreError(f"refusing to overwrite immutable object: {key}")
+        self._s3.upload_file(str(path), self.bucket, key, ExtraArgs={"ContentType": content_type})
+
+    def get_file(self, key: str, path: Path) -> None:
+        _check_key(key)
+        self._s3.download_file(self.bucket, key, str(path))
 
     def exists(self, key: str) -> bool:
         from botocore.exceptions import ClientError

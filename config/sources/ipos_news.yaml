@@ -1,0 +1,28 @@
+id: ipos_news
+name: Intellectual Property Office of Singapore news
+adapter: sitemap
+rings: [core]
+domains: [D1, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day (sitemap lastmod)
+coverage: >-
+  Pages under /news/news-collection/ on ipos.gov.sg whose sitemap lastmod falls in the lookback and window: press
+  releases, speeches and announcements (105 such pages on 2026-10-12).
+history_start: "the site's current sitemap (105 news pages on 2026-10-12)"
+stable_since: null
+breaks: []
+known_biases:
+  - lastmod reflects edits as well as new pages
+revision_policy: pages change in place; every collected version is kept
+licence: >-
+  IPOS terms of use: website content may not be reproduced without the rights holder's authorisation. Titles, links
+  and dates only
+snapshot_rights: titles, links, dates and the HTML's hash and size only (no page text)
+expected_volume: {min_per_run: 0, max_per_run: 20}
+params:
+  sitemap_url: https://www.ipos.gov.sg/sitemap.xml
+  lookback_days: 2
+  include_prefixes: [/news/news-collection/]
+  max_pages: 20
+  store_text: false
