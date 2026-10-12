@@ -1,0 +1,36 @@
+id: wipo_ipstats
+name: WIPO IP statistics, bulk indicator files (patents by technology, trade marks and designs by class)
+adapter: zip_csv
+rings: [core, adjacent]
+domains: [D1, D3, D5]
+family: statistics
+cadence: once
+publication_lag: "the files on WIPO's statistics page were last rebuilt in December 2023 (data to 2022); re-run when WIPO updates them"
+coverage: >-
+  WIPO's bulk downloads of its IP statistics (the IP Statistics Data Center itself is disallowed by robots.txt):
+  patent publications and grants by technology field (35 fields), trade mark applications and registrations by Nice
+  class, and industrial design applications and registrations by Locarno class, each by office and by applicant's
+  origin, yearly. Patents from 2000, trade marks from 2004, to 2022. Australia appears as an office and as an origin.
+history_start: "2000 (patents), 2004 (trade marks); designs to check in the census"
+stable_since: null
+breaks: []
+known_biases:
+  - "Stale: the files end in 2022 and have not been rebuilt since 2024; WIPO's newer figures are only in its Data Center"
+  - "Office '**' and origin codes follow WIPO's own conventions (regional offices, unknown origin); read the census"
+  - "Counts as WIPO collected them from offices; offices report with different definitions and lags"
+revision_policy: "rebuilt rarely; a new set of files is a new release in the lake (unchanged files are skipped)"
+licence: >-
+  WIPO statistics: users agree not to republish or commercially re-sell WIPO's statistical datasets, and cite
+  "WIPO Statistics Database" (WIPO's IP statistics page, read 2026-10-12). Moria stores them privately for
+  non-commercial research (D-017) and publishes counts of the files only
+snapshot_rights: "stored in the private bucket's lake; never republished; the public repo holds row counts and column names"
+expected_volume: {min_per_run: 1000000, max_per_run: 12000000}
+params:
+  max_bytes: 100000000
+  files:
+    - id: patent_indicators
+      url: https://www.wipo.int/documents/d/ip-statistics/wipo-data-patent-indicators.zip
+    - id: trademark_indicators
+      url: https://www.wipo.int/documents/d/ip-statistics/wipo-data-trademark-indicators.zip
+    - id: design_indicators
+      url: https://www.wipo.int/documents/d/ip-statistics/docs-en-wipo-data-design-indicators.zip

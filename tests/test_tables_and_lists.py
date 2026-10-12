@@ -177,3 +177,56 @@ def test_xlsx_without_a_matching_workbook_fails(http_cfg, store):
     c = card("xlsx", params)
     r = run_collection(c, store, make_client(http_cfg, handler), Window.for_day(DAY))
     assert r.status == "failed" and "no workbook" in r.error
+
+
+def zip_of_csvs(rows: str = "2021,AU,US,1,5\n2022,AU,AU,2,7\n") -> bytes:
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("indicator_by_class.csv", "year,office,origin,class_id,count\n" + rows)
+        zf.writestr("names.xlsx", b"not converted")
+    return buf.getvalue()
+
+
+def test_zip_csv_goes_to_the_lake_and_skips_unchanged_files(http_cfg, store):
+    import json
+
+    from moria.bulk import refresh
+    from moria.census import census_markdown
+
+    data = {"v": zip_of_csvs()}
+
+    def handler(request):
+        return httpx.Response(200, content=data["v"], headers={"Last-Modified": "Mon, 15 Apr 2024 10:23:46 GMT"})
+
+    c = card("zip_csv", {"files": [{"id": "marks", "url": "https://stats.test/marks.zip"}]}, id="stats",
+             family="statistics", cadence="once", expected_volume={"min_per_run": 1, "max_per_run": 10})  # fmt: skip
+    r = refresh(c, store, make_client(http_cfg, handler))
+    assert r.status == "passed", r.error
+    assert r.records == 2 and store.list("lake/") == ["lake/stats/release=2024-04-15/marks__indicator_by_class.parquet"]
+    release = json.loads(store.get("raw/stats/2024-04-15/manifest.json"))
+    table = release["tables"]["marks__indicator_by_class"]
+    assert table["rows"] == 2 and [c for c, _ in table["columns"]] == ["year", "office", "origin", "class_id", "count"]
+    assert release["files"]["marks"]["not_converted"] == ["names.xlsx"]
+    text = census_markdown(store, c)
+    assert "| marks__indicator_by_class | 2 | year, office, origin, class_id, count | 2021 to 2022 | 2 | 1 |" in text
+
+    again = refresh(c, store, make_client(http_cfg, handler))
+    assert again.status == "passed" and again.records == 0 and "unchanged" in again.warnings[0]
+
+    data["v"] = zip_of_csvs("2023,AU,AU,2,9\n")  # changed content under the same Last-Modified date: a person looks
+    changed = refresh(c, store, make_client(http_cfg, handler))
+    assert changed.status == "failed" and "a person should look" in changed.error
+
+
+def test_census_of_lists_and_tables_shows_no_titles(http_cfg, store):
+    from moria.census import census_markdown
+
+    params = {"pages": [{"id": "t", "url": "https://lex.test/list"}], "item_pattern": TABLE_PATTERN,
+              "date_format": "%B %d, %Y"}  # fmt: skip
+    c = card("listpage", params, id="notes")
+    client = make_client(http_cfg, page_handler({"/list": TABLE_PAGE}))
+    assert run_collection(c, store, client, Window.for_day(DAY), backfill=True).status == "passed"
+    text = census_markdown(store, c)
+    assert "| t | 2 | 2001-03-01 | 2026-10-05 |" in text and "Placeholder Land" not in text

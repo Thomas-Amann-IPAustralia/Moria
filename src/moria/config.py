@@ -30,6 +30,7 @@ Adapter = Literal[
     "hf_corpus",
     "listpage",
     "xlsx",
+    "zip_csv",
 ]
 
 
