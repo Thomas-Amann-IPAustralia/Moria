@@ -46,6 +46,9 @@ class CollectContext:
     limit: int | None = None
     warnings: list[str] = field(default_factory=list)
     store: Store | None = None  # the run's store, for collectors that read owner uploads (inbox/)
+    # A first snapshot: take everything the source offers, not only the window (feeds: every item; sitemaps: every
+    # page, up to the card's backfill cap). Collectors without a history ignore it.
+    backfill: bool = False
 
 
 class Collector(Protocol):

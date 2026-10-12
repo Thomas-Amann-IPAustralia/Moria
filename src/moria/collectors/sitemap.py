@@ -1,4 +1,5 @@
-"""Web pages found through a site's sitemap: pages whose lastmod falls in the lookback and window are fetched.
+"""Web pages found through a site's sitemap: pages whose lastmod falls in the lookback and window are fetched. A
+backfill (the first full snapshot) fetches every page in the sitemap, with or without a lastmod, up to its own cap.
 
 robots.txt is honoured. Pages are stored as extracted text plus metadata and the SHA-256 and size of the original
 HTML, not the full HTML: a single government page can be over 500 KB, and the free storage is 10 GB (D-007).
@@ -18,7 +19,7 @@ from pydantic import Field
 
 from ..config import Strict
 from ..http import FetchError
-from ..records import RawRecord, make_envelope, sha256_hex
+from ..records import RawRecord, make_envelope, sha256_hex, utc_now
 from .base import CollectContext, CollectError
 
 PARSER_VERSION = "sitemap-v1"
@@ -32,6 +33,7 @@ class SitemapParams(Strict):
     include_prefixes: list[str] = Field(default_factory=list)
     exclude_substrings: list[str] = Field(default_factory=list)
     max_pages: int = 50
+    backfill_max_pages: int = 2000  # a first full snapshot (--backfill) takes every page, up to this cap
     store_text: bool = True
 
 
@@ -111,12 +113,12 @@ class SitemapCollector:
         self.card = card
         self.params = SitemapParams.model_validate(card.params)
 
-    def _selected(self, urls: list[dict], first: date, last_exclusive: date) -> list[dict]:
+    def _selected(self, urls: list[dict], first: date | None, last_exclusive: date) -> list[dict]:
         chosen = []
         for u in urls:
             day = _lastmod_day(u["lastmod"])
             path = urlsplit(u["loc"]).path
-            if day is None or not (first <= day < last_exclusive):
+            if first is not None and (day is None or not (first <= day < last_exclusive)):
                 continue
             if self.params.include_prefixes and not any(path.startswith(p) for p in self.params.include_prefixes):
                 continue
@@ -130,9 +132,10 @@ class SitemapCollector:
         for sub in nested[:20]:
             more, _ = parse_sitemap(ctx.client.get(sub).content)
             urls.extend(more)
-        first = ctx.window.day - timedelta(days=self.params.lookback_days)
+        first = None if ctx.backfill else ctx.window.day - timedelta(days=self.params.lookback_days)
         chosen = self._selected(urls, first, ctx.window.day + timedelta(days=1))
-        cap = min(self.params.max_pages, ctx.limit or self.params.max_pages)
+        most = self.params.backfill_max_pages if ctx.backfill else self.params.max_pages
+        cap = min(most, ctx.limit or most)
         if len(chosen) > cap:
             ctx.warnings.append(f"sitemap: {len(chosen)} pages changed, capped at {cap}")
             chosen = chosen[:cap]
@@ -143,6 +146,7 @@ class SitemapCollector:
             except FetchError as e:
                 ctx.warnings.append(f"sitemap page skipped: {e}")
                 continue
+            retrieved_at = utc_now().isoformat(timespec="seconds")
             page = extract_page(resp.text)
             if not self.params.store_text:
                 page = {"title": page["title"]}
@@ -170,8 +174,9 @@ class SitemapCollector:
                         licence=self.card.licence,
                         parser_version=PARSER_VERSION,
                         event_at=None,
-                        observable_at=u["lastmod"],
+                        observable_at=u["lastmod"] or retrieved_at,
                         provider_updated_at=u["lastmod"],
+                        retrieved_at=retrieved_at,
                     ),
                     payload=payload,
                 )

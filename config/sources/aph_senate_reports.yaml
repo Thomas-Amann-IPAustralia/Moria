@@ -1,0 +1,31 @@
+id: aph_senate_reports
+name: "APH: Senate committee reports (RSS)"
+adapter: feed
+rings: [core, adjacent]
+domains: [D1, D6]
+family: policy
+cadence: daily
+publication_lag: same day to a few days; an item is dated by its tabling
+coverage: >-
+  Reports tabled by Senate committees, interim and final, from the Department of the Senate's feed
+history_start: "the feed's current items (134 on 2026-10-12, dated 2025-07-31 to 2026-09-16)"
+stable_since: null
+breaks: []
+known_biases:
+  - "Senate committees only"
+  - "Several reports of one inquiry share its link; each item's id adds a hash of its title, date and summary"
+  - "Items are dated by their tabling and may be added to the feed later; a 30-day lookback catches late additions"
+revision_policy: items change in place; a changed item is a new record
+licence: >-
+  CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise
+  noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted
+  text, embeddings, summaries) are for its own use and are not shared
+snapshot_rights: >-
+  titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with
+  attribution, or link
+expected_volume: {min_per_run: 0, max_per_run: 60}
+params:
+  url: https://www.aph.gov.au/senate/rss/reports
+  lookback_days: 30
+  keep_summary: true
+  item_id: link_and_content

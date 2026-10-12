@@ -1,0 +1,58 @@
+id: oalc
+name: Open Australian Legal Corpus (Isaacus), in parts
+adapter: hf_corpus
+rings: [core, adjacent]
+domains: [D1, D6]
+family: legal
+cadence: once
+publication_lag: "a snapshot; release 7.1.0 is the state of each source at its last scrape (2024-09 to 2025-03-10)"
+coverage: >-
+  The latest version of every in-force Commonwealth Act and legislative instrument (Federal Register of Legislation),
+  and every decision of the Federal Court of Australia (with the Copyright Tribunal, the Australian Competition
+  Tribunal and others) and of the High Court of Australia, as the corpus holds them. NSW Caselaw and the state
+  legislation in the corpus are left out by default (D-016); the owner may widen the parts.
+history_start: "judgments from the courts' first online decisions; legislation as in force at the scrape"
+stable_since: null
+breaks: []
+known_biases:
+  - "A snapshot, not a feed: nothing after each source's last scrape (10 March 2025 for the three parts taken)"
+  - "Latest versions only: it can't show how a law changed over time; repealed laws are absent"
+  - "Not all of AustLII: no IP Australia hearing decisions, no other tribunals, no Commonwealth bills"
+  - "Text extracted by the corpus's own tools (HTML, OCR for PDFs); OCR errors are possible in older decisions"
+revision_policy: "a new corpus release is a new release in the lake; the older one is kept"
+licence: >-
+  The corpus as a collection: CC BY 4.0 (Isaacus). Each document keeps its source's terms (the corpus's LICENCE.md,
+  read 2026-10-12): legislation CC BY 4.0 with set attribution wording; Federal Court and High Court decisions may be
+  reproduced unaltered for personal, non-commercial use or use within an organisation (High Court: keep its
+  copyright notice). Moria's use is non-commercial research (the owner, D-017); text is never republished
+snapshot_rights: "full text stored in the private bucket's lake; the public repo holds counts by source, type and year"
+expected_volume: {min_per_run: 90000, max_per_run: 130000}
+params:
+  repo: isaacus/open-australian-legal-corpus
+  revision: ef45e3fec41a960919a31149eee6dab9aa39f725  # the dataset commit of 2026-03-07; release 7.1.0
+  file: corpus.jsonl
+  sha256: 5abc64a3ad35a44eca65706babd63d1095c29ebebf3f5c588beb56612097b758  # 9,401,179,433 bytes
+  release: 7.1.0
+  released: "2025-03-10"
+  sources:
+    federal_register_of_legislation:
+      provider: Federal Register of Legislation
+      observable_from: when_scraped
+      licence: >-
+        CC BY 4.0. Attribution: "Sourced from the Federal Register of Legislation at 10 March 2025. For the latest
+        information on Australian Government law please go to https://www.legislation.gov.au"
+    federal_court_of_australia:
+      provider: Federal Court of Australia
+      observable_from: date
+      licence: >-
+        Federal Court of Australia copyright: download, display, print and reproduce in unaltered form for
+        personal, non-commercial use or use within an organisation; judgments may be reproduced unaltered if
+        acknowledged as the Court's and the source is acknowledged
+    high_court_of_australia:
+      provider: High Court of Australia
+      observable_from: date
+      licence: >-
+        High Court of Australia copyright: download, display, print and reproduce in unaltered form only, retaining
+        the Court's copyright notice, for personal, non-commercial use or use within an organisation
+  memory_limit: 3GB
+  threads: 4

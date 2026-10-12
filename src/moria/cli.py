@@ -21,6 +21,7 @@ from .discover import discover as discover_urls
 from .envcheck import run_checks
 from .http import PoliteClient
 from .ipr import refresh as ipr_refresh
+from .stages import LAKE_STAGES
 from .store import open_store
 from .terms import check as terms_check
 
@@ -140,7 +141,8 @@ def discover(
 ) -> None:
     """Check what a new source's addresses answer from here: status, type and size; a feed's or sitemap's item count
     and dates; the feeds a page links. Addresses and counts only, never text. A refusal is an answer, not a failure."""
-    client = PoliteClient(load_config().http)
+    # one try per address, and a shorter wait: a site that hangs is an answer too
+    client = PoliteClient(load_config().http.model_copy(update={"timeout_s": 30.0, "max_retries": 0}))
     try:
         for line in discover_urls(client, urls, match):
             typer.echo(line)
@@ -148,7 +150,9 @@ def discover(
         client.close()
 
 
-def _collect(source_ids: list[str], day: date, limit: int | None, store_backend: str | None) -> list:
+def _collect(
+    source_ids: list[str], day: date, limit: int | None, store_backend: str | None, backfill: bool = False
+) -> list:
     cfg, cards = load_config(), load_sources()
     unknown = [s for s in source_ids if s not in cards]
     if unknown:
@@ -161,10 +165,10 @@ def _collect(source_ids: list[str], day: date, limit: int | None, store_backend:
     results = []
     try:
         for sid in source_ids:
-            if cards[sid].adapter == "ip_rapid":  # a bulk stage of its own (moria ipr refresh), not a raw bundle
-                r = ipr_refresh(cards[sid], store, client, limit=limit, config_hash=chash)
+            if cards[sid].adapter in LAKE_STAGES:  # bulk stages write the lake, not a raw bundle
+                r = LAKE_STAGES[cards[sid].adapter](cards[sid], store, client, limit=limit, config_hash=chash)
             else:
-                r = run_collection(cards[sid], store, client, window, limit=limit, config_hash=chash)
+                r = run_collection(cards[sid], store, client, window, limit=limit, config_hash=chash, backfill=backfill)
             results.append(r)
             line = (
                 f"{r.status:<7} {sid:<22} records={r.records:<6} warnings={len(r.warnings):<3} "
@@ -182,9 +186,10 @@ def collect(
     day: str = typer.Option(None, help="UTC day to collect (YYYY-MM-DD); default yesterday"),
     limit: int = typer.Option(None, help="Smoke test: cap the work (query groups, pages or records)"),
     store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+    backfill: bool = typer.Option(False, help="A first snapshot: every feed item, or every page in a sitemap"),
 ) -> None:
     """Collect one source for one UTC day into the raw store."""
-    results = _collect([source], _parse_day(day), limit, store)
+    results = _collect([source], _parse_day(day), limit, store, backfill)
     if any(r.status != "passed" for r in results):
         raise typer.Exit(2)
 
@@ -283,7 +288,7 @@ def baseline() -> None:
 @app.command()
 def adapters() -> None:
     """List the collector adapters."""
-    for name in sorted([*ADAPTERS, "ip_rapid"]):
+    for name in sorted([*ADAPTERS, *LAKE_STAGES]):
         typer.echo(name)
 
 

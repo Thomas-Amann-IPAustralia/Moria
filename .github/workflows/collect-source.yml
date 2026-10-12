@@ -15,6 +15,11 @@ on:
         description: "UTC day (YYYY-MM-DD); empty means yesterday"
         required: false
         default: ""
+      backfill:
+        description: "A first snapshot: every feed item, or every page in a sitemap"
+        type: boolean
+        required: false
+        default: false
       urls:
         description: "discover only: addresses to check, separated by spaces"
         required: false
@@ -67,10 +72,10 @@ jobs:
         env:
           SOURCE: ${{ inputs.source }}
           DAY: ${{ inputs.day }}
+          BACKFILL: ${{ inputs.backfill }}
         run: |
           if [[ ! "$SOURCE" =~ ^[a-z0-9_]+$ ]]; then echo "source must be a source id"; exit 2; fi
-          if [ -n "$DAY" ]; then
-            uv run moria collect "$SOURCE" --store r2 --day "$DAY"
-          else
-            uv run moria collect "$SOURCE" --store r2
-          fi
+          args=(--store r2)
+          if [ -n "$DAY" ]; then args+=(--day "$DAY"); fi
+          if [ "$BACKFILL" = "true" ]; then args+=(--backfill); fi
+          uv run moria collect "$SOURCE" "${args[@]}"

@@ -27,6 +27,7 @@ Adapter = Literal[
     "ip_rapid",
     "documents",
     "bigquery_cpc",
+    "hf_corpus",
 ]
 
 

@@ -59,13 +59,13 @@ def run_collection(
     window: Window,
     limit: int | None = None,
     config_hash: str | None = None,
+    backfill: bool = False,
 ) -> CollectResult:
-    manifest = Manifest(
-        command=f"collect.{card.id}",
-        params={"window_start": window.start.isoformat(), "window_end": window.end.isoformat(), "limit": limit},
-        config_hash=config_hash,
-    )
-    ctx = CollectContext(card=card, client=client, window=window, limit=limit, store=store)
+    params = {"window_start": window.start.isoformat(), "window_end": window.end.isoformat(), "limit": limit}
+    if backfill:
+        params["backfill"] = True
+    manifest = Manifest(command=f"collect.{card.id}", params=params, config_hash=config_hash)
+    ctx = CollectContext(card=card, client=client, window=window, limit=limit, store=store, backfill=backfill)
     requests_before = client.requests
     outcomes_before = dict(client.outcomes)
     started = time.monotonic()
