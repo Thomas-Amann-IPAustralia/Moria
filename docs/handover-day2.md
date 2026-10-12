@@ -16,11 +16,12 @@ Build day 3 when the owner asks. Nothing in the machinery spends money.
   - `abs_headline`: eleven SDMX queries, 839 series.
   - `ip_rapid`: the 2026-10-12 release is the first base in the bucket (`lake/ip_rapid/base=2026-10-12/`, 1.00 GB,
     92.7M rows). The next release becomes a delta against it.
-- **Once:** `foresight_syntheses` (three of eight documents read) and `config/baseline.yaml` (19 known trends, a
-  draft for the owner, D-013).
+- **Once:** `foresight_syntheses` (three of eight documents read), `peer_office_strategies` (UKIPO, EPO and USPTO;
+  the EPO and USPTO pages are short landing pages, their full plans are separate files) and
+  `config/baseline.yaml` (19 known trends, a draft for the owner, D-013).
 - **Built, not running:** `patent_cpc_counts` on BigQuery, a dry run by default. It waits on the owner's GCP project
   (`docs/setup.md`).
-- **The terms check** (D-012): see the open items.
+- **The terms check** (D-012): two runs over 13 sampled days; see open item 6.
 - **The bucket:** 1.00 GB of the free 10 GB.
 - **Reusable pieces:**
   - `moria.collectors.abs.parse_sdmx_csv` (SDMX-CSV with labels into series);
@@ -41,9 +42,13 @@ Build day 3 when the owner asks. Nothing in the machinery spends money.
 4. **ABS gaps:** business entries and exits (CABEE) and business R&D (BERD) are spreadsheets; an xlsx adapter would
    cover them.
 5. **Peer offices not covered:** EUIPO and JPO (HTTP 403 to the build session; try from a runner), KIPO (no feed).
-6. **The terms** (D-012).
+6. **The terms** (D-012): 92 of 207 terms never match in 13 sampled days, in either spelling (49 of the 65 core
+   terms); names-only matches are often incidental, so day 4's detectors use `about_documents`. Once merged, run
+   `terms-check` on Actions to check themes v2's 24 new phrases. The recommendations wait on the owner: keep the
+   silent terms, add a broad IP-system theme, and rephrase core terms the way news writes them.
 7. **`collect-daily` retrying failed sources once** at the end of the run (suggested in D-010; still open).
-8. **The daily schedule** has not fired yet (D-011): check that 02:23 UTC runs appear.
+8. **The daily schedule** didn't fire at 02:23 UTC on 2026-10-12 (D-011). Check that runs appear; if not, a
+   one-line change to `collect-daily.yml` in a pull request should register it again.
 
 ## For the owner
 1. Merge this branch, or ask for a pull request.
@@ -56,5 +61,6 @@ Build day 3 when the owner asks. Nothing in the machinery spends money.
 - Commit the code, run, then record. Never commit data or the territory context.
 - Read a source's terms before storing its text; when unclear, store titles and links only.
 - Logs print counts and keys, never content. Reports in the repo are aggregates only; hit samples stay in the bucket.
-- The OpenAlex key's daily budget is shared by every run that day: the weekly job needs about 2,900 credits.
+- The OpenAlex key's daily budget is shared by every run that day: the weekly run estimates about 2,900 credits
+  (it used 2,424) and won't start unless 1,000 would be left after it.
 - Next free decision number: D-014.

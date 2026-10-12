@@ -100,7 +100,7 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
 
 | Id | Adapter | Notes |
 |---|---|---|
-| `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 41 query groups (`config/territories.yaml`, `config/themes.yaml`) in title, URL, quotations and named entities; matches are kept, with daily volumes worldwide and for `.au` domains against every document. Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
+| `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 45 query groups (`config/territories.yaml`, `config/themes.yaml`) in title, URL, quotations and named entities, in Australian and US spelling and with a plural last word; matches are kept, with daily volumes worldwide and for `.au` domains against every document. Each volume also counts documents about the group (title or URL) and names-only ones, which are often incidental: `about_documents` is the cleaner series (D-012). Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
 | `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. A full first snapshot is a separate backfill. |
 | `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO and CIPO keep titles and links only (terms unclear). |
@@ -110,6 +110,7 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
 | `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
 | `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. `dry_run: true` until the owner has a GCP project and has seen the estimate. |
 | `foresight_syntheses` | documents | Once. Eight documents; three fetched (CSIRO as metadata only), five refused from the build session. |
+| `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the EPO's strategic plan (metadata only) and the USPTO's strategy page. |
 
 ## Model choice
 Free first (design §9):
