@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from moria.collectors import ADAPTERS
-from moria.config import MoriaConfig, load_config, load_sources, load_territories, load_themes
+from moria.config import MoriaConfig, load_baseline, load_config, load_sources, load_territories, load_themes
 from moria.ipr import IprParams
 from moria.records import RawRecord, decode_bundle, encode_bundle, make_envelope
 from moria.store import StoreError
@@ -24,6 +24,16 @@ def test_repo_config_files_validate():
     assert [t.id for t in territories] == ["T1", "T2", "T3", "T4", "T5"]
     assert all(t.terms.core and t.terms.adjacent and t.terms.wider_world for t in territories)
     assert load_themes().themes
+
+
+def test_baseline_cites_only_documents_read_and_listed_in_the_foresight_card():
+    baseline = load_baseline()
+    card_docs = {d["id"] for d in load_sources()["foresight_syntheses"].params["documents"]}
+    assert set(baseline.documents) <= card_docs
+    assert {s.doc for t in baseline.trends for s in t.sources} <= {
+        k for k, d in baseline.documents.items() if d.read != "not_read"
+    }
+    assert len(baseline.trends) >= 10 and baseline.status in ("draft", "confirmed")
 
 
 def test_unknown_config_keys_are_errors():

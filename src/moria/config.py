@@ -115,6 +115,54 @@ class ThemesFile(Strict):
     themes: dict[str, list[str]]
 
 
+Pestle = Literal["political", "economic", "social", "technological", "legal", "environmental"]
+
+
+class TrendSource(Strict):
+    doc: str  # a document id in config/sources/foresight_syntheses.yaml
+    item: str  # the document's own name for the trend
+
+
+class KnownTrend(Strict):
+    id: str
+    name: str
+    statement: str
+    pestle: list[Pestle]
+    rings: list[Ring]
+    sources: list[TrendSource]
+
+
+class BaselineDocument(Strict):
+    read: Literal["full", "partial", "not_read"]
+    items: int | None = None
+    note: str = ""
+
+
+class BaselineFile(Strict):
+    """The known-trends baseline (design §2.5): what is already widely expected, drafted from the syntheses."""
+
+    version: int
+    status: Literal["draft", "confirmed"]
+    documents: dict[str, BaselineDocument]
+    trends: list[KnownTrend]
+
+    @field_validator("trends")
+    @classmethod
+    def _unique_ids(cls, trends: list[KnownTrend]) -> list[KnownTrend]:
+        ids = [t.id for t in trends]
+        if len(set(ids)) != len(ids):
+            raise ValueError("known-trend ids must be unique")
+        return trends
+
+    def check_sources(self) -> None:
+        """Every trend cites only documents that were read."""
+        for t in self.trends:
+            for s in t.sources:
+                doc = self.documents.get(s.doc)
+                if doc is None or doc.read == "not_read":
+                    raise ValueError(f"{t.id} cites {s.doc!r}, which is not a document read for the baseline")
+
+
 def _load_yaml(path: Path) -> Any:
     with path.open(encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -140,6 +188,12 @@ def load_territories(config_dir: Path = CONFIG_DIR) -> TerritoriesFile:
 
 def load_themes(config_dir: Path = CONFIG_DIR) -> ThemesFile:
     return ThemesFile.model_validate(_load_yaml(config_dir / "themes.yaml"))
+
+
+def load_baseline(config_dir: Path = CONFIG_DIR) -> BaselineFile:
+    baseline = BaselineFile.model_validate(_load_yaml(config_dir / "baseline.yaml"))
+    baseline.check_sources()
+    return baseline
 
 
 def config_hash(*models: BaseModel) -> str:
