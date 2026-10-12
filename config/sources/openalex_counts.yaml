@@ -9,12 +9,17 @@ publication_lag: "days to months: OpenAlex indexes new works continuously, and r
 coverage: >-
   Every work in OpenAlex's core corpus, counted by its primary topic at all four levels of the topic taxonomy
   (4 domains, 26 fields, 252 subfields, about 4,500 topics), for each publication year from 2010 and each of the last
-  36 months; worldwide, and for works with at least one author at an Australian institution.
+  36 months; worldwide, and for works with at least one author at an Australian institution. Research output
+  types only (article, review, preprint, conference paper, book, book chapter, dissertation, report): datasets,
+  paratext and other records are left out, because bulk ingests of them swamp the counts.
 history_start: "2010 here (configurable; OpenAlex reaches far earlier)"
 stable_since: "the topic taxonomy introduced in 2024 (to confirm in the census)"
 breaks: []
 known_biases:
   - Recent periods fill in late, so a month's count keeps rising for months after it ends (each run is a vintage)
+  - Bulk ingests change coverage (on 2026-10-12, 2026 held 18.9M datasets against 1.9M in 2025), which is why
+    the counts are restricted to research output types
+  - Works dated in the future (forthcoming issues) appear in the current and coming months
   - Works dated by year only are given 1 January, which inflates January
   - Topics come from OpenAlex's own classifier; a change to it is a break, not a trend
   - Australia means an author's affiliation, not the subject
@@ -28,5 +33,6 @@ params:
   months_back: 36
   levels: [domain, field, subfield, topic]
   scopes: [world, au]
+  extra_filter: type:article|review|preprint|conference-paper|book|book-chapter|dissertation|report
   max_credits: 4000
   reserve_credits: 1000
