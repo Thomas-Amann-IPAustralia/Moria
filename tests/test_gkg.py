@@ -194,6 +194,7 @@ def test_phrases_match_in_both_spellings_and_with_a_plural_last_word():
     assert "trademark attorneys" in phrase_variants("trade mark attorney")
     assert phrase_variants("four corners") == {"four corners"}  # no false spellings ("four" is not "four" -> "for")
     assert phrase_variants("enterprise") == {"enterprise", "enterprises"}  # -ise only for known stems
+    assert "deglobalization" in phrase_variants("deglobalisation")  # -isation always has an -ization spelling
     m = PhraseMatcher([QueryGroup("g:0", ("organised crime", "supply chain disruption", "population ageing"))])
     assert m.phrases_in("Organized-crime ring linked to supply chain disruptions") == {
         "organised crime",

@@ -97,7 +97,7 @@ _ISE_STEMS = frozenset(
         "author", "capital", "categor", "central", "colon", "commercial", "critic", "decentral", "democrat", "digit",
         "emphas", "final", "global", "harmon", "industrial", "legal", "local", "maxim", "minim", "mobil", "modern",
         "monet", "national", "neutral", "optim", "organ", "personal", "priorit", "privat", "real", "recogn",
-        "revital", "special", "stabil", "standard", "subsid", "summar", "symbol", "util", "visual",
+        "revital", "special", "stabil", "standard", "subsid", "summar", "symbol", "urban", "util", "visual",
     ]
 )  # fmt: skip
 _ISE_ENDINGS = {
@@ -119,8 +119,13 @@ def _spellings(word: str) -> set[str]:
         out.add(_SPELLING_US[word])
     for endings in (_ISE_ENDINGS, _IZE_ENDINGS):
         for ending, other in endings.items():
-            if word.endswith(ending) and word[: -len(ending)] in _ISE_STEMS:
-                out.add(word[: -len(ending)] + other)
+            if not word.endswith(ending):
+                continue
+            stem = word[: -len(ending)]
+            # -isation and -ization are always spellings of each other; the shorter -ise forms only for known stems,
+            # because "enterprise" or "franchise" have no -ize form
+            if ending.startswith(("isation", "ization")) or stem in _ISE_STEMS:
+                out.add(stem + other)
     return out
 
 

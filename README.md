@@ -7,9 +7,14 @@ a Futures Cone, each finding traceable to its evidence. Free by default: scikit-
 models (including a free Jev-class decision model), with Cloudflare R2 for storage and GitHub Actions or the GCE
 free tier for compute.
 
-**Status: day 1 of the machinery sprint is built** (D-007): five daily collectors, the store, manifests, the
-environment check, and CI. Read [`CLAUDE.md`](CLAUDE.md) for the rules and commands, and
-[`docs/design.md`](docs/design.md) for the design. The decisions are in [`docs/decisions.md`](docs/decisions.md).
+**Status: days 1 and 2 of the machinery sprint are built** (D-007, D-011 to D-013). Eleven daily sources (news,
+legislation, IP Australia, WIPO, and peer IP offices: UKIPO, EPO (two feeds), IPONZ, CIPO, USPTO and IPOS), three
+weekly ones (OpenAlex counts over the whole topic
+taxonomy, ABS headline series, the IP RAPID lake with individuals' names hashed), patent counts on BigQuery (dry run
+until a GCP project exists), the foresight syntheses and a draft known-trends baseline, the terms check, and census
+reports. Read [`CLAUDE.md`](CLAUDE.md) for the rules and commands, and [`docs/design.md`](docs/design.md) for the
+design. The decisions are in [`docs/decisions.md`](docs/decisions.md); what's next is in
+[`docs/handover-day2.md`](docs/handover-day2.md).
 
 ```bash
 uv sync --group dev                          # install
@@ -18,6 +23,11 @@ uv run moria sources                         # the source cards
 uv run moria env-check                       # which keys are present; one cheap call per service
 uv run moria collect legislation_frl         # yesterday (UTC), into data/store/ (git-ignored)
 uv run moria collect-daily --store r2        # what the daily workflow runs
+uv run moria collect-weekly --store r2       # what the weekly workflow runs (OpenAlex, ABS, IP RAPID)
+uv run moria ipr refresh --limit 1           # IP RAPID smoke test: convert one table locally, upload nothing
+uv run moria terms check --weeks 2           # search terms against sampled days of news
+uv run moria census abs_headline             # profile a source's latest collection (aggregates only)
+uv run moria baseline                        # the known-trends baseline
 ```
 
 | Path | What it is |
@@ -28,9 +38,11 @@ uv run moria collect-daily --store r2        # what the daily workflow runs
 | `docs/setup.md` | Accounts and keys: what goes where (GitHub Actions secrets, the Claude Code environment) |
 | `docs/mining-explained.md` | How the mining works, in plain terms, with a worked example and what labelling looks like |
 | `config/` | Settings, source cards, territories (public parts), broad themes |
-| `src/moria/` | The package: store, records, manifests, HTTP client, collectors, CLI |
-| `.github/workflows/` | `ci`, `collect-daily`, `probe` |
+| `src/moria/` | The package: store, records, manifests, HTTP client, collectors, IP RAPID, terms check, census, CLI |
+| `.github/workflows/` | `ci`, `collect-daily`, `collect-weekly`, `collect-source`, `terms-check`, `probe` |
 | `config/territories.yaml` | The five Growth Territories: descriptions, search terms, pathways and IP RAPID indicators |
+| `config/baseline.yaml` | The known-trends baseline (a draft for the owner), drafted from the foresight syntheses |
+| `reports/` | Generated reports for the owner, aggregates only: the terms check and a census per source |
 | `scripts/memprobe.py` | Peak-memory probe of the planned workloads; re-run it on the target runner on day 1 |
 | `scripts/probe_jevstyle.py` | Memory, speed and behaviour probe of the free Jev-class decision model |
 | `scripts/demo_embed_cluster.py` | A small runnable demo of embedding, clustering, novelty and look-alikes (laptop, Kaggle or Colab) |

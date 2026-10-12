@@ -2,8 +2,7 @@
 
 **Design v0.3, 2026-10-09; updated 2026-10-10. Status: direction approved by the owner (D-005, D-006), with set-up
 items open (§15). It builds on
-D-003 and D-004.** Nothing is built
-yet. v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
+D-003 and D-004.** Days 1 and 2 of the machinery sprint are built (D-007, D-011 to D-013). v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
 - one purpose, with two audiences;
 - broader than the IP system;
 - free options first;
@@ -982,8 +981,10 @@ Candidate developments:
 
 ## 13. The one-week machinery sprint
 
-**Progress:** day 1 was built on 2026-10-10 (D-007), and the memory probe ran on a real runner (D-008). The rules
-and commands are in `CLAUDE.md`, and what's next is in `docs/handover-day1.md`.
+**Progress:** day 1 was built on 2026-10-10 (D-007), and the memory probe ran on a real runner (D-008). Day 2 was
+built on 2026-10-12 (D-011 to D-013); the BigQuery patent counts wait on a GCP project, and five foresight documents
+on a route past their sites' blocks. The rules and commands are in `CLAUDE.md`, and what's next is in
+`docs/handover-day2.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 

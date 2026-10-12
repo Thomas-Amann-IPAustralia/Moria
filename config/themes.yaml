@@ -1,6 +1,9 @@
 # Broad wider-world themes for the news scan (design §2.1), searched with no IP filter.
-# Draft v1 (2026-10-10), from the wider-world ring's definition. Day 2 extends it from the foresight syntheses.
-version: 1
+# Draft v1 (2026-10-10), from the wider-world ring's definition. v2 (2026-10-12) adds four themes for known trends the
+# v1 themes missed (config/baseline.yaml, D-013): biodiversity and circularity (KT03, KT04), the shift east and south
+# (KT08), cities and consumption (KT16, KT17), and care and migration (KT06, KT18). Phrases match in Australian and US
+# spelling and with a plural last word (D-012).
+version: 2
 themes:
   demographics_health:
     - population ageing
@@ -72,3 +75,31 @@ themes:
     - regional development
     - transport electrification
     - digital infrastructure
+  nature_circularity:
+    - biodiversity
+    - nature positive
+    - ecosystem restoration
+    - deforestation
+    - invasive species
+    - circular economy
+  global_shifts:
+    - global south
+    - brics
+    - indo-pacific
+    - multipolar
+    - deglobalisation
+    - reshoring
+  cities_consumption:
+    - urbanisation
+    - megacities
+    - consumer spending
+    - fast fashion
+    - middle class
+    - e-commerce
+  care_migration:
+    - care economy
+    - disability support
+    - childcare
+    - international students
+    - skilled migration
+    - aged care workforce
