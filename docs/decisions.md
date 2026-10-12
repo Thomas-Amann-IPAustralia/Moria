@@ -557,4 +557,68 @@ while it ran, so it looked hung.
 
 **Spend:** $0.
 
-Next free decision number: D-010.
+## D-010 — GDELT from GKG bulk files: built and run; quotations searched, never stored; the DOC adapter's partial-group bug fixed (2026-10-12)
+
+**Context.** The owner adopted D-009 ("Approved, build the GKG bulk-file collector") and asked for the separate bug to
+be fixed. They also asked whether quotations deserve more than being dropped: keywords from YAKE before dropping
+them, or using them as context for the embeddings and dropping them afterwards. They assumed the reason for dropping
+was size.
+
+**Decision (owner: build it, fix the bug; the details below settled in the build).**
+- **`gdelt_news` uses the new `gdelt_gkg` adapter** (`src/moria/collectors/gkg.py`). It downloads the day's 96 GKG 2.1
+  files (one per 15 minutes, stamped inside the UTC day) and reads every English web document once. A document is
+  kept when a query-group phrase appears, as whole words, in its title, URL, quotations or named entities. A phrase
+  matches regardless of case, and spaces, hyphens and underscores are interchangeable. Duplicate URLs count once.
+- **Each kept document stores:** URL, domain, the `.au` flag, title (capped at 500 characters), GDELT's timestamp
+  (`observable_at`) and the page's publication time (`event_at`, when GDELT has it), every group and phrase matched
+  with the fields it matched in, and GDELT's metadata derived from the full text: themes, organisations, location
+  countries, tone and word count. It also stores whether the document had quotations.
+- **Each group stores two volumes a day:** worldwide English and `.au` domains. Each is the count of matching
+  documents against every document read, with matches by field and the number of files read.
+- **Fails loudly** when more than 4 of the 96 files are missing (GDELT sometimes skips one), or when a file is not a
+  valid zip with exactly one member. A missing file within the allowance is a warning.
+- **Not stored:** quotations, person names and page authors.
+- **`moria env-check`** now probes `data.gdeltproject.org` instead of the DOC API.
+- **The DOC API adapter (`gdelt`) stays, unused.** Its bug is fixed: a group whose later call failed used to keep its
+  article records although the group was reported as failed. A group's records are now kept only when every call
+  for it succeeds.
+
+**Quotations: searched in memory, never stored.**
+- The reason they aren't stored is the licence, not size: design §12 stores news as titles and URLs, because article
+  text belongs to its publishers. Size would be no issue. 588 of the 2,294 matched documents on 2026-10-10 had
+  quotations, about 140 characters each: under 100 KB a day, beside a 523 KB bundle.
+- Searching them costs nothing and adds recall: on 2026-10-10, 107 documents matched in quotations, 75 of them
+  nowhere else (3% of matches; 4 of 222 territory-group documents).
+- **YAKE over quotations: not now.** GKG already gives what YAKE would, and better, because GDELT derives it from the
+  whole article rather than a sentence or two: themes, organisations and named entities. Named entities are the
+  strongest matching field (1,619 matches; 1,136 found nowhere else). Keywords from about 140 characters would mostly
+  repeat those words. YAKE remains a deterministic, model-free option if the labels later show a gap.
+- **Quotations as embedding context: no.**
+  - Embeddings are day 3, a separate stage that reads the raw bundles. Feeding it quotations would mean storing
+    article text in an immutable bundle, which the rule forbids, or embedding during collection, which breaks
+    "no model calls in collection".
+  - Only about a quarter of documents have quotations, so the embeddings would mix title-only and title-plus-quote
+    inputs, which skews similarity.
+  - Day 3 can embed the title with GDELT's derived metadata instead: the same input for every document.
+
+**Checked:**
+- **Local run, 2026-10-10:** 96 files, 64,598 documents (2,402 `.au`), 2,294 matched, 2,376 records, 1m35s, 10 s of
+  CPU (the rest is the one-second interval between downloads). 16 of 31 territory groups had matches; the DOC API
+  gave 103 articles that day. Name-only matches were checked by phrase and look genuine ("extreme weather",
+  "mental health", "climate change", "artificial intelligence"). Day 4's artefact checks should watch them anyway.
+- **Runner:** `collect-daily` on this branch, run
+  [38194632825](https://github.com/Thomas-Amann-IPAustralia/Moria/actions/runs/38194632825), 2026-10-11: 96 of 96
+  files, 52,835 documents (2,771 `.au`), 1,249 matched, 1,331 records, 1m36s.
+- **That run failed on another source:** `legislation_frl` timed out four times, 90 s each, between 02:10 and 02:17 UTC.
+  From this session minutes later the same query took 62 s, then 0.5 s, so the API was briefly slow, not down.
+- **Tests:** 25 pass, with hand-built GKG files (placeholder text).
+
+**Spend:** $0.
+
+**Consequences.**
+- `moria terms check` (day 2) cannot read three months of GKG cheaply (about 24 GB), so it samples days.
+- GKG runs back to 2015-02-19, so a news backfill is possible later.
+- **For the owner:** a short slow spell at a source fails that source for the day, because retries give up after about
+  7 minutes. A cheap remedy is for `collect-daily` to retry failed sources once at the end of the run.
+
+Next free decision number: D-011.
