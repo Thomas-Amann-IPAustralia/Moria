@@ -11,6 +11,7 @@ from pathlib import Path
 
 import typer
 
+from .census import census_markdown
 from .collectors import ADAPTERS, Window, run_collection
 from .collectors.gdelt import GdeltParams, build_groups
 from .collectors.gkg import GkgParams
@@ -230,6 +231,25 @@ def ipr_refresh_command(
     typer.echo(line if r.status == "passed" else f"{line}\n        cause: {r.error}")
     if r.status != "passed":
         raise typer.Exit(2)
+
+
+@app.command()
+def census(
+    source: str = typer.Argument(..., help="A source id from `moria sources`"),
+    out: str = typer.Option(None, help="Where to write the report; default reports/census/<source>.md"),
+    all_runs: bool = typer.Option(False, "--all-runs", help="Combine every collection in the store, not the latest"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Profile a source's latest collection (aggregates only, safe for the public repo)."""
+    cards = load_sources()
+    if source not in cards:
+        typer.echo(f"unknown source: {source}", err=True)
+        raise typer.Exit(2)
+    text = census_markdown(open_store(load_config().store, store), cards[source], all_runs=all_runs)
+    path = Path(out or f"reports/census/{source}.md")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text + "\n", encoding="utf-8")
+    typer.echo(f"wrote {path}")
 
 
 @app.command()
