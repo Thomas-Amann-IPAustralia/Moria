@@ -4,7 +4,7 @@ with a sample of its hits to read for noise.
 GDELT's DOC API throttles shared cloud addresses (D-009), so the check reads GKG bulk files, as the daily collector
 does (D-010). Three months of GKG is about 24 GB, so it samples days: by default one a week for 13 weeks, ending with
 a given day. Every term is matched exactly as the daily collector matches it: whole words, regardless of case, in
-each English web document's title, URL, quotations and named entities.
+each English web document's title, URL, quotations and named entities, with its synonyms counted as the term (D-014).
 
 Outputs:
 - the full result, with a seeded sample of hits per term (day, title, URL, domain, fields), in the private store at
@@ -27,7 +27,7 @@ from pathlib import Path
 from .collectors.base import CollectContext, CollectError, Window
 from .collectors.gdelt import QueryGroup
 from .collectors.gkg import GkgCollector, PhraseMatcher, file_stamps, phrase_hits, searchable_texts, web_documents
-from .config import SourceCard, TerritoriesFile, ThemesFile
+from .config import SourceCard, TerritoriesFile, ThemesFile, synonym_map
 from .http import FetchError, PoliteClient
 from .manifest import Manifest
 from .records import canonical_json
@@ -54,6 +54,9 @@ class TermStats:
     by_field: dict[str, int] = field(default_factory=dict)
     names_only: int = 0
     title_hits: int = 0
+    synonyms: tuple[str, ...] = ()
+    via_synonyms: int = 0  # documents found only through a synonym, not the term's own wording
+    by_form: dict[str, int] = field(default_factory=dict)  # documents per wording: the term and each synonym
     samples: list[dict] = field(default_factory=list)
     seen_samples: int = 0
 
@@ -87,6 +90,8 @@ def term_inventory(territories: TerritoriesFile, themes: ThemesFile) -> dict[str
     for name, phrases in sorted(themes.themes.items()):
         for phrase in phrases:
             add(phrase, f"theme:{name}")
+    for term, others in synonym_map(territories, themes).items():
+        terms[term].synonyms = others
     return terms
 
 
@@ -118,7 +123,8 @@ def run_check(
     """Match every term on the sampled days. Returns the per-term stats and the run totals."""
     collector = GkgCollector(gdelt_card)
     terms = term_inventory(territories, themes)
-    matcher = PhraseMatcher([QueryGroup("terms", tuple(terms))])
+    synonyms = tuple((p, s.synonyms) for p, s in terms.items() if s.synonyms)
+    matcher = PhraseMatcher([QueryGroup("terms", tuple(terms), synonyms)])
     rngs = {p: random.Random(f"{seed}:{p}") for p in terms}
     totals: dict = {"days_read": 0, "days_skipped": [], "documents": 0, "au_documents": 0, "files_read": 0}
     for n, day in enumerate(days, start=1):
@@ -142,8 +148,8 @@ def run_check(
                 docs_today += 1
                 totals["au_documents"] += doc.au
                 texts = searchable_texts(doc)
-                for phrase, fields in phrase_hits(matcher, texts, FIELDS).items():
-                    s = terms[phrase]
+                for phrase, hit in phrase_hits(matcher, texts, FIELDS).items():
+                    s, fields = terms[phrase], hit.fields
                     s.world += 1
                     s.au += doc.au
                     day_hits[phrase] = day_hits.get(phrase, 0) + 1
@@ -152,6 +158,9 @@ def run_check(
                     s.names_only += fields == {"names"}
                     s.about += bool(fields & {"title", "url"})
                     s.title_hits += "title" in fields
+                    s.via_synonyms += phrase not in hit.forms
+                    for form in hit.forms:
+                        s.by_form[form] = s.by_form.get(form, 0) + 1
                     item = {
                         "day": day.isoformat(),
                         "title": texts["title"][:200],
@@ -159,6 +168,7 @@ def run_check(
                         "domain": doc.domain,
                         "au": doc.au,
                         "fields": sorted(fields),
+                        "synonyms": hit.synonyms(phrase),
                     }
                     _keep_sample(s, item, samples_per_term, rngs[phrase])
         too_many = missing > collector.params.max_missing_files and not files_per_day
@@ -190,9 +200,11 @@ def summary_markdown(terms: dict[str, TermStats], totals: dict, run_id: str, day
         "",
         "**How to read it.** *World/day* is the average number of documents a sampled day that mention the term",
         "(whole words, in either spelling and with a plural last word, in the title, URL, quotations or named",
-        "entities); *About/day* counts only matches in the title or URL, the documents about the term; *.au/day* is",
-        "for `.au` domains. *Names only* is the share found only inside GDELT's named entities, which is often",
-        f"incidental (D-012). Flags are triage: `silent` no hit at all; `rare` under {RARE_PER_DAY} a day;",
+        "entities, with its synonyms counted as the term); *About/day* counts only matches in the title or URL, the",
+        "documents about the term; *.au/day* is for `.au` domains. *Names only* is the share found only inside",
+        "GDELT's named entities, which is often incidental (D-012). *Via synonyms* is the share found only through a",
+        "synonym (D-014), with the number of synonyms in brackets.",
+        f"Flags are triage: `silent` no hit at all; `rare` under {RARE_PER_DAY} a day;"
         f"`broad` over {BROAD_PER_DAY:.0f} a day; `names-heavy` over {NAMES_HEAVY_SHARE:.0%} names-only hits. The hit",
         "samples are in the private bucket; a person reads them before any term is narrowed or dropped.",
         "",
@@ -205,16 +217,21 @@ def summary_markdown(terms: dict[str, TermStats], totals: dict, run_id: str, day
     lines += [f"**{len(terms)} distinct terms; {flagged} flagged.**", ""]
     for group in sorted(groups, key=lambda g: (g == "themes", g)):
         lines += [f"## {group if group != 'themes' else 'Broad themes'}", ""]
-        lines += ["| Term | Ring or theme | World/day | About/day | .au/day | Days with hits | Names only | Flags |"]
-        lines += ["|---|---|---:|---:|---:|---:|---:|---|"]
+        lines += [
+            "| Term | Ring or theme | World/day | About/day | .au/day | Days with hits | Names only | "
+            "Via synonyms | Flags |"
+        ]
+        lines += ["|---|---|---:|---:|---:|---:|---:|---:|---|"]
         for s in sorted(groups[group], key=lambda s: (-s.world, s.phrase)):
             prefix = "theme:" if group == "themes" else f"{group}:"
             src = ", ".join(x.split(":", 1)[1] for x in s.sources if x.startswith(prefix))
             names = f"{s.names_only / s.world:.0%}" if s.world else "-"
+            via = "" if not s.synonyms else (f"{s.via_synonyms / s.world:.0%}" if s.world else "-")
+            via += f" ({len(s.synonyms)})" if s.synonyms else ""
             flags = ", ".join(f"`{f}`" for f in s.flags(d))
             lines.append(
                 f"| {s.phrase} | {src} | {s.world / d:.1f} | {s.about / d:.1f} | {s.au / d:.2f} | "
-                f"{s.days_with_hits}/{totals['days_read']} | {names} | {flags} |"
+                f"{s.days_with_hits}/{totals['days_read']} | {names} | {via} | {flags} |"
             )
         lines.append("")
     return "\n".join(lines)
@@ -268,6 +285,9 @@ def check(
                     "by_field": dict(sorted(s.by_field.items())),
                     "names_only": s.names_only,
                     "title_hits": s.title_hits,
+                    "synonyms": list(s.synonyms),
+                    "via_synonyms": s.via_synonyms,
+                    "by_form": dict(sorted(s.by_form.items())),
                     "flags": s.flags(d),
                     "samples": sorted(s.samples, key=lambda x: (x["day"], x["url"])),
                 }

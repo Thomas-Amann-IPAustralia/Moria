@@ -4,22 +4,18 @@ from __future__ import annotations
 
 import json
 from datetime import date
-from types import SimpleNamespace
 
 from moria.terms import check, sampled_days
 
-from .conftest import card, make_client
+from .conftest import card, make_client, terms_config
 from .test_gkg import gkg_zip, make_handler, row
 
-TERRITORIES = SimpleNamespace(
-    territories=[
-        SimpleNamespace(
-            id="T9",
-            terms=SimpleNamespace(core=["widget licensing", "never seen phrase"], adjacent=["gizmo"], wider_world=[]),
-        )
-    ]
+TERRITORIES, THEMES = terms_config(
+    ["widget licensing", "never seen phrase"],
+    adjacent=["gizmo"],
+    themes={"testing": ["net zero", "gizmo"]},
+    synonyms={"widget licensing": ["widget licence deal"]},
 )
-THEMES = SimpleNamespace(themes={"testing": ["net zero", "gizmo"]})
 
 
 def gkg_card():
@@ -33,6 +29,7 @@ DAY_1 = [
 DAY_2 = [
     row("https://news.test/b", "news.test", title="Widget licensing again", date_="20261009000000"),
     row("https://news.test/net-zero-plan", "news.test", date_="20261009000000"),
+    row("https://news.test/c", "news.test", title="A widget licence deal, placeholder", date_="20261009000000"),
 ]
 
 
@@ -55,12 +52,15 @@ def test_terms_check_counts_each_term_and_keeps_samples_private(http_cfg, store,
         report_path=report,
     )
     assert status == "passed", json.loads(store.get(mkey))["error"]
-    assert counts["days_read"] == 2 and counts["documents"] == 4 and counts["terms"] == 4
+    assert counts["days_read"] == 2 and counts["documents"] == 5 and counts["terms"] == 4
 
     result = json.loads(store.get(next(k for k in store.list("reports/terms-check/") if k.endswith(".json"))))
     terms = result["terms"]
     wl = terms["widget licensing"]
-    assert (wl["world"], wl["au"], wl["days_with_hits"], wl["by_field"]) == (2, 0, 2, {"title": 2})
+    assert (wl["world"], wl["au"], wl["days_with_hits"], wl["by_field"]) == (3, 0, 2, {"title": 3})
+    # the synonym counts as the term; the result says how much came only through it (D-014)
+    assert wl["synonyms"] == ["widget licence deal"] and wl["via_synonyms"] == 1
+    assert wl["by_form"] == {"widget licence deal": 1, "widget licensing": 2}
     assert len(wl["samples"]) == 1 and wl["samples"][0]["title"].lower().startswith(("placeholder", "widget"))
     gizmo = terms["gizmo"]
     assert gizmo["sources"] == ["T9:adjacent", "theme:testing"]
@@ -70,6 +70,7 @@ def test_terms_check_counts_each_term_and_keeps_samples_private(http_cfg, store,
 
     public = report.read_text()
     assert "widget licensing" in public and "`silent`" in public
+    assert "| widget licensing | core | 1.5 | 1.5 | 0.00 | 2/2 | 0% | 33% (1) |  |" in public
     for private in ("Placeholder story", "news.test/a", "paper.test.au"):
         assert private not in public, private  # the public summary carries counts, never titles or URLs
 

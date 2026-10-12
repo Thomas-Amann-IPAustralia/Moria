@@ -13,7 +13,9 @@ What is stored (design §12: news is titles, URLs and metadata, never article te
   incidental (D-012), so `about_documents` is the cleaner series.
 
 Phrases match in Australian and US spelling and with a plural last word (`phrase_variants`), so "commercialisation"
-also finds "commercialization" and "supply chain disruption" finds "supply chain disruptions" (D-012).
+also finds "commercialization" and "supply chain disruption" finds "supply chain disruptions" (D-012). A term's
+synonyms (the `synonyms` maps in config/territories.yaml and config/themes.yaml) are other wordings of it, the way news
+writes it: a match on a synonym counts as the term, and the record names the synonyms that matched (D-014).
 
 Quotations are article text, so they are searched in memory and never stored. Person names and page authors are not
 stored either.
@@ -36,7 +38,7 @@ from ..records import RawRecord, make_envelope
 from .base import CollectContext, CollectError
 from .gdelt import QueryGroupParams, build_groups
 
-PARSER_VERSION = "gdelt-gkg-v2"
+PARSER_VERSION = "gdelt-gkg-v3"
 FILE_INTERVAL = timedelta(minutes=15)
 MATCH_FIELDS = ("title", "url", "quotations", "names")
 
@@ -159,28 +161,39 @@ def phrase_variants(phrase: str) -> set[str]:
 
 
 class PhraseMatcher:
-    """Whole-word, case-insensitive phrase matching, in both spellings and with a plural last word. Candidates are
-    looked up by first word, then checked as substrings of the normalised text: fast enough for a day's 65k documents
-    in pure Python. Matches are reported by the phrase as written in the config."""
+    """Whole-word, case-insensitive phrase matching, in both spellings and with a plural last word, for each term and
+    its synonyms. Candidates are looked up by first word, then checked as substrings of the normalised text: fast
+    enough for a day's 65k documents in pure Python. Matches are reported by the term as written in the config (lower
+    case), with the form that matched: the term itself or one of its synonyms."""
 
     def __init__(self, groups):
         self.groups_by_phrase: dict[str, list[str]] = {}
+        forms: dict[str, set[str]] = {}
         for g in groups:
+            synonyms = dict(g.synonyms)
             for p in g.phrases:
-                self.groups_by_phrase.setdefault(p.lower(), []).append(g.group_id)
-        self._by_first_word: dict[str, set[tuple[str, str]]] = {}  # first word -> {(normalised variant, phrase)}
-        for phrase in self.groups_by_phrase:
-            for variant in phrase_variants(phrase):
-                self._by_first_word.setdefault(variant.split()[0], set()).add((f" {variant} ", phrase))
+                key = p.lower()
+                self.groups_by_phrase.setdefault(key, []).append(g.group_id)
+                forms.setdefault(key, {key}).update(synonyms.get(key, ()))
+        # first word -> {(normalised variant, term, form)}
+        self._by_first_word: dict[str, set[tuple[str, str, str]]] = {}
+        for phrase, phrase_forms in forms.items():
+            for form in phrase_forms:
+                for variant in phrase_variants(form):
+                    self._by_first_word.setdefault(variant.split()[0], set()).add((f" {variant} ", phrase, form))
 
-    def phrases_in(self, text: str) -> set[str]:
+    def forms_in(self, text: str) -> set[tuple[str, str]]:
+        """(term, form) for every term found, by the form that matched (the term itself or a synonym)."""
         if not text:
             return set()
         normalised = _words(text)
         found = set()
         for word in set(normalised.split()) & self._by_first_word.keys():
-            found.update(phrase for n, phrase in self._by_first_word[word] if n in normalised)
+            found.update((phrase, form) for n, phrase, form in self._by_first_word[word] if n in normalised)
         return found
+
+    def phrases_in(self, text: str) -> set[str]:
+        return {phrase for phrase, _ in self.forms_in(text)}
 
 
 @dataclass
@@ -280,12 +293,23 @@ def searchable_texts(doc: GkgDocument) -> dict[str, str]:
     }
 
 
-def phrase_hits(matcher: PhraseMatcher, texts: dict[str, str], fields: list[str]) -> dict[str, set[str]]:
-    """phrase -> the fields it matched in"""
-    hits: dict[str, set[str]] = {}
+@dataclass
+class PhraseHit:
+    fields: set[str] = field(default_factory=set)  # where the term matched
+    forms: set[str] = field(default_factory=set)  # the term itself and/or the synonyms that matched
+
+    def synonyms(self, phrase: str) -> list[str]:
+        return sorted(self.forms - {phrase})
+
+
+def phrase_hits(matcher: PhraseMatcher, texts: dict[str, str], fields: list[str]) -> dict[str, PhraseHit]:
+    """term -> the fields it matched in and the forms that matched"""
+    hits: dict[str, PhraseHit] = {}
     for f in fields:
-        for phrase in matcher.phrases_in(texts[f]):
-            hits.setdefault(phrase, set()).add(f)
+        for phrase, form in matcher.forms_in(texts[f]):
+            hit = hits.setdefault(phrase, PhraseHit())
+            hit.fields.add(f)
+            hit.forms.add(form)
     return hits
 
 
@@ -376,8 +400,9 @@ class GkgCollector:
             return None
         matches = sorted(
             (
-                {"group": gid, "phrase": phrase, "fields": sorted(fs)}
-                for phrase, fs in hits.items()
+                {"group": gid, "phrase": phrase, "fields": sorted(hit.fields)}
+                | ({"synonyms": hit.synonyms(phrase)} if hit.synonyms(phrase) else {})
+                for phrase, hit in hits.items()
                 for gid in matcher.groups_by_phrase[phrase]
             ),
             key=lambda m: (m["group"], m["phrase"]),
@@ -439,6 +464,7 @@ class GkgCollector:
                 world = scope == "world"
                 payload = {
                     "query_group": g.group_id,
+                    "ring": g.ring,
                     "scope": scope,
                     "matching_documents": c.world if world else c.au,
                     "about_documents": c.about_world if world else c.about_au,

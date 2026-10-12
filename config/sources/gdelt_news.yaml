@@ -15,6 +15,8 @@ stable_since: null
 breaks:
   - "2026-10-12: parser gdelt-gkg-v2 matches both spellings and a plural last word, and adds about and names-only
     counts per group (D-012); earlier volumes are not comparable"
+  - "2026-10-12: parser gdelt-gkg-v3 counts a term's synonyms as the term, adds the ip_system theme (core ring) and
+    a ring on each volume record (D-014); earlier volumes are not comparable"
 known_biases:
   - Over-weights English-language and large outlets
   - Matching uses the title, URL, quotations and names, not the full article text, so recall per article is lower

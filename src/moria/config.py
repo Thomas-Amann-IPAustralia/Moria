@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONFIG_DIR = REPO_ROOT / "config"
@@ -104,10 +104,38 @@ class Territory(Strict):
     ipr_indicators: list[str] = []
 
 
+def _key(phrase: str) -> str:
+    return " ".join(phrase.lower().split())
+
+
+def _check_phrase(phrase: str, where: str) -> None:
+    if _key(phrase) in {"ip", "i.p."}:
+        raise ValueError(f"{where}: a bare 'IP' term matches IP addresses; use 'intellectual property'")
+
+
+def _check_synonyms(terms: set[str], synonyms: dict[str, list[str]]) -> None:
+    """Synonyms are other wordings of a term, counted as the term itself (D-014): each belongs to one term of this
+    file, and none is itself a term."""
+    seen: dict[str, str] = {}
+    for term, others in synonyms.items():
+        if _key(term) not in terms:
+            raise ValueError(f"synonyms: {term!r} is not a term in this file")
+        if not others:
+            raise ValueError(f"synonyms: {term!r} has an empty list")
+        for s in others:
+            _check_phrase(s, f"synonyms of {term!r}")
+            if _key(s) in terms:
+                raise ValueError(f"synonyms: {s!r} is already a term; a synonym must be a new wording")
+            if _key(s) in seen:
+                raise ValueError(f"synonyms: {s!r} is listed under both {seen[_key(s)]!r} and {term!r}")
+            seen[_key(s)] = term
+
+
 class TerritoriesFile(Strict):
     version: int
     search_rules: list[str]
     territories: list[Territory]
+    synonyms: dict[str, list[str]] = {}
 
     @field_validator("territories")
     @classmethod
@@ -115,14 +143,63 @@ class TerritoriesFile(Strict):
         for t in territories:
             for ring in ("core", "adjacent", "wider_world"):
                 for term in getattr(t.terms, ring):
-                    if term.strip().lower() in {"ip", "i.p."}:
-                        raise ValueError(f"{t.id}: a bare 'IP' term matches IP addresses; use 'intellectual property'")
+                    _check_phrase(term, t.id)
         return territories
+
+    @model_validator(mode="after")
+    def _synonyms(self) -> TerritoriesFile:
+        _check_synonyms(self.terms(), self.synonyms)
+        return self
+
+    def terms(self) -> set[str]:
+        return {_key(p) for t in self.territories for ring in ("core", "adjacent", "wider_world")
+                for p in getattr(t.terms, ring)}  # fmt: skip
 
 
 class ThemesFile(Strict):
     version: int
     themes: dict[str, list[str]]
+    rings: dict[str, Ring] = {}  # a theme's ring when it is not wider_world (the default)
+    synonyms: dict[str, list[str]] = {}
+
+    @model_validator(mode="after")
+    def _checks(self) -> ThemesFile:
+        for name, phrases in self.themes.items():
+            for p in phrases:
+                _check_phrase(p, f"theme {name}")
+        unknown = set(self.rings) - set(self.themes)
+        if unknown:
+            raise ValueError(f"rings: unknown themes {sorted(unknown)}")
+        _check_synonyms(self.terms(), self.synonyms)
+        return self
+
+    def terms(self) -> set[str]:
+        return {_key(p) for phrases in self.themes.values() for p in phrases}
+
+    def ring(self, theme: str) -> str:
+        return self.rings.get(theme, "wider_world")
+
+
+def synonym_map(territories: TerritoriesFile, themes: ThemesFile) -> dict[str, tuple[str, ...]]:
+    """Every term (lower case) with its synonyms (lower case), from both files. A synonym may not be a term in the
+    other file either, and a term's synonyms are listed in one file only."""
+    terms = territories.terms() | themes.terms()
+    out: dict[str, tuple[str, ...]] = {}
+    for source in (territories.synonyms, themes.synonyms):
+        for term, others in source.items():
+            if _key(term) in out:
+                raise ValueError(f"synonyms: {term!r} has synonyms in both territories.yaml and themes.yaml")
+            for s in others:
+                if _key(s) in terms:
+                    raise ValueError(f"synonyms: {s!r} is a term in the other file")
+            out[_key(term)] = tuple(_key(s) for s in others)
+    owners: dict[str, str] = {}
+    for term, others in out.items():
+        for s in others:
+            if s in owners:
+                raise ValueError(f"synonyms: {s!r} is listed under both {owners[s]!r} and {term!r}")
+            owners[s] = term
+    return out
 
 
 Pestle = Literal["political", "economic", "social", "technological", "legal", "environmental"]

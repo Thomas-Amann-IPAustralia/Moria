@@ -61,6 +61,7 @@ def test_query_groups_are_balanced_and_quoted():
     groups = build_groups(GdeltParams(phrases_per_query=6))
     assert all(1 <= len(gr.phrases) <= 6 for gr in groups)
     assert not any(p.lower() == "ip" for gr in groups for p in gr.phrases)
+    assert not any(s.lower() == "ip" for gr in groups for _, syn in gr.synonyms for s in syn)
 
 
 def test_gdelt_collects_articles_and_volumes(http_cfg, store):

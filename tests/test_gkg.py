@@ -6,7 +6,6 @@ import io
 import json
 import zipfile
 from datetime import date
-from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -17,7 +16,7 @@ from moria.collectors.gdelt import QueryGroup
 from moria.collectors.gkg import PhraseMatcher
 from moria.records import decode_bundle
 
-from .conftest import card, make_client
+from .conftest import card, make_client, terms_config
 
 DAY = date(2026, 10, 9)
 QUOTE = "placeholder quoted words about widget licensing"
@@ -25,11 +24,14 @@ QUOTE = "placeholder quoted words about widget licensing"
 
 @pytest.fixture(autouse=True)
 def fixed_terms(monkeypatch):
-    territory = SimpleNamespace(
-        id="T9", terms=SimpleNamespace(core=["widget licensing", "gizmo"], adjacent=[], wider_world=[])
+    territories, themes = terms_config(
+        ["widget licensing", "gizmo"],
+        themes={"testing": ["net zero"], "ip_test": ["sprocket"]},
+        synonyms={"widget licensing": ["widget licence deal"]},
+        rings={"ip_test": "core"},
     )
-    monkeypatch.setattr(gdelt_module, "load_territories", lambda: SimpleNamespace(territories=[territory]))
-    monkeypatch.setattr(gdelt_module, "load_themes", lambda: SimpleNamespace(themes={"testing": ["net zero"]}))
+    monkeypatch.setattr(gdelt_module, "load_territories", lambda: territories)
+    monkeypatch.setattr(gdelt_module, "load_themes", lambda: themes)
 
 
 def row(url, domain, title="Placeholder title", quotes="", names="", collection="1", date_="20261009001500"):
@@ -137,6 +139,40 @@ def test_gkg_keeps_matching_documents_and_counts_volumes(http_cfg, store):
 
     warnings = " ".join(r.warnings)
     assert "94 of 96 files not published" in warnings and "1 rows skipped" in warnings
+    assert (
+        vols[("T9:core:0", "world")]["ring"] == "core" and vols[("theme:testing:0", "world")]["ring"] == "wider_world"
+    )
+    assert vols[("theme:ip_test:0", "world")]["ring"] == "core"  # a theme's ring from themes.yaml (D-014)
+
+
+def test_a_synonym_counts_as_its_term_and_the_record_names_it(http_cfg, store):
+    rows = [
+        row("https://news.test/s", "news.test", title="Placeholder widget licence deals announced"),
+        row("https://news.test/t", "news.test", title="Widget licensing and a widget licence deal"),
+    ]
+    files = {"20261009000000": gkg_zip(rows)}
+    r = run_collection(gkg_card(), store, make_client(http_cfg, make_handler(files)), Window.for_day(DAY))
+    assert r.status == "passed", r.error
+    recs = decode_bundle(store.get(r.bundle_key))
+    docs = {x.payload["url"]: x.payload for x in recs if x.envelope.kind == "document"}
+    assert docs["https://news.test/s"]["matches"] == [
+        {"group": "T9:core:0", "phrase": "widget licensing", "fields": ["title"], "synonyms": ["widget licence deal"]}
+    ]
+    assert docs["https://news.test/t"]["matches"][0]["synonyms"] == ["widget licence deal"]
+    vols = {(x.payload["query_group"], x.payload["scope"]): x.payload for x in recs if x.envelope.kind == "observation"}
+    assert vols[("T9:core:0", "world")]["matching_documents"] == 2
+
+
+def test_matcher_reports_the_form_that_matched_and_the_group_expression_lists_synonyms():
+    g = QueryGroup("g:0", ("patent waiver", "net zero"), (("patent waiver", ("trips waiver",)),))
+    m = PhraseMatcher([g])
+    assert m.forms_in("Members debate the TRIPS waivers") == {("patent waiver", "trips waiver")}
+    assert m.phrases_in("A patent waiver and a TRIPS waiver") == {"patent waiver"}
+    assert m.forms_in("A patent waiver and a TRIPS waiver") == {
+        ("patent waiver", "patent waiver"),
+        ("patent waiver", "trips waiver"),
+    }
+    assert g.expression == '("patent waiver" OR "trips waiver" OR "net zero")'
 
 
 def test_gkg_fails_loudly_when_too_many_files_are_missing(http_cfg, store):

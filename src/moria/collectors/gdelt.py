@@ -14,7 +14,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from ..config import Strict, load_territories, load_themes
+from ..config import Strict, load_territories, load_themes, synonym_map
 from ..http import FetchError
 from ..records import RawRecord, make_envelope
 from .base import CollectContext, CollectError
@@ -45,17 +45,22 @@ class GdeltParams(QueryGroupParams):
 class QueryGroup:
     group_id: str  # e.g. "T1:core:0" or "theme:climate_energy:1"
     phrases: tuple[str, ...]
+    synonyms: tuple[tuple[str, tuple[str, ...]], ...] = ()  # (term, its synonyms), lower case: counted as the term
+    ring: str | None = None
 
     @property
     def expression(self) -> str:
-        terms = [f'"{p}"' if (" " in p or "-" in p) else p for p in self.phrases]
+        forms = [f for p in self.phrases for f in (p, *dict(self.synonyms).get(p.lower(), ()))]
+        terms = [f'"{f}"' if (" " in f or "-" in f) else f for f in forms]
         return terms[0] if len(terms) == 1 else "(" + " OR ".join(terms) + ")"
 
 
 def build_groups(params: QueryGroupParams) -> list[QueryGroup]:
     groups: list[QueryGroup] = []
+    territories, themes = load_territories(), load_themes()
+    synonyms = synonym_map(territories, themes)
 
-    def chunk(prefix: str, phrases: list[str]) -> None:
+    def chunk(prefix: str, phrases: list[str], ring: str) -> None:
         # Balanced groups of at most phrases_per_query: 14 phrases with a maximum of 6 become 5, 5 and 4.
         if not phrases:
             return
@@ -64,15 +69,17 @@ def build_groups(params: QueryGroupParams) -> list[QueryGroup]:
         start = 0
         for i in range(n_groups):
             end = start + size + (1 if i < extra else 0)
-            groups.append(QueryGroup(f"{prefix}:{i}", tuple(phrases[start:end])))
+            part = tuple(phrases[start:end])
+            syn = tuple((p.lower(), synonyms[p.lower()]) for p in part if p.lower() in synonyms)
+            groups.append(QueryGroup(f"{prefix}:{i}", part, syn, ring))
             start = end
 
-    for t in load_territories().territories:
+    for t in territories.territories:
         for ring in params.territory_rings:
-            chunk(f"{t.id}:{ring}", getattr(t.terms, ring))
+            chunk(f"{t.id}:{ring}", getattr(t.terms, ring), ring)
     if params.include_themes:
-        for name, phrases in sorted(load_themes().themes.items()):
-            chunk(f"theme:{name}", phrases)
+        for name, phrases in sorted(themes.themes.items()):
+            chunk(f"theme:{name}", phrases, themes.ring(name))
     return groups
 
 

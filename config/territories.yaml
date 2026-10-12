@@ -16,7 +16,10 @@
 # (most of the world never says "intellectual property"); `wider_world` names forces that could move the territory.
 # Every term is checked on day 2 (`moria terms check`): its volume worldwide and in Australian sources, and a sample
 # of hits read for noise. A check from this session's shared network exit was refused by GDELT (HTTP 429).
-version: 1
+#
+# v2 (2026-10-12): `synonyms` at the end of the file, other wordings of a term the way news writes them, counted as the
+# term itself (owner: "As long as the any new terms are treated as synonyms", D-014). The terms are unchanged.
+version: 2
 
 search_rules:
   - 'Never search a bare "IP": it matches IP addresses and networking. Use "intellectual property".'
@@ -274,3 +277,119 @@ territories:
       - Climate-related patent filings (WIPO IPC Green Inventory)
       - Plant breeder's rights applications by plant group
       - Certification and collective trade marks (a proxy for GI-style protection), by class
+
+# Other wordings of a term, the way news writes it: a match on a synonym counts as the term (D-014). Drafted by Claude
+# from how news usually phrases each idea; `moria terms check` reports how much each term gains through its synonyms.
+# Left out on purpose: wordings that are mostly boilerplate or figurative ("registered trademark", "patent pending",
+# "trademarked", "knock off"), and "IP" wordings that are also networking terms ("IP services", "IP protection").
+synonyms:
+  # T1
+  intellectual property enforcement: [IP enforcement, enforcement of intellectual property]
+  intellectual property infringement: [IP infringement, infringement of intellectual property]
+  trade mark infringement: [trademark lawsuit, trademark violation]
+  patent infringement: [patent lawsuit, patent litigation, infringing patent]
+  counterfeit goods: [counterfeit products, counterfeit items, fake goods]
+  counterfeiting: [counterfeiter]
+  pirated goods: [pirated products, pirated copies, pirated content]
+  online piracy: [digital piracy, piracy site, pirate site, illegal streaming, streaming piracy]
+  brand protection: [brand enforcement]
+  anti-counterfeiting: [anti-counterfeit]
+  intellectual property theft:
+    - IP theft
+    - theft of intellectual property
+    - stolen intellectual property
+    - trade secret theft
+  trademark squatting: [trademark squatter, trademark troll]
+  intellectual property dispute: [IP dispute, IP battle, intellectual property battle, IP row]
+  intellectual property litigation: [IP litigation, IP lawsuit, intellectual property lawsuit]
+  copycat products: [copycat product, copycat brand]
+  knock-off products: [knockoff]
+  parallel imports: [parallel import, grey import, gray import]
+  marketplace takedown: [takedown notice, takedown request]
+  platform liability: [intermediary liability]
+  fake invoice scam: [invoice scam, invoice fraud]
+  small business export: [SME export]
+  online platform regulation: [platform regulation, digital platform regulation, regulating online platforms]
+  # T2
+  intellectual property awareness: [IP awareness]
+  patent application cost: [patent fee, patent cost, cost of patenting]
+  trade mark application: [trademark filing, files trademark, filed trademark, filed a trademark]
+  design registration: [design patent]
+  accelerated examination: [fast-track patent, expedited examination, patent prosecution highway]
+  intellectual property strategy: [IP strategy, patent strategy]
+  first patent: [first-ever patent]
+  intangible assets: [intangible asset]
+  startup founders: [startup founder, start-up founder]
+  trade secrets: [trade secret]
+  R&D tax incentive: [R&D tax credit, research and development tax incentive]
+  # T3
+  intellectual property valuation: [IP valuation, valuing intellectual property, value of intellectual property]
+  patent valuation: [patent value, value of patents]
+  IP-backed finance:
+    - IP-backed loan
+    - IP-backed financing
+    - IP financing
+    - intellectual property-backed
+    - patent-backed loan
+  patent licensing: [patent license, patent royalty]
+  technology licensing: [technology license]
+  intellectual property commercialisation:
+    - IP commercialisation
+    - commercialisation of intellectual property
+    - commercialising intellectual property
+  patent monetisation:
+    - monetise patents
+    - monetising patents
+    - patent troll
+    - patent assertion entity
+    - non-practising entity
+    - non-practicing entity
+  standard essential patents: [standard essential patent, SEP licensing, FRAND]
+  intellectual property audit: [IP audit]
+  university spin-out: [university spinout, university spin-off]
+  intangible investment: [investment in intangibles, intangible capital]
+  royalty income: [royalty revenue]
+  # T4
+  patent attorney: [patent lawyer, patent agent]
+  trade marks attorney: [trade mark attorney, trademark lawyer]
+  intellectual property firm: [IP firm, IP law firm, intellectual property law firm]
+  intellectual property education: [IP education]
+  intellectual property mediation: [IP mediation, IP arbitration, intellectual property arbitration]
+  small business advisers: [small business adviser, small business advisor]
+  AI legal services: [legal AI, AI lawyer]
+  AI in government services: [AI in government, government use of AI]
+  # T5
+  AI inventorship:
+    - AI inventor
+    - AI as inventor
+    - AI as an inventor
+    - DABUS
+    - AI-generated invention
+    - AI-assisted invention
+  AI-generated works copyright:
+    - AI authorship
+    - copyright AI-generated
+    - copyright of AI-generated
+    - copyright for AI-generated
+  text and data mining exception: [text and data mining, TDM exception]
+  Indigenous knowledge protection:
+    - protecting Indigenous knowledge
+    - protection of Indigenous knowledge
+    - Indigenous knowledge rights
+  Indigenous cultural and intellectual property:
+    - Indigenous intellectual property
+    - Indigenous cultural intellectual property
+  geographical indications:
+    - geographical indication
+    - geographic indication
+    - protected designation of origin
+    - protected geographical indication
+  access to medicines patents: [drug patent, vaccine patent, medicine patent, patent evergreening, evergreening]
+  patent waiver: [TRIPS waiver, IP waiver, intellectual property waiver, waive patents, waiving patents]
+  compulsory licensing: [compulsory license, march-in rights]
+  plant breeders rights: [plant breeder's rights, plant variety rights, plant variety protection]
+  genetic resources disclosure: [disclosure of origin, genetic resources treaty, biopiracy]
+  patent system reform: [patent reform, patent law reform, patent system overhaul]
+  generative AI training data: [AI training data]
+  mission-oriented innovation: [mission-oriented policy]
+  trust in institutions: [institutional trust]
