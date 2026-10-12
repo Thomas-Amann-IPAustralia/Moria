@@ -1,13 +1,16 @@
-# The known-trends baseline (design §2.5, §2.6): what is already widely expected. A candidate signal that only
-# restates one of these trends is marked `already_known` at triage; a validated signal outside every trend here and
-# outside every Growth Territory counts towards novelty, the sprint's success test (design §11.1).
+# The known-trends baseline (design §2.5, §2.6): what is already widely expected. A candidate signal is tagged with
+# the known trend it matches, never rejected for it: "Hearing something is a priority and understanding its urgency are
+# two very different things. Reinforcement of what is already known is still valuable" (owner, D-014). A validated
+# signal outside every trend here and outside every Growth Territory counts towards novelty, the sprint's success test
+# (design §11.1); one that reinforces a trend is reported as reinforcement.
 #
-# Status: a DRAFT for the owner to confirm, edit or cut. Drafted by Claude on 2026-10-12 from the three syntheses
-# read in full in the build session (each `item` below is the document's own name for its trend). The statements are
-# paraphrases, not quotations. The other documents in config/sources/foresight_syntheses.yaml could not be fetched
-# from the build session; they are listed as not read, and their trends are added once they are read.
+# Status: CONFIRMED by the owner on 2026-10-12 ("19 initial trends confirmed", D-014). Drafted by Claude on 2026-10-12
+# from the three syntheses read in full in the build session (each `item` below is the document's own name for its
+# trend). The statements are paraphrases, not quotations. The other documents in
+# config/sources/foresight_syntheses.yaml could not be fetched from the build session; they are listed as not read,
+# and their trends are added once they are read (the owner expects several more).
 version: 1
-status: draft
+status: confirmed
 
 documents:
   csiro_our_future_world_2022: {read: full, items: 7, note: "seven global megatrends to 2042"}
@@ -18,6 +21,7 @@ documents:
   net_zero_plan_2025: {read: not_read, note: "refused from the build session"}
   national_defence_strategy_2026: {read: not_read, note: "refused from the build session"}
   wef_global_risks_report_2026: {read: not_read, note: "HTTP 403 from the build session"}
+  oecd_sti_outlook_2025: {read: not_read, note: "HTTP 403 from the build session; on the wishlist"}
 
 trends:
   - id: KT01

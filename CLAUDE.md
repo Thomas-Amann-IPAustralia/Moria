@@ -13,6 +13,9 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   series and the IP RAPID lake (weekly, `collect-weekly`); patent counts by CPC subclass on BigQuery (built, dry run
   only: it waits on a GCP project); the foresight syntheses and a draft known-trends baseline; `moria terms check`;
   `moria census` and its reports; the collect-weekly and terms-check workflows.
+- **The owner's answers (D-014):** the 19-trend baseline is confirmed, and a known trend is a tag, never a reason to
+  reject a signal (reinforcement counts); synonyms for the territory terms and an `ip_system` theme for the core ring;
+  owner uploads of refused documents (`docs/wishlist.md`) with a licence check on every document.
 - **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors, artefact checks), day 5
   (dossiers, register export). Day-2 leftovers are in `docs/handover-day2.md`.
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
@@ -59,6 +62,9 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   first (D-011).
 - A source whose terms don't clearly allow storing its text keeps titles, links and dates only (`keep_summary:
   false` for feeds, `store_text: false` for sitemaps and documents).
+- Owner uploads go to `inbox/documents/` in the private bucket, never into the repo. Every document's own licence
+  statements are checked; one that reserves its rights is never stored as text, and `store_text: if_open_licence`
+  stores text only when the document states an open licence (D-014).
 
 ## Pipeline
 
@@ -74,7 +80,8 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 | Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` | config | nothing |
 
 Local runs default to `--store local`, which writes to `data/store/` (git-ignored). GitHub Actions passes
-`--store r2`.
+`--store r2`. The `documents` adapter reads an owner upload at `inbox/documents/<document id>.pdf` (or `.html`) in the
+store instead of the document's URL.
 
 **Workflows** (`.github/workflows/`):
 - `ci.yml`: lint, format and tests on every push.
@@ -94,7 +101,8 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
   unchanged series keeps its evidence id.
 - IP RAPID lives in the lake as typed Parquet: a base about quarterly and weekly deltas against it (`_change` is
   `added` or `removed`). The zip is not kept; its SHA-256 is in the release manifest.
-- `config/baseline.yaml`: the known-trends baseline (draft), validated; a trend cites only documents read.
+- `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
+  documents read. A signal records whether it is `novel` or `reinforces` a known trend.
 
 ## Sources (config/sources/*.yaml; design §5)
 
@@ -103,14 +111,14 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
 | `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 47 query groups (`config/territories.yaml`, `config/themes.yaml`, including the `ip_system` theme for the core ring) in title, URL, quotations and named entities, in Australian and US spelling, with a plural last word, and with each term's synonyms counted as the term (D-014); matches are kept, with daily volumes worldwide and for `.au` domains against every document. Each volume also counts documents about the group (title or URL) and names-only ones, which are often incidental: `about_documents` is the cleaner series (D-012). Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
 | `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. A full first snapshot is a separate backfill. |
-| `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO and CIPO keep titles and links only (terms unclear). |
+| `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO and CIPO keep titles and links only until the owner confirms their terms (`docs/wishlist.md`). |
 | `uspto_news`, `ipos_news` | sitemap | News pages by lastmod. IPOS keeps titles only: its terms forbid reproduction. |
 | `openalex_counts` | openalex_counts | Weekly. Works by primary topic at four taxonomy levels, each year from 2010 and each of the last 36 months, worldwide and with an Australian author; research output types only (D-011). About 2,400 of the 10,000 free daily credits. |
 | `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
 | `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
 | `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. `dry_run: true` until the owner has a GCP project and has seen the estimate. |
-| `foresight_syntheses` | documents | Once. Eight documents; three fetched (CSIRO as metadata only), five refused from the build session. |
-| `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the EPO's strategic plan (metadata only) and the USPTO's strategy page. |
+| `foresight_syntheses` | documents | Once. Nine documents; three fetched (CSIRO as metadata only); the other six wait on owner uploads (`docs/wishlist.md`), stored as text only where the document states an open licence. |
+| `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the USPTO's strategy page, the EPO's strategic plan and work plan and the EUIPO's plan (metadata only); the JPO's report and CIPO's strategy wait on owner uploads. |
 
 ## Model choice
 Free first (design §9):

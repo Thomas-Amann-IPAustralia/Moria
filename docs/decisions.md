@@ -872,4 +872,114 @@ refused document, the size cap) and the baseline's citations.
   are national priorities (the science priorities, critical technologies, net zero, defence) part of "already
   known", or should signals that confirm them still count as new evidence?
 
-Next free decision number: D-014.
+## D-014 — The owner's answers on day 2: the baseline confirmed, and known trends still count; synonyms and an IP-system theme; a document wishlist with owner uploads and a licence check (2026-10-12)
+
+**Context.** The owner answered the day-2 report (D-011 to D-013) in one message:
+- BigQuery: "I've added the credentials to Github Secrets. Are you SURE you mean the WHOLE JSON that downloaded?"
+- The baseline: "19 intial trends confirmed." And: "just because trends are already 'known' in the sense of them
+  being national priorities, it's entirely feasible that they may not be priorities or even front of mind for
+  IPAVentures or IP Australia's strategic leadership. Hearing something is a priority and understanding its urgency
+  are two very different things. Reinforcement of what is already known is still valuable. I'm sure we'll be adding
+  several new trends over the next few days."
+- Documents: "Are you able to produce a write a wishlist of the public documents in the Github repo and I can go to
+  the sites and get the documents for you? I'll make sure to only upload them if their licensing allows and maybe
+  you can run a check too so we can have it on record." EPO's and Canada.ca's terms: "I'll have a look when gathering
+  the documents from your wish list. Please include it on the list so I don't forget."
+- Terms: "For now, keep the search terms that never matched. We'll revisit the search strategy once we've got all of
+  the plumbing and infrastructure set up." "Sure, please add a a broad IP-system theme so the core ring gets a news
+  count of its own". "As long as the any new terms are treated as synonyms then sure, feel free to add terms the way
+  news writes them."
+- The owner pasted the territory context again.
+
+**Decision (the owner's, in the words above; the details below were settled in the build).**
+- **The baseline is confirmed:** `config/baseline.yaml` is `status: confirmed`, 19 trends. **A known trend is never a
+  reason to reject a signal.** The design changes accordingly (§2.5, §2.6, §6, §11.1): `already_known` is no longer
+  a rejection reason; a signal records its `baseline_relation`, `novel` or `reinforces` (with what it adds: pace,
+  urgency, arrival in Australia or in the IP system); reinforcement is reported beside novelty. Novelty (the sprint's
+  success test) is unchanged: outside both the baseline and every territory.
+- **The silent terms stay.** No term is pruned; the search strategy is revisited once the machinery is built.
+- **Synonyms, counted as the term** (`synonyms` in `config/territories.yaml` v2 and `config/themes.yaml` v3): 173
+  wordings for 72 terms, drafted the way news writes them ("TRIPS waiver" for "patent waiver", "DABUS" and "AI
+  inventor" for "AI inventorship", the singular of terms written in the plural). The terms themselves are unchanged.
+  A synonym must be a new wording of exactly one term (validated); a match on it counts as the term, and the match
+  record names it. Left out on purpose: boilerplate and figurative wordings ("registered trademark", "patent
+  pending", "trademarked", "knock off") and "IP" wordings that are also networking terms.
+- **An IP-system theme, `ip_system`, in the core ring:** intellectual property, patent, trade mark, copyright,
+  registered design, plant breeders rights, geographical indications, intellectual property office, IP Australia,
+  WIPO (with their synonyms). Themes gain a `rings` map (default wider world), and every volume record carries its
+  group's ring. Parser `gdelt-gkg-v3`; the card records the break.
+- **A wishlist, owner uploads, and a licence check** (`docs/wishlist.md`):
+  - The owner downloads what the build session can't reach and puts it in the private bucket at
+    `inbox/documents/<document id>.pdf` (or `.html`); never in the repo, which is public. The `documents` collector
+    reads an upload instead of the URL, and the record says so (`obtained: owner_upload`).
+  - **Every document's licence is checked:** its first six and last four pages are searched, in memory, for licence
+    statements (Creative Commons with version, the Open Government Licence, the EU reuse notice, "all rights
+    reserved", "no part may be reproduced", public domain). The statements and a verdict go in the record, the
+    manifest and the census report (names only). A document that reserves its rights with no open licence is never
+    stored as text, whatever its card says; `store_text: if_open_licence` stores text only when the document itself
+    states an open licence. The refused foresight documents move to `if_open_licence`.
+  - New card entries: the OECD *STI Outlook 2025* (the OECD publication for the baseline), the EPO's *Annual Work
+    Plan 2026*, the EUIPO's *Strategic Plan 2030*, the JPO's *Status Report 2026* and CIPO's *2023-2028 Business
+    Strategy*.
+  - **Terms read for the owner to confirm:** the EPO's website terms of use, section 6 (read from here): its own
+    information may be downloaded, printed and processed "for private and commercial purposes", displayed accurately
+    and citing the website; third-party content, logos and images excluded. Canada.ca's terms (from search results;
+    the site refuses this session): non-commercial reproduction "without charge or further permission", with title,
+    author and a not-an-official-version statement. EPO and CIPO stay titles and links only until the owner confirms.
+- **The territory context** is back in the private bucket (`interpretation/territories/context.yaml`, 8,486 bytes,
+  hash checked) and in the git-ignored local file. It is not in the repo. The public wishlist leaves out the
+  documents that the context cites, since listing them would hint at it; they are put to the owner in the chat.
+- **BigQuery:** yes, the whole JSON key file, as downloaded (its private key, the account's email and the token
+  address are all needed to sign in). The dry run waits on the merge: `collect-source` runs only from `main`.
+
+**Rejected, a line each:**
+- **Uploads to the repo:** it is public, so an upload would republish the document.
+- **Adding news wordings as new terms:** the owner asked for synonyms; a synonym keeps the term list, and its
+  counts, unchanged.
+- **Trusting the cards' licences alone:** the check costs nothing and catches a document whose own notice disagrees.
+
+**Checked:**
+- **Tests:** 69 pass, with synonyms in the matcher and the terms check, validation of synonyms and theme rings,
+  owner uploads, the licence patterns and the census across runs.
+- **Third terms check** (run `20261012T131633Z-cdd72551`, commit `3485769`, the same 13 days as D-012): 239 terms.
+  - On the 207 earlier terms: silent 92 to 75, rare 24 to 35, names-heavy 29 (unchanged). Core terms silent: 49 to
+    38 of 65. 17 silent terms matched through a synonym, each a handful of times (for example "intellectual property
+    enforcement" 3, "trade mark application" 3, "knock-off products" 5).
+  - Synonyms added 140 documents that only they found (0.7% of hits). The largest by far: "geographical indication"
+    in the singular (geographical indications 14 to 103 documents, mostly India's GI tags, in named entities).
+  - The IP-system theme: at most about 16 documents a day are about one of its terms (title or URL; the sum over
+    terms, which overlap), at most 59 a day mention one, and 0.2 a day in `.au` domains. "IP Australia" never
+    appeared in the 13 sampled days.
+  - Themes v2 (24 phrases): 3 silent (aged care workforce, deglobalisation, megacities), 1 rare.
+  - **Read from the samples** (12 per term) for patent, trade mark, copyright and intellectual property: title or URL
+    hits were on topic in 17 of 19; names-only hits in about 4 of 23. So `about_documents` stays the series to use
+    (D-012). The synonym "takedown request" was off topic in all 4 samples (government content takedowns) and is
+    removed (`c68f5af`, after the run).
+- **Document runs** (commit `cc8c54f`, into the bucket): `peer_office_strategies` 6 records (manifest
+  `20261012T132413Z-24fe112c`), `foresight_syntheses` 2 records (`20261012T132431Z-d312b25a`; CSIRO's site failed this
+  time, its morning record stands). The licence check agrees with the cards for the UKIPO plan (Open Government
+  Licence) and the Intergenerational Report (CC BY 3.0). For the JRC booklet it found CC BY 2.0 and CC BY-SA 2.0,
+  most likely photo credits: the statements are evidence for a person, not a verdict. The EUIPO plan, the EPO's work
+  plan and pages, CIPO's release and the USPTO page state none; the EUIPO plan's text is therefore not stored.
+- The census of a document card across runs shows the newest record of each document.
+
+**Runs and slips, disclosed:**
+- Commit `97f02ad` went in while a census test failed in the full suite: the command piped pytest's output and lost
+  its exit code. The test was order-dependent (two runs in one second); fixed in `87a3d3e`, which CI checks.
+- The public terms report was regenerated from the run's own result after a formatting fix (one header line); its
+  numbers are the run's.
+
+**Spend:** $0. GKG: about 3.5 GB downloaded for the third check, free. OpenAlex: no credits used.
+
+**Consequences.**
+- After the merge: `collect-source` with `patent_cpc_counts` (the dry run), then with `foresight_syntheses` and
+  `peer_office_strategies` once uploads are in the inbox.
+- Day 3 reads `ring` from volume records and embeds the trend statements for `known_trend_match`.
+- **For the owner:**
+  1. **Merge this branch** (or ask for a pull request): the BigQuery dry run, the weekly schedule and the
+     terms-check workflow all start from `main`.
+  2. **The wishlist** (`docs/wishlist.md`): five foresight documents, two peer-office documents, WEF's two top-10
+     lists pasted in the chat, and the EPO's and Canada.ca's terms to confirm.
+  3. Whether the documents your territory context cites may go on the public wishlist.
+
+Next free decision number: D-015.
