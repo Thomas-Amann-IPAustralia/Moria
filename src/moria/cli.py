@@ -7,6 +7,7 @@ import logging
 import sys
 import time
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import typer
 
@@ -16,9 +17,12 @@ from .collectors.gkg import GkgParams
 from .config import config_hash, load_config, load_sources, load_territories, load_themes
 from .envcheck import run_checks
 from .http import PoliteClient
+from .ipr import refresh as ipr_refresh
 from .store import open_store
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help=__doc__)
+ipr_app = typer.Typer(no_args_is_help=True, help="IP RAPID: the weekly bulk release, into the lake as Parquet")
+app.add_typer(ipr_app, name="ipr")
 
 
 @app.callback()
@@ -98,7 +102,10 @@ def _collect(source_ids: list[str], day: date, limit: int | None, store_backend:
     results = []
     try:
         for sid in source_ids:
-            r = run_collection(cards[sid], store, client, window, limit=limit, config_hash=chash)
+            if cards[sid].adapter == "ip_rapid":  # a bulk stage of its own (moria ipr refresh), not a raw bundle
+                r = ipr_refresh(cards[sid], store, client, limit=limit, config_hash=chash)
+            else:
+                r = run_collection(cards[sid], store, client, window, limit=limit, config_hash=chash)
             results.append(r)
             line = (
                 f"{r.status:<7} {sid:<22} records={r.records:<6} warnings={len(r.warnings):<3} "
@@ -138,10 +145,56 @@ def collect_daily(
         raise typer.Exit(2)
 
 
+@app.command("collect-weekly")
+def collect_weekly(
+    day: str = typer.Option(None, help="UTC day the snapshot is filed under (YYYY-MM-DD); default yesterday"),
+    limit: int = typer.Option(None, help="Smoke test: cap the work per source"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Collect every weekly source: whole-taxonomy counts, statistics and the IP RAPID release. Carries on past a
+    failed source, then exits 2 if any failed."""
+    weekly = [c.id for c in load_sources().values() if c.cadence == "weekly"]
+    results = _collect(weekly, _parse_day(day), limit, store)
+    summary = {r.source: {"status": r.status, "records": r.records, "warnings": len(r.warnings)} for r in results}
+    typer.echo(json.dumps(summary, sort_keys=True))
+    if any(r.status != "passed" for r in results):
+        raise typer.Exit(2)
+
+
+@ipr_app.command("refresh")
+def ipr_refresh_command(
+    zip_path: str = typer.Option(None, "--zip", help="Use this copy of the current release instead of downloading"),
+    work_dir: str = typer.Option(None, help="Keep the converted Parquet here (default: a temporary directory)"),
+    limit: int = typer.Option(None, help="Smoke test: convert only the first N tables, locally; uploads nothing"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Ingest the current IP RAPID release into the lake (a base, or a delta against the latest base), with
+    individuals' names hashed. Does nothing if the release is already in the store."""
+    cfg, cards = load_config(), load_sources()
+    card = next(c for c in cards.values() if c.adapter == "ip_rapid")
+    client = PoliteClient(cfg.http)
+    try:
+        r = ipr_refresh(
+            card,
+            open_store(cfg.store, store),
+            client,
+            zip_path=Path(zip_path) if zip_path else None,
+            work_dir=Path(work_dir) if work_dir else None,
+            limit=limit,
+            config_hash=config_hash(cfg, card),
+        )
+    finally:
+        client.close()
+    line = f"{r.status:<7} {card.id:<22} rows={r.records:<10} warnings={len(r.warnings):<3} manifest={r.manifest_key}"
+    typer.echo(line if r.status == "passed" else f"{line}\n        cause: {r.error}")
+    if r.status != "passed":
+        raise typer.Exit(2)
+
+
 @app.command()
 def adapters() -> None:
     """List the collector adapters."""
-    for name in sorted(ADAPTERS):
+    for name in sorted([*ADAPTERS, "ip_rapid"]):
         typer.echo(name)
 
 

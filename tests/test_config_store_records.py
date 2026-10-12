@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from moria.collectors import ADAPTERS
 from moria.config import MoriaConfig, load_config, load_sources, load_territories, load_themes
+from moria.ipr import IprParams
 from moria.records import RawRecord, decode_bundle, encode_bundle, make_envelope
 from moria.store import StoreError
 
@@ -15,7 +16,10 @@ def test_repo_config_files_validate():
     cards = load_sources()
     assert {"gdelt_news", "legislation_frl", "ipaustralia_site", "wipo_press", "ukipo_news"} <= set(cards)
     for c in cards.values():
-        ADAPTERS[c.adapter](c)  # each adapter validates its card's params
+        if c.adapter == "ip_rapid":  # a bulk stage of its own, not a collector
+            IprParams.model_validate(c.params)
+        else:
+            ADAPTERS[c.adapter](c)  # each adapter validates its card's params
     territories = load_territories().territories
     assert [t.id for t in territories] == ["T1", "T2", "T3", "T4", "T5"]
     assert all(t.terms.core and t.terms.adjacent and t.terms.wider_world for t in territories)

@@ -8,10 +8,12 @@ so a slow run shows what it is doing.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 import urllib.robotparser
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from urllib.parse import urlsplit
 
 import httpx
@@ -159,6 +161,54 @@ class PoliteClient:
             )
             if attempt + 1 < attempts:
                 self._sleep(delay)
+        raise FetchError(f"{last_error} after {attempt + 1} attempt(s): {_safe(url)}")
+
+    def download(self, url: str, dest: Path, retries: int | None = None, log_every_mb: int = 200) -> tuple[str, int]:
+        """Stream a large file to `dest` without holding it in memory; returns its SHA-256 and size. A failed attempt
+        starts again from the beginning, after the same backoff as `request`."""
+        host = urlsplit(url).netloc
+        attempts = (self.cfg.max_retries if retries is None else retries) + 1
+        last_error = "no attempt made"
+        for attempt in range(attempts):
+            self._wait_for_host(host)
+            self.requests += 1
+            what, tries = f"GET {_safe(url)}", f"attempt {attempt + 1}/{attempts}"
+            started = time.monotonic()
+            try:
+                with self._client.stream("GET", url) as resp:
+                    self._count(f"http_{resp.status_code}")
+                    if resp.status_code != 200:
+                        last_error = f"HTTP {resp.status_code}"
+                        if resp.status_code not in RETRY_STATUSES:
+                            log.warning("%s -> %s (%s); not retried", what, last_error, tries)
+                            break
+                        delay = self._retry_after(resp) or self.cfg.backoff_s * (2**attempt)
+                        log.warning("%s -> %s (%s)%s", what, last_error, tries, self._then(attempt, attempts, delay))
+                        if attempt + 1 < attempts:
+                            self._sleep(delay)
+                        continue
+                    digest, size, next_log = hashlib.sha256(), 0, log_every_mb
+                    with open(dest, "wb") as f:
+                        for chunk in resp.iter_bytes(1024 * 1024):
+                            f.write(chunk)
+                            digest.update(chunk)
+                            size += len(chunk)
+                            if size >= next_log * 1024 * 1024:
+                                log.info(
+                                    "%s: %d MB so far, %.0fs", what, size // (1024 * 1024), time.monotonic() - started
+                                )
+                                next_log += log_every_mb
+                log.info(
+                    "%s -> 200, %d MB in %.1fs (%s)", what, size // (1024 * 1024), time.monotonic() - started, tries
+                )
+                return digest.hexdigest(), size
+            except httpx.HTTPError as e:
+                last_error = type(e).__name__
+                self._count(f"error_{last_error}")
+                delay = self.cfg.backoff_s * (2**attempt)
+                log.warning("%s -> %s (%s)%s", what, last_error, tries, self._then(attempt, attempts, delay))
+                if attempt + 1 < attempts:
+                    self._sleep(delay)
         raise FetchError(f"{last_error} after {attempt + 1} attempt(s): {_safe(url)}")
 
     def _count(self, outcome: str) -> None:
