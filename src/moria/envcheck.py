@@ -53,6 +53,29 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
     else:
         checks.append(Check("api:openalex", "skipped", "no key"))
 
+    project = os.environ.get(cfg.secrets.get("gcp_project", ""), "")
+    if project and os.environ.get(cfg.secrets.get("gcp_credentials", ""), ""):
+        try:
+            from .collectors.bigquery import API, default_credentials
+
+            creds = default_credentials()
+            if not creds.valid:
+                from .collectors.bigquery import _AuthRequest
+
+                creds.refresh(_AuthRequest())
+            # A dry run is free: it proves the credentials and the project without scanning anything
+            resp = client.post(
+                f"{API}/projects/{project}/queries",
+                json={"query": "SELECT 1", "useLegacySql": False, "dryRun": True},
+                headers={"Authorization": f"Bearer {creds.token}"},
+                retries=1,
+            )
+            checks.append(Check("api:bigquery", "ok", f"dry run HTTP {resp.status_code}"))
+        except Exception as e:
+            checks.append(Check("api:bigquery", "failed", type(e).__name__))
+    else:
+        checks.append(Check("api:bigquery", "skipped", "no GCP project or credentials (docs/setup.md)"))
+
     probes: dict[str, tuple[str, dict | None]] = {}
     for card in cards.values():
         if card.adapter == "gdelt_gkg":

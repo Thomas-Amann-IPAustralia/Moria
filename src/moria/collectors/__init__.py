@@ -15,6 +15,7 @@ from ..records import bundle_key, encode_bundle
 from ..store import Store
 from .abs import AbsSdmxCollector
 from .base import CollectContext, CollectError, Window, monitor_entry
+from .bigquery import BigQueryCpcCollector
 from .documents import DocumentsCollector
 from .feed import FeedCollector
 from .gdelt import GdeltCollector
@@ -25,6 +26,7 @@ from .sitemap import SitemapCollector
 
 ADAPTERS = {
     "abs_sdmx": AbsSdmxCollector,
+    "bigquery_cpc": BigQueryCpcCollector,
     "documents": DocumentsCollector,
     "gdelt": GdeltCollector,
     "gdelt_gkg": GkgCollector,
