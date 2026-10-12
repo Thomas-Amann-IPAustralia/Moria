@@ -49,6 +49,7 @@ class TermStats:
     sources: list[str]  # "T1:core", "theme:economy_finance", ...
     world: int = 0
     au: int = 0
+    about: int = 0  # a match in the title or URL: the document is about the term
     days_with_hits: int = 0
     by_field: dict[str, int] = field(default_factory=dict)
     names_only: int = 0
@@ -149,6 +150,7 @@ def run_check(
                     for f in fields:
                         s.by_field[f] = s.by_field.get(f, 0) + 1
                     s.names_only += fields == {"names"}
+                    s.about += bool(fields & {"title", "url"})
                     s.title_hits += "title" in fields
                     item = {
                         "day": day.isoformat(),
@@ -187,11 +189,12 @@ def summary_markdown(terms: dict[str, TermStats], totals: dict, run_id: str, day
         + f": {totals['documents']:,} English web documents, {totals['au_documents']:,} from `.au` domains.",
         "",
         "**How to read it.** *World/day* is the average number of documents a sampled day that mention the term",
-        "(whole words, in the title, URL, quotations or named entities); *.au/day* the same for `.au` domains.",
-        "*Title* is the share of hits found in the title, *names only* the share found only in GDELT's named",
-        f"entities. Flags are triage: `silent` no hit at all; `rare` under {RARE_PER_DAY} a day; `broad` over",
-        f"{BROAD_PER_DAY:.0f} a day; `names-heavy` over {NAMES_HEAVY_SHARE:.0%} names-only hits. The hit samples are",
-        "in the private bucket; a person reads them before any term is narrowed or dropped.",
+        "(whole words, in either spelling and with a plural last word, in the title, URL, quotations or named",
+        "entities); *About/day* counts only matches in the title or URL, the documents about the term; *.au/day* is",
+        "for `.au` domains. *Names only* is the share found only inside GDELT's named entities, which is often",
+        f"incidental (D-012). Flags are triage: `silent` no hit at all; `rare` under {RARE_PER_DAY} a day;",
+        f"`broad` over {BROAD_PER_DAY:.0f} a day; `names-heavy` over {NAMES_HEAVY_SHARE:.0%} names-only hits. The hit",
+        "samples are in the private bucket; a person reads them before any term is narrowed or dropped.",
         "",
     ]
     groups: dict[str, list[TermStats]] = {}
@@ -202,17 +205,16 @@ def summary_markdown(terms: dict[str, TermStats], totals: dict, run_id: str, day
     lines += [f"**{len(terms)} distinct terms; {flagged} flagged.**", ""]
     for group in sorted(groups, key=lambda g: (g == "themes", g)):
         lines += [f"## {group if group != 'themes' else 'Broad themes'}", ""]
-        lines += ["| Term | Ring or theme | World/day | .au/day | Days with hits | Title | Names only | Flags |"]
+        lines += ["| Term | Ring or theme | World/day | About/day | .au/day | Days with hits | Names only | Flags |"]
         lines += ["|---|---|---:|---:|---:|---:|---:|---|"]
         for s in sorted(groups[group], key=lambda s: (-s.world, s.phrase)):
             prefix = "theme:" if group == "themes" else f"{group}:"
             src = ", ".join(x.split(":", 1)[1] for x in s.sources if x.startswith(prefix))
-            title = f"{s.title_hits / s.world:.0%}" if s.world else "-"
             names = f"{s.names_only / s.world:.0%}" if s.world else "-"
             flags = ", ".join(f"`{f}`" for f in s.flags(d))
             lines.append(
-                f"| {s.phrase} | {src} | {s.world / d:.1f} | {s.au / d:.2f} | {s.days_with_hits}/{totals['days_read']}"
-                f" | {title} | {names} | {flags} |"
+                f"| {s.phrase} | {src} | {s.world / d:.1f} | {s.about / d:.1f} | {s.au / d:.2f} | "
+                f"{s.days_with_hits}/{totals['days_read']} | {names} | {flags} |"
             )
         lines.append("")
     return "\n".join(lines)
@@ -259,6 +261,8 @@ def check(
                     "world": s.world,
                     "au": s.au,
                     "world_per_day": round(s.world / d, 3),
+                    "about": s.about,
+                    "about_per_day": round(s.about / d, 3),
                     "au_per_day": round(s.au / d, 3),
                     "days_with_hits": s.days_with_hits,
                     "by_field": dict(sorted(s.by_field.items())),

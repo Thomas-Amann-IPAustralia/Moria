@@ -7,7 +7,13 @@ and named entities. Matching documents are kept; the rest only count towards the
 What is stored (design §12: news is titles, URLs and metadata, never article text):
 - per matching document: URL, domain, title, GDELT's timestamps, which groups and phrases matched and in which fields,
   and GDELT's own metadata, which it derives from the full text: themes, organisations, location countries and tone;
-- per group and scope (worldwide English, `.au` domains): matching documents and all documents that day.
+- per group and scope (worldwide English, `.au` domains): matching documents, the documents *about* the group (a
+  phrase in the title or URL), the documents that match only through GDELT's named entities, and all documents
+  that day. A names-only match means the phrase appears inside some proper name in the article, which is often
+  incidental (D-012), so `about_documents` is the cleaner series.
+
+Phrases match in Australian and US spelling and with a plural last word (`phrase_variants`), so "commercialisation"
+also finds "commercialization" and "supply chain disruption" finds "supply chain disruptions" (D-012).
 
 Quotations are article text, so they are searched in memory and never stored. Person names and page authors are not
 stored either.
@@ -30,7 +36,7 @@ from ..records import RawRecord, make_envelope
 from .base import CollectContext, CollectError
 from .gdelt import QueryGroupParams, build_groups
 
-PARSER_VERSION = "gdelt-gkg-v1"
+PARSER_VERSION = "gdelt-gkg-v2"
 FILE_INTERVAL = timedelta(minutes=15)
 MATCH_FIELDS = ("title", "url", "quotations", "names")
 
@@ -59,20 +65,108 @@ def _words(text: str) -> str:
     return f" {_SEPARATORS.sub(' ', text.lower()).strip()} "
 
 
+# Word-level spelling pairs (Australian/UK -> US), from explicit lists so that words like "enterprise" or "four" are
+# never touched. The territories' search rule asks for both spellings (config/territories.yaml).
+_SPELLING = {
+    "ageing": "aging",
+    "analyse": "analyze",
+    "behaviour": "behavior",
+    "catalogue": "catalog",
+    "centre": "center",
+    "colour": "color",
+    "defence": "defense",
+    "enrol": "enroll",
+    "favour": "favor",
+    "fibre": "fiber",
+    "fulfil": "fulfill",
+    "harbour": "harbor",
+    "honour": "honor",
+    "judgement": "judgment",
+    "labour": "labor",
+    "licence": "license",
+    "modelling": "modeling",
+    "neighbour": "neighbor",
+    "offence": "offense",
+    "programme": "program",
+    "travelling": "traveling",
+}
+_SPELLING_US = {us: au for au, us in _SPELLING.items()}
+# Stems that take -ise/-ize: "commercial" + "isation" <-> "commercial" + "ization"
+_ISE_STEMS = frozenset(
+    [
+        "author", "capital", "categor", "central", "colon", "commercial", "critic", "decentral", "democrat", "digit",
+        "emphas", "final", "global", "harmon", "industrial", "legal", "local", "maxim", "minim", "mobil", "modern",
+        "monet", "national", "neutral", "optim", "organ", "personal", "priorit", "privat", "real", "recogn",
+        "revital", "special", "stabil", "standard", "subsid", "summar", "symbol", "util", "visual",
+    ]
+)  # fmt: skip
+_ISE_ENDINGS = {
+    "ise": "ize",
+    "ised": "ized",
+    "ises": "izes",
+    "ising": "izing",
+    "isation": "ization",
+    "isations": "izations",
+}
+_IZE_ENDINGS = {us: au for au, us in _ISE_ENDINGS.items()}
+
+
+def _spellings(word: str) -> set[str]:
+    out = {word}
+    if word in _SPELLING:
+        out.add(_SPELLING[word])
+    if word in _SPELLING_US:
+        out.add(_SPELLING_US[word])
+    for endings in (_ISE_ENDINGS, _IZE_ENDINGS):
+        for ending, other in endings.items():
+            if word.endswith(ending) and word[: -len(ending)] in _ISE_STEMS:
+                out.add(word[: -len(ending)] + other)
+    return out
+
+
+def _plurals(word: str) -> set[str]:
+    if len(word) < 3 or word.endswith("s"):
+        return set()
+    if word.endswith(("x", "z", "ch", "sh")):
+        return {word + "es"}
+    if word.endswith("y") and word[-2] not in "aeiou":
+        return {word[:-1] + "ies"}
+    return {word + "s"}
+
+
+def phrase_variants(phrase: str) -> set[str]:
+    """The normalised phrase in Australian and US spelling, with its last word also in the plural; "trade mark" and
+    "trademark" stand for each other."""
+    words = _words(phrase).split()
+    if not words:
+        return set()
+    forms = [_spellings(w) for w in words]
+    forms[-1] = forms[-1] | {p for w in forms[-1] for p in _plurals(w)}
+    variants = {""}
+    for options in forms:
+        variants = {f"{v} {o}".strip() for v in variants for o in options}
+    for v in list(variants):
+        if " trade mark" in f" {v} ":
+            variants.add(f" {v} ".replace(" trade mark", " trademark").strip())
+        if " trademark" in f" {v} ":
+            variants.add(f" {v} ".replace(" trademark", " trade mark").strip())
+    return variants
+
+
 class PhraseMatcher:
-    """Whole-word, case-insensitive phrase matching. Candidates are looked up by first word, then checked as
-    substrings of the normalised text: fast enough for a day's 65k documents in pure Python."""
+    """Whole-word, case-insensitive phrase matching, in both spellings and with a plural last word. Candidates are
+    looked up by first word, then checked as substrings of the normalised text: fast enough for a day's 65k documents
+    in pure Python. Matches are reported by the phrase as written in the config."""
 
     def __init__(self, groups):
         self.groups_by_phrase: dict[str, list[str]] = {}
         for g in groups:
             for p in g.phrases:
                 self.groups_by_phrase.setdefault(p.lower(), []).append(g.group_id)
-        self._by_first_word: dict[str, list[tuple[str, str]]] = {}  # first word -> [(normalised, phrase)]
+        self._by_first_word: dict[str, set[tuple[str, str]]] = {}  # first word -> {(normalised variant, phrase)}
         for phrase in self.groups_by_phrase:
-            normalised = _words(phrase)
-            if normalised.strip():
-                self._by_first_word.setdefault(normalised.split()[0], []).append((normalised, phrase))
+            for variant in phrase_variants(phrase):
+                self._by_first_word.setdefault(variant.split()[0], set()).add((f" {variant} ", phrase))
 
     def phrases_in(self, text: str) -> set[str]:
         if not text:
@@ -88,6 +182,10 @@ class PhraseMatcher:
 class GroupCounts:
     world: int = 0
     au: int = 0
+    about_world: int = 0  # a phrase in the title or URL
+    about_au: int = 0
+    names_only_world: int = 0  # matched only inside GDELT's named entities
+    names_only_au: int = 0
     by_field: dict[str, int] = field(default_factory=dict)
 
 
@@ -281,9 +379,16 @@ class GkgCollector:
         )
         for gid in sorted({m["group"] for m in matches}):
             c = counts[gid]
+            group_fields = {f for m in matches if m["group"] == gid for f in m["fields"]}
             c.world += 1
             c.au += au
-            for f in sorted({f for m in matches if m["group"] == gid for f in m["fields"]}):
+            if group_fields & {"title", "url"}:
+                c.about_world += 1
+                c.about_au += au
+            if group_fields == {"names"}:
+                c.names_only_world += 1
+                c.names_only_au += au
+            for f in sorted(group_fields):
                 c.by_field[f] = c.by_field.get(f, 0) + 1
         payload = {
             "url": url,
@@ -326,10 +431,13 @@ class GkgCollector:
         for g in groups:
             c = counts[g.group_id]
             for scope in self.params.volume_scopes:
+                world = scope == "world"
                 payload = {
                     "query_group": g.group_id,
                     "scope": scope,
-                    "matching_documents": c.world if scope == "world" else c.au,
+                    "matching_documents": c.world if world else c.au,
+                    "about_documents": c.about_world if world else c.about_au,
+                    "names_only_documents": c.names_only_world if world else c.names_only_au,
                     "total_documents": totals[scope],
                     "matches_by_field": dict(sorted(c.by_field.items())) if scope == "world" else None,
                     "files_read": files_read,

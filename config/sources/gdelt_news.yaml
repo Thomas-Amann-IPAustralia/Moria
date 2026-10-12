@@ -12,11 +12,15 @@ coverage: >-
   worldwide and for .au domains, against every document that day.
 history_start: "GKG 2.1 bulk files run from 2015-02-19, so a backfill is possible"
 stable_since: null
-breaks: []
+breaks:
+  - "2026-10-12: parser gdelt-gkg-v2 matches both spellings and a plural last word, and adds about and names-only
+    counts per group (D-012); earlier volumes are not comparable"
 known_biases:
   - Over-weights English-language and large outlets
   - Matching uses the title, URL, quotations and names, not the full article text, so recall per article is lower
     than a full-text search
+  - A names-only match means the phrase appears inside some proper name in the article, often incidentally;
+    about_documents (title or URL) is the cleaner series (D-012)
   - Australian sources means .au domains; Australian outlets on .com domains count as worldwide only
   - Syndicated stories appear many times (collapsed by de-duplication)
   - GDELT's source list changes over time, so volumes are compared as shares, never raw counts alone

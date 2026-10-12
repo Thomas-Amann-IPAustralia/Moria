@@ -122,6 +122,10 @@ def test_gkg_keeps_matching_documents_and_counts_volumes(http_cfg, store):
     vols = {(x.payload["query_group"], x.payload["scope"]): x.payload for x in recs if x.envelope.kind == "observation"}
     assert vols[("T9:core:0", "world")]["matching_documents"] == 3  # a, the quotation, the name
     assert vols[("T9:core:0", "world")]["matches_by_field"] == {"names": 1, "quotations": 1, "title": 1}
+    # about: in the title or URL; names-only: only inside a named entity (often incidental, D-012)
+    assert vols[("T9:core:0", "world")]["about_documents"] == 1
+    assert vols[("T9:core:0", "world")]["names_only_documents"] == 1
+    assert vols[("theme:testing:0", "world")]["about_documents"] == 2
     assert vols[("T9:core:0", "au")]["matching_documents"] == 1
     assert vols[("theme:testing:0", "world")]["matching_documents"] == 2
     assert vols[("theme:testing:0", "world")]["total_documents"] == 6  # duplicates and non-web rows excluded
@@ -174,3 +178,25 @@ def test_gkg_card_validates_match_fields():
         from moria.collectors.gkg import GkgCollector
 
         GkgCollector(gkg_card(match_fields=["title", "body"]))
+
+
+def test_phrases_match_in_both_spellings_and_with_a_plural_last_word():
+    from moria.collectors.gkg import phrase_variants
+
+    assert phrase_variants("organised crime") == {
+        "organised crime",
+        "organized crime",
+        "organised crimes",
+        "organized crimes",
+    }
+    assert "intellectual property commercialization" in phrase_variants("intellectual property commercialisation")
+    assert "defense industries" in phrase_variants("defence industry")
+    assert "trademark attorneys" in phrase_variants("trade mark attorney")
+    assert phrase_variants("four corners") == {"four corners"}  # no false spellings ("four" is not "four" -> "for")
+    assert phrase_variants("enterprise") == {"enterprise", "enterprises"}  # -ise only for known stems
+    m = PhraseMatcher([QueryGroup("g:0", ("organised crime", "supply chain disruption", "population ageing"))])
+    assert m.phrases_in("Organized-crime ring linked to supply chain disruptions") == {
+        "organised crime",
+        "supply chain disruption",
+    }
+    assert m.phrases_in("An ageing population") == set()  # word order is not varied
