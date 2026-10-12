@@ -41,9 +41,11 @@ def test_census_of_documents_keeps_the_newest_record_of_each_and_shows_the_licen
     from .test_documents import doc, docs_card, handler, tiny_pdf
 
     c = docs_card([doc("open", "https://docs.test/open.pdf", True), doc("blocked", "https://docs.test/b.pdf", True)])
-    run_collection(c, store, make_client(http_cfg, handler), Window.for_day(date(2026, 10, 11)))
-    store.put("inbox/documents/blocked.pdf", tiny_pdf("Placeholder under CC BY 4.0"), "application/pdf")
+    store.put("inbox/documents/blocked.pdf", tiny_pdf("Placeholder with no statement"), "application/pdf")
     run_collection(c, store, make_client(http_cfg, handler), Window.for_day(date(2026, 10, 12)))
+    store.put("inbox/documents/blocked.pdf", tiny_pdf("Placeholder under CC BY 4.0"), "application/pdf")
+    # the later run collects for an earlier day, so its bundle's path sorts first: run order must win
+    run_collection(c, store, make_client(http_cfg, handler), Window.for_day(date(2026, 10, 11)))
     report = census_markdown(store, c, all_runs=True)
     assert "**Records:** 2" in report and "the newest record of each" in report
     assert "| blocked | owner_upload | pdf | 1 |" in report and "| CC BY 4.0 | open_licence | True |" in report

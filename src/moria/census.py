@@ -218,7 +218,9 @@ def census_markdown(store: Store, card: SourceCard, all_runs: bool = False) -> s
     if key is None:
         return "\n".join([*head, "No collection in the store yet.", ""])
     if all_runs:
-        keys = sorted(k for k in store.list(f"raw/{card.id}/") if k.endswith(".jsonl.zst"))
+        # by run id (it starts with the run's UTC time), not by path, whose date is the collection window's day
+        keys = sorted((k for k in store.list(f"raw/{card.id}/") if k.endswith(".jsonl.zst")),
+                      key=lambda k: k.rsplit("/", 1)[-1])  # fmt: skip
         unique = {r.envelope.evidence_id: r for k in keys for r in decode_bundle(store.get(k))}
         records = list(unique.values())
         lines = [*head, f"Every collection in the store: {len(keys)} runs, de-duplicated by evidence id.", ""]
@@ -229,7 +231,7 @@ def census_markdown(store: Store, card: SourceCard, all_runs: bool = False) -> s
     if not records:
         return "\n".join([*lines, "The latest collection holds no records.", ""])
     if all_runs and card.adapter == "documents":
-        # a document read again gets a new record; keep the newest record of each (keys sort by run time)
+        # a document read again gets a new record; keep the newest record of each (keys are in run order)
         records = list({r.payload["id"]: r for r in records}.values())
         lines += ["Documents: the newest record of each.", ""]
     lines += generic_profile(records)
