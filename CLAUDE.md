@@ -15,7 +15,9 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   `moria census` and its reports; the collect-weekly and terms-check workflows.
 - **The owner's answers (D-014):** the 19-trend baseline is confirmed, and a known trend is a tag, never a reason to
   reject a signal (reinforcement counts); synonyms for the territory terms and an `ip_system` theme for the core ring;
-  owner uploads of refused documents (`docs/wishlist.md`) with a licence check on every document.
+  owner uploads of refused documents (`docs/wishlist.md`) with a licence check on every document. The public documents
+  the territory context cites are on the wishlist with the owner's approval (`territory_evidence`, D-015); the context
+  itself stays private.
 - **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors, artefact checks), day 5
   (dossiers, register export). Day-2 leftovers are in `docs/handover-day2.md`.
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
@@ -118,6 +120,7 @@ store instead of the document's URL.
 | `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
 | `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. `dry_run: true` until the owner has a GCP project and has seen the estimate. |
 | `foresight_syntheses` | documents | Once. Nine documents; three fetched (CSIRO as metadata only); the other six wait on owner uploads (`docs/wishlist.md`), stored as text only where the document states an open licence. |
+| `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5) and IP Australia's *Australian IP Report 2026* read; the AIC's crime-cost reports and the Patents Accessibility Review wait on owner uploads. |
 | `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the USPTO's strategy page, the EPO's strategic plan and work plan and the EUIPO's plan (metadata only); the JPO's report and CIPO's strategy wait on owner uploads. |
 
 ## Model choice

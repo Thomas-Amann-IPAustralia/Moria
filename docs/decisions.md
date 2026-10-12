@@ -982,4 +982,35 @@ refused document, the size cap) and the baseline's citations.
      lists pasted in the chat, and the EPO's and Canada.ca's terms to confirm.
   3. Whether the documents your territory context cites may go on the public wishlist.
 
-Next free decision number: D-015.
+## D-015 — The public documents the territory context cites go on the public wishlist; a pull request for days 1 and 2 (2026-10-12)
+
+**Context.** The owner's territory context is private (D-006). It cites four public documents, and D-014 kept them off
+the public wishlist because listing them hints at the context. Asked whether they could go on it, the owner said:
+"Add them to the public wishlist then open a PR".
+
+**Decision (the owner's).**
+- **A new `documents` card, `territory_evidence`** (read once), and section 3 of `docs/wishlist.md`. Only the
+  documents' titles, publishers and links are public, with a one-line description each; the context itself stays
+  private. The documents:
+  - the AIC's *Estimating the costs of serious and organised crime in Australia, 2020-21* (Statistical Report 38),
+    and its newer edition, *2023-24* (Statistical Report 55): owner uploads (aic.gov.au refuses this session);
+  - the Productivity Commission's *Innovation for the 98%*: the 2022 interim report and Volume 5 of the 2023 final
+    report, fetched from here;
+  - the *Patents Accessibility Review: Final report* (2021, offered as Word: saved as PDF for upload) and the
+    Government's response (2022): owner uploads (industry.gov.au refuses this session);
+  - IP Australia's *Australian IP Report 2026*, fetched from here.
+- Text is stored only where the document states an open licence, except the IP Report: its PDF states none, and it
+  is stored under IP Australia's website licence (CC BY 4.0, D-011), as IP Australia's pages already are.
+- **A pull request** for the branch, as the owner asked.
+
+**Checked:** both Productivity Commission PDFs state CC BY 4.0, so their text is stored (99 and 105 pages); the IP
+Report (86 pages) states no licence anywhere in its text. Runs into the bucket: `20261012T140358Z-e1fa4b2e`
+(commit `7cd731f`; the IP Report's text not stored) and `20261012T140936Z-1151738a` (commit `c7492f8`, stored).
+`reports/census/territory_evidence.md`. Tests: 69 pass.
+
+**Spend:** $0.
+
+**Consequences.** The four uploads join the wishlist. The documents serve the territories' "what changed since 2022"
+comparisons (design §2.4).
+
+Next free decision number: D-016.

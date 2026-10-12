@@ -1,6 +1,6 @@
 # Handover: the machinery sprint after day 2
 
-For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-011 to D-014 in `docs/decisions.md`.
+For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-011 to D-015 in `docs/decisions.md`.
 Build day 3 when the owner asks. Nothing in the machinery spends money.
 
 **Status (2026-10-12):** day 2 is done (D-011 to D-013), and the owner's answers are in (D-014), on branch
@@ -19,7 +19,8 @@ Build day 3 when the owner asks. Nothing in the machinery spends money.
 - **Once:** `foresight_syntheses` (three of nine documents read), `peer_office_strategies` (UKIPO, EPO, USPTO and
   EUIPO; JPO and CIPO wait on uploads) and `config/baseline.yaml` (19 known trends, confirmed by the owner, D-014).
   Refused documents come as owner uploads in the bucket's `inbox/documents/` (`docs/wishlist.md`), with a licence
-  check on every document.
+  check on every document. `territory_evidence` (D-015) holds the public documents the territory context cites:
+  three read, four waiting on uploads.
 - **Built, not running:** `patent_cpc_counts` on BigQuery, a dry run by default. It waits on the owner's GCP project
   (`docs/setup.md`).
 - **The terms check** (D-012, D-014): three runs over the same 13 sampled days; see open item 6. The territory
@@ -38,8 +39,8 @@ Build day 3 when the owner asks. Nothing in the machinery spends money.
    observations with vintages; OpenAlex groups into long form; GKG `about_documents` as the primary news series),
    de-duplicate, embeddings, BM25, tags. `moria ipr metrics` (demand, timeliness, outcomes) belongs with it.
 2. **BigQuery:** the dry run once the owner has a project; then the owner decides on switching it on (D-011).
-3. **The wishlist** (`docs/wishlist.md`, D-014): the owner uploads the refused documents; then run
-   `foresight_syntheses` and `peer_office_strategies` (from a runner or with `--store r2`), read the new documents, and
+3. **The wishlist** (`docs/wishlist.md`, D-014, D-015): the owner uploads the refused documents; then run
+   `foresight_syntheses`, `peer_office_strategies` and `territory_evidence` (from a runner or with `--store r2`), read the new documents, and
    add their trends to the baseline (the owner expects several). The OECD publication is the STI Outlook 2025.
 4. **ABS gaps:** business entries and exits (CABEE) and business R&D (BERD) are spreadsheets; an xlsx adapter would
    cover them.
