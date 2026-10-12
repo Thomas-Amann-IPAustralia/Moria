@@ -512,4 +512,49 @@ numbers for planning. They are in design §4.2. Job sizing assumes a 4-vCPU, 16 
 - No job needs the 1 GB VM. The BM25 index (603 MB on the runner) would not fit it reliably anyway.
 - Memory limits inside jobs (DuckDB's `memory_limit`) stay, so jobs also run on smaller machines.
 
-Next free decision number: D-009.
+## D-009 — GDELT's API throttles shared cloud addresses; take GDELT from its bulk files instead; progress logs (2026-10-12)
+
+**Context.** The first `collect-daily` run that reached the bucket (run
+[38159541723](https://github.com/Thomas-Amann-IPAustralia/Moria/actions/runs/38159541723), attempt 2) passed, but
+`gdelt_news` took 93 minutes and 35 of its 41 query groups failed with HTTP 429 after 4 attempts each: 246 requests,
+about one every 22 seconds, far slower than GDELT's limit of one every 5 seconds. The Actions log showed nothing
+while it ran, so it looked hung.
+
+**Cause (measured).**
+- GDELT's DOC API limits by IP address. GitHub runners and this session leave through shared cloud addresses, so other
+  users' traffic counts against Moria's allowance. From this session, the first request after hours of silence was
+  refused at once; later requests took 7 to 16 seconds each and failed intermittently. Pacing cannot fix a limit that
+  other users spend.
+- GDELT's 429 answer says: "All high-traffic users should switch to our ngrams dataset", or contact GDELT for larger
+  queries.
+- GDELT's bulk files (`data.gdeltproject.org/gdeltv2/`) are a static file server with no such limit. From this session
+  the 96 Global Knowledge Graph (GKG) files for 2026-10-10 (268 MB zipped) downloaded in 28 seconds without a refusal.
+  The day has 64,598 English web documents, each with its URL, source domain and page title; 2,402 come from `.au`
+  domains. Matching all 41 groups' phrases against the titles took 17 seconds.
+- **Comparison, same day.** Where the API answered, title matches in GKG were of the same order or higher (for example
+  `theme:technology_general` 29 API articles against 36 GKG titles; `theme:climate_energy_resources` 18 against 34).
+  Territory groups are sparse either way (0 to 11 a day).
+
+**Decision (a recommendation; the owner decides adoption).**
+- Replace the DOC API calls in `gdelt_news` with a GKG bulk-file adapter: download the day's 96 GKG files, keep only
+  web documents whose title (or URL) matches a query group, and store their URL, domain, title, time and GKG metadata
+  (themes, tone). Never store GKG's `Quotations` field: it is article text. Daily volumes become exact counts of
+  matching documents over all documents, worldwide and for `.au` domains.
+- Trade-offs: titles, not full text, are searched, so recall per article is lower; "Australian sources" means `.au`
+  domains rather than GDELT's own country mapping; a day costs about 270 MB of download (free). In return: no rate
+  limit, no 250-article cap, an exact denominator, and a run of about a minute rather than 90.
+- Not recommended: a residential proxy. It would not be needed, it would get round a limit GDELT asks heavy users to
+  respect, and the reputable providers offer paid trials rather than free tiers.
+- Optional, free: write to GDELT asking about an allowance for the DOC API, should full-text search be wanted later.
+
+**Settled in the build (logging; nothing to approve).**
+- Every HTTP attempt logs its host and path (never the query string), status, time taken and attempt number. Every
+  retry logs its wait. Each source logs a start line and a finish line with its time, records and request outcomes.
+  GDELT logs `[i/n]` progress per query group. Logs go to stderr with UTC timestamps; `moria --quiet` keeps warnings
+  and errors only. `collect-daily.yml` sets `PYTHONUNBUFFERED=1` so lines appear as they happen.
+- Manifests count request outcomes (`requests_http_200`, `requests_http_429`, `requests_error_<name>`).
+- The client no longer waits after its last failed attempt. That wait was 40 seconds per failed GDELT group.
+
+**Spend:** $0.
+
+Next free decision number: D-010.

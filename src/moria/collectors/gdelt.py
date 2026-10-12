@@ -7,6 +7,7 @@ them is visible.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
@@ -20,6 +21,8 @@ from .base import CollectContext, CollectError
 
 API = "https://api.gdeltproject.org/api/v2/doc/doc"
 PARSER_VERSION = "gdelt-v1"
+
+log = logging.getLogger("moria.collect.gdelt")
 
 
 class GdeltParams(Strict):
@@ -89,6 +92,9 @@ class GdeltCollector:
         self.card = card
         self.params = GdeltParams.model_validate(card.params)
 
+    def _calls_per_group(self) -> int:
+        return int(self.params.articles) + len(self.params.volume_scopes)
+
     def _call(self, ctx: CollectContext, query: str, mode: str, extra: dict) -> dict:
         request = {
             "query": query,
@@ -111,7 +117,9 @@ class GdeltCollector:
         if ctx.limit:
             groups = groups[: ctx.limit]
         failures = 0
-        for g in groups:
+        log.info("gdelt: %d query groups, up to %d calls each", len(groups), self._calls_per_group())
+        for i, g in enumerate(groups, start=1):
+            before = len(records)
             try:
                 if self.params.articles:
                     out = self._call(
@@ -176,6 +184,10 @@ class GdeltCollector:
             except (FetchError, CollectError) as e:
                 failures += 1
                 ctx.warnings.append(f"gdelt group {g.group_id} failed: {e}")
+                log.warning("gdelt [%d/%d] %s failed: %s", i, len(groups), g.group_id, e)
+                continue
+            log.info("gdelt [%d/%d] %s ok: %d records", i, len(groups), g.group_id, len(records) - before)
+        log.info("gdelt: %d of %d groups ok, %d failed", len(groups) - failures, len(groups), failures)
         if groups and failures == len(groups):
             raise CollectError(f"gdelt: every query group failed ({failures}); first: {ctx.warnings[0]}")
         return records

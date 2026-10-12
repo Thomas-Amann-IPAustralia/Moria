@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import logging
+import sys
+import time
 from datetime import UTC, date, datetime, timedelta
 
 import typer
@@ -15,6 +18,19 @@ from .http import PoliteClient
 from .store import open_store
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help=__doc__)
+
+
+@app.callback()
+def main(quiet: bool = typer.Option(False, "--quiet", "-q", help="Log warnings and errors only, not each request")):
+    """Progress goes to stderr as timestamped (UTC) log lines: one per HTTP attempt, per retry wait and per source."""
+    handler = logging.StreamHandler(sys.stderr)
+    formatter = logging.Formatter("%(asctime)s %(levelname)-7s %(message)s", datefmt="%H:%M:%SZ")
+    formatter.converter = time.gmtime
+    handler.setFormatter(formatter)
+    root = logging.getLogger("moria")
+    root.handlers[:] = [handler]
+    root.setLevel(logging.WARNING if quiet else logging.INFO)
+    root.propagate = False
 
 
 def _yesterday() -> date:

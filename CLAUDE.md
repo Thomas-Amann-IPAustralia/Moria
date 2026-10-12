@@ -79,7 +79,7 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
 
 | Id | Adapter | Notes |
 |---|---|---|
-| `gdelt_news` | gdelt | 41 query groups from `config/territories.yaml` and `config/themes.yaml`. Each group gets an article list (worldwide English), a daily volume worldwide, and a daily volume from Australian sources. This session's network exit is rate-limited by GDELT (HTTP 429); run it from Actions. |
+| `gdelt_news` | gdelt | 41 query groups from `config/territories.yaml` and `config/themes.yaml`. Each group gets an article list (worldwide English), a daily volume worldwide, and a daily volume from Australian sources. GDELT's API throttles shared cloud addresses, Actions runners included (HTTP 429); the bulk-file switch awaits the owner (D-009). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
 | `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. A full first snapshot is a separate backfill. |
 | `wipo_press`, `ukipo_news` | feed | Items dated in the window plus a 3-day lookback |

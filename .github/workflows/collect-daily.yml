@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     env:
+      PYTHONUNBUFFERED: "1"  # print each line as it happens, not at the end of the run
       OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
       R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}

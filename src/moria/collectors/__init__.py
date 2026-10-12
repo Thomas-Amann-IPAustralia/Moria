@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 import sys
+import time
 import traceback
 from dataclasses import dataclass
 
@@ -25,6 +27,8 @@ ADAPTERS = {
 }
 
 __all__ = ["ADAPTERS", "CollectError", "CollectResult", "Window", "run_collection"]
+
+log = logging.getLogger("moria.collect")
 
 
 @dataclass
@@ -53,6 +57,18 @@ def run_collection(
     )
     ctx = CollectContext(card=card, client=client, window=window, limit=limit)
     requests_before = client.requests
+    outcomes_before = dict(client.outcomes)
+    started = time.monotonic()
+    log.info("%s: collecting %s (run %s)", card.id, window.day.isoformat(), manifest.run_id)
+
+    def request_counts() -> dict[str, int]:
+        # Requests made by this run, and their outcomes ("http_200", "http_429", "error_ReadTimeout", ...)
+        counts = {"requests": client.requests - requests_before}
+        for outcome, n in client.outcomes.items():
+            if n - outcomes_before.get(outcome, 0):
+                counts[f"requests_{outcome}"] = n - outcomes_before.get(outcome, 0)
+        return counts
+
     try:
         collector = ADAPTERS[card.adapter](card)
         records = collector.collect(ctx)
@@ -63,7 +79,7 @@ def run_collection(
         kinds: dict[str, int] = {}
         for r in records:
             kinds[r.envelope.kind] = kinds.get(r.envelope.kind, 0) + 1
-        manifest.counts = {"records": len(records), "requests": client.requests - requests_before, **kinds}
+        manifest.counts = {"records": len(records), **request_counts(), **kinds}
         monitor = monitor_entry(card, window, len(records), manifest.run_id, "passed")
         monitor_key = f"monitors/ingestion/source={card.id}/{window.day.isoformat()}/{manifest.run_id}.json"
         store.put(monitor_key, monitor, "application/json")
@@ -72,6 +88,14 @@ def run_collection(
             ctx.warnings.append(f"ingestion monitor: {len(records)} records is outside the expected band")
         manifest.warnings = ctx.warnings
         mkey = manifest.finish(store, "passed")
+        log.info(
+            "%s: passed in %s, %d records, %d warnings, requests %s",
+            card.id,
+            _took(started),
+            len(records),
+            len(ctx.warnings),
+            _summary(request_counts()),
+        )
         return CollectResult(card.id, "passed", len(records), mkey, key, ctx.warnings)
     except Exception as e:
         if not isinstance(e, CollectError | FetchError):
@@ -79,6 +103,19 @@ def run_collection(
         first_line = (str(e).splitlines() or [type(e).__name__])[0]
         cause = f"{card.id}: {type(e).__name__}: {first_line[:300]}"
         manifest.warnings = ctx.warnings
-        manifest.counts = {"requests": client.requests - requests_before}
+        manifest.counts = request_counts()
         mkey = manifest.finish(store, "failed", cause)
+        log.error(
+            "%s: failed in %s, requests %s; cause: %s", card.id, _took(started), _summary(request_counts()), cause
+        )
         return CollectResult(card.id, "failed", 0, mkey, None, ctx.warnings, cause)
+
+
+def _took(started: float) -> str:
+    seconds = int(time.monotonic() - started)
+    return f"{seconds // 60}m{seconds % 60:02d}s"
+
+
+def _summary(counts: dict[str, int]) -> str:
+    detail = ", ".join(f"{k.removeprefix('requests_')}={v}" for k, v in sorted(counts.items()) if k != "requests")
+    return f"{counts['requests']}" + (f" ({detail})" if detail else "")

@@ -2,11 +2,13 @@
 Retry-After, and robots.txt for web pages (design §5, SOP §16.2).
 
 It goes through the environment's proxy settings (httpx trust_env), and never logs query strings, which may carry
-API keys.
+API keys. Every attempt is logged with its host and path, status and time taken, and so is every wait before a retry,
+so a slow run shows what it is doing.
 """
 
 from __future__ import annotations
 
+import logging
 import time
 import urllib.robotparser
 from email.utils import parsedate_to_datetime
@@ -17,6 +19,8 @@ import httpx
 from .config import HttpConfig
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
+
+log = logging.getLogger("moria.http")
 
 
 class FetchError(RuntimeError):
@@ -41,6 +45,7 @@ class PoliteClient:
             transport=transport,
         )
         self.requests = 0
+        self.outcomes: dict[str, int] = {}  # e.g. {"http_200": 40, "http_429": 3, "error_ReadTimeout": 1}
 
     def close(self) -> None:
         self._client.close()
@@ -86,19 +91,49 @@ class PoliteClient:
         for attempt in range(attempts):
             self._wait_for_host(host)
             self.requests += 1
+            what = f"GET {_safe(url)}"
+            tries = f"attempt {attempt + 1}/{attempts}"
+            started = time.monotonic()
             try:
                 resp = self._client.get(url, params=params)
             except httpx.HTTPError as e:
                 last_error = f"{type(e).__name__}"
-                self._sleep(self.cfg.backoff_s * (2**attempt))
+                self._count(f"error_{last_error}")
+                delay = self.cfg.backoff_s * (2**attempt)
+                log.warning(
+                    "%s -> %s after %.1fs (%s)%s",
+                    what,
+                    last_error,
+                    time.monotonic() - started,
+                    tries,
+                    self._then(attempt, attempts, delay),
+                )
+                if attempt + 1 < attempts:
+                    self._sleep(delay)
                 continue
+            self._count(f"http_{resp.status_code}")
+            elapsed = time.monotonic() - started
             if resp.status_code in ok_statuses:
+                log.info("%s -> %s in %.1fs (%s)", what, resp.status_code, elapsed, tries)
                 return resp
             last_error = f"HTTP {resp.status_code}"
             if resp.status_code not in RETRY_STATUSES:
+                log.warning("%s -> %s in %.1fs (%s); not retried", what, last_error, elapsed, tries)
                 break
-            self._sleep(self._retry_after(resp) or self.cfg.backoff_s * (2**attempt))
+            delay = self._retry_after(resp) or self.cfg.backoff_s * (2**attempt)
+            log.warning(
+                "%s -> %s in %.1fs (%s)%s", what, last_error, elapsed, tries, self._then(attempt, attempts, delay)
+            )
+            if attempt + 1 < attempts:
+                self._sleep(delay)
         raise FetchError(f"{last_error} after {attempt + 1} attempt(s): {_safe(url)}")
+
+    def _count(self, outcome: str) -> None:
+        self.outcomes[outcome] = self.outcomes.get(outcome, 0) + 1
+
+    @staticmethod
+    def _then(attempt: int, attempts: int, delay: float) -> str:
+        return f"; retrying in {delay:.0f}s" if attempt + 1 < attempts else "; giving up"
 
     @staticmethod
     def _retry_after(resp: httpx.Response) -> float | None:
