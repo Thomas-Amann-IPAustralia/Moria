@@ -1,0 +1,55 @@
+name: collect-weekly
+
+# Collects every weekly source into the private R2 bucket: OpenAlex whole-taxonomy counts, the ABS headline series
+# and the IP RAPID release (a base or a delta in the lake). Mondays, after IP Australia rebuilds IP RAPID (about
+# 00:30 UTC) and after OpenAlex's daily budget resets (00:00 UTC). Schedules run only from the default branch.
+# Logs are public: commands print counts and keys, never content.
+on:
+  schedule:
+    - cron: "41 3 * * 1"  # Mondays 03:41 UTC
+  workflow_dispatch:
+    inputs:
+      day:
+        description: "UTC day the snapshot is filed under (YYYY-MM-DD); empty means yesterday"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect-weekly
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      PYTHONUNBUFFERED: "1"
+      OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: python -m pip install --quiet uv
+      - name: Install dependencies (from the lockfile)
+        run: uv sync --frozen
+      - name: Disk and memory (IP RAPID needs about 8 GB of disk at its peak)
+        run: df -h / && free -m
+      - name: Environment check (the bucket and OpenAlex must answer)
+        run: uv run moria env-check --require store:r2,api:openalex
+      - name: Collect
+        env:
+          DAY: ${{ inputs.day }}
+        run: |
+          if [ -n "$DAY" ]; then
+            uv run moria collect-weekly --store r2 --day "$DAY"
+          else
+            uv run moria collect-weekly --store r2
+          fi

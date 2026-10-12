@@ -139,6 +139,53 @@ def file_stamps(ctx: CollectContext) -> list[str]:
     return stamps
 
 
+@dataclass
+class GkgDocument:
+    url: str
+    domain: str
+    au: bool
+    row: list[str]
+
+
+def web_documents(text: str, seen: set[str]) -> tuple[list[GkgDocument], int]:
+    """One file's open-web documents whose URL hasn't been seen yet (adding them to `seen`), and the number of rows
+    skipped for not having 27 columns."""
+    docs, malformed = [], 0
+    for line in text.split("\n"):
+        if not line.strip():
+            continue
+        row = line.rstrip("\r").split("\t")
+        if len(row) != N_COLUMNS:
+            malformed += 1
+            continue
+        url = row[C_URL].strip()
+        if row[C_COLLECTION] != WEB or not url or url in seen:
+            continue
+        seen.add(url)
+        domain = row[C_DOMAIN].strip().lower()
+        docs.append(GkgDocument(url, domain, domain.endswith(".au"), row))
+    return docs, malformed
+
+
+def searchable_texts(doc: GkgDocument) -> dict[str, str]:
+    """The texts phrases are matched in. Quotations are article text: searched here in memory, never stored."""
+    return {
+        "title": _extra(doc.row[C_EXTRAS], "PAGE_TITLE"),
+        "url": doc.url,
+        "quotations": " \n ".join(_quotes(doc.row[C_QUOTES])),
+        "names": " ; ".join(_names(doc.row[C_NAMES])),
+    }
+
+
+def phrase_hits(matcher: PhraseMatcher, texts: dict[str, str], fields: list[str]) -> dict[str, set[str]]:
+    """phrase -> the fields it matched in"""
+    hits: dict[str, set[str]] = {}
+    for f in fields:
+        for phrase in matcher.phrases_in(texts[f]):
+            hits.setdefault(phrase, set()).add(f)
+    return hits
+
+
 class GkgCollector:
     parser_version = PARSER_VERSION
 
@@ -149,7 +196,7 @@ class GkgCollector:
         if unknown:
             raise CollectError(f"gkg: unknown match_fields {sorted(unknown)}; allowed: {list(MATCH_FIELDS)}")
 
-    def _download(self, ctx: CollectContext, stamp: str) -> str | None:
+    def download_file(self, ctx: CollectContext, stamp: str) -> str | None:
         """The file's text, or None when GDELT never published it (404)."""
         url = f"{self.params.base_url}/{stamp}.gkg.csv.zip"
         resp = ctx.client.get(url, ok_statuses=(200, 404))
@@ -180,34 +227,24 @@ class GkgCollector:
         log.info("gkg: %d files, %d query groups, matching in %s", len(stamps), len(groups), ", ".join(fields))
         for i, stamp in enumerate(stamps, start=1):
             try:
-                text = self._download(ctx, stamp)
+                text = self.download_file(ctx, stamp)
             except FetchError as e:
                 raise CollectError(f"gkg: file {stamp} could not be fetched: {e}") from e
             if text is None:
                 missing.append(stamp)
                 log.warning("gkg [%d/%d] %s: not published by GDELT (404)", i, len(stamps), stamp)
                 continue
-            n_docs = n_matches = 0
-            for line in text.split("\n"):
-                if not line.strip():
-                    continue
-                row = line.rstrip("\r").split("\t")
-                if len(row) != N_COLUMNS:
-                    malformed += 1
-                    continue
-                url = row[C_URL].strip()
-                if row[C_COLLECTION] != WEB or not url or url in seen:
-                    continue
-                seen.add(url)
-                domain = row[C_DOMAIN].strip().lower()
-                au = domain.endswith(".au")
+            file_docs, bad_rows = web_documents(text, seen)
+            malformed += bad_rows
+            n_matches = 0
+            for doc in file_docs:
                 totals["world"] += 1
-                totals["au"] += au
-                n_docs += 1
-                record = self._match(ctx, row, url, domain, au, matcher, fields, counts)
+                totals["au"] += doc.au
+                record = self._match(ctx, doc, matcher, fields, counts)
                 if record is not None and self.params.articles:
                     docs.append(record)
                     n_matches += 1
+            n_docs = len(file_docs)
             log.info("gkg [%d/%d] %s: %d documents, %d matched", i, len(stamps), stamp, n_docs, n_matches)
 
         if missing:
@@ -226,19 +263,12 @@ class GkgCollector:
         )
         return docs + self._volumes(ctx, groups, counts, totals, len(stamps) - len(missing), len(stamps))
 
-    def _match(self, ctx, row, url, domain, au, matcher, fields, counts) -> RawRecord | None:
+    def _match(self, ctx, doc: GkgDocument, matcher, fields, counts) -> RawRecord | None:
+        row, url, domain, au = doc.row, doc.url, doc.domain, doc.au
         extras = row[C_EXTRAS]
-        title = _extra(extras, "PAGE_TITLE")
-        texts = {
-            "title": title,
-            "url": url,
-            "quotations": " \n ".join(_quotes(row[C_QUOTES])),
-            "names": " ; ".join(_names(row[C_NAMES])),
-        }
-        hits: dict[str, set[str]] = {}  # phrase -> fields
-        for f in fields:
-            for phrase in matcher.phrases_in(texts[f]):
-                hits.setdefault(phrase, set()).add(f)
+        texts = searchable_texts(doc)
+        title = texts["title"]
+        hits = phrase_hits(matcher, texts, fields)
         if not hits:
             return None
         matches = sorted(
