@@ -13,19 +13,23 @@ from ..http import FetchError, PoliteClient
 from ..manifest import Manifest
 from ..records import bundle_key, encode_bundle
 from ..store import Store
+from .abs import AbsSdmxCollector
 from .base import CollectContext, CollectError, Window, monitor_entry
 from .feed import FeedCollector
 from .gdelt import GdeltCollector
 from .gkg import GkgCollector
 from .legislation import LegislationCollector
+from .openalex import OpenAlexCountsCollector
 from .sitemap import SitemapCollector
 
 ADAPTERS = {
+    "abs_sdmx": AbsSdmxCollector,
     "gdelt": GdeltCollector,
     "gdelt_gkg": GkgCollector,
     "feed": FeedCollector,
     "sitemap": SitemapCollector,
     "legislation": LegislationCollector,
+    "openalex_counts": OpenAlexCountsCollector,
 }
 
 __all__ = ["ADAPTERS", "CollectError", "CollectResult", "Window", "run_collection"]
@@ -71,6 +75,7 @@ def run_collection(
                 counts[f"requests_{outcome}"] = n - outcomes_before.get(outcome, 0)
         return counts
 
+    collector = None
     try:
         collector = ADAPTERS[card.adapter](card)
         records = collector.collect(ctx)
@@ -81,7 +86,7 @@ def run_collection(
         kinds: dict[str, int] = {}
         for r in records:
             kinds[r.envelope.kind] = kinds.get(r.envelope.kind, 0) + 1
-        manifest.counts = {"records": len(records), **request_counts(), **kinds}
+        manifest.counts = {"records": len(records), **request_counts(), **kinds, **_collector_counts(collector)}
         monitor = monitor_entry(card, window, len(records), manifest.run_id, "passed")
         monitor_key = f"monitors/ingestion/source={card.id}/{window.day.isoformat()}/{manifest.run_id}.json"
         store.put(monitor_key, monitor, "application/json")
@@ -105,12 +110,17 @@ def run_collection(
         first_line = (str(e).splitlines() or [type(e).__name__])[0]
         cause = f"{card.id}: {type(e).__name__}: {first_line[:300]}"
         manifest.warnings = ctx.warnings
-        manifest.counts = request_counts()
+        manifest.counts = {**request_counts(), **_collector_counts(collector)}
         mkey = manifest.finish(store, "failed", cause)
         log.error(
             "%s: failed in %s, requests %s; cause: %s", card.id, _took(started), _summary(request_counts()), cause
         )
         return CollectResult(card.id, "failed", 0, mkey, None, ctx.warnings, cause)
+
+
+def _collector_counts(collector) -> dict[str, int]:
+    # A collector may report its own counts for the manifest, such as API credits used
+    return dict(getattr(collector, "counts", None) or {})
 
 
 def _took(started: float) -> str:

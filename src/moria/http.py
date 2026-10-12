@@ -82,6 +82,39 @@ class PoliteClient:
         check_robots: bool = False,
         retries: int | None = None,
         ok_statuses: tuple[int, ...] = (200,),
+        headers: dict[str, str] | None = None,
+    ) -> httpx.Response:
+        """GET with politeness and retries. `headers` carry credentials (never logged), so keys stay out of URLs."""
+        return self.request(
+            "GET",
+            url,
+            params=params,
+            check_robots=check_robots,
+            retries=retries,
+            ok_statuses=ok_statuses,
+            headers=headers,
+        )
+
+    def post(
+        self,
+        url: str,
+        json: dict | None = None,
+        retries: int | None = None,
+        ok_statuses: tuple[int, ...] = (200,),
+        headers: dict[str, str] | None = None,
+    ) -> httpx.Response:
+        return self.request("POST", url, json=json, retries=retries, ok_statuses=ok_statuses, headers=headers)
+
+    def request(
+        self,
+        method: str,
+        url: str,
+        params: dict | None = None,
+        json: dict | None = None,
+        check_robots: bool = False,
+        retries: int | None = None,
+        ok_statuses: tuple[int, ...] = (200,),
+        headers: dict[str, str] | None = None,
     ) -> httpx.Response:
         if check_robots and not self.allowed_by_robots(url):
             raise FetchError(f"disallowed by robots.txt: {_safe(url)}")
@@ -91,11 +124,11 @@ class PoliteClient:
         for attempt in range(attempts):
             self._wait_for_host(host)
             self.requests += 1
-            what = f"GET {_safe(url)}"
+            what = f"{method} {_safe(url)}"
             tries = f"attempt {attempt + 1}/{attempts}"
             started = time.monotonic()
             try:
-                resp = self._client.get(url, params=params)
+                resp = self._client.request(method, url, params=params, json=json, headers=headers)
             except httpx.HTTPError as e:
                 last_error = f"{type(e).__name__}"
                 self._count(f"error_{last_error}")

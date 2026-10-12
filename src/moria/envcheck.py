@@ -42,10 +42,14 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
     key = os.environ.get(cfg.secrets.get("openalex", ""), "")
     if key:
         try:
-            resp = client.get("https://api.openalex.org/works", params={"per_page": "1", "api_key": key}, retries=1)
-            checks.append(Check("api:openalex", "ok", f"HTTP {resp.status_code}"))
-        except FetchError as e:
-            checks.append(Check("api:openalex", "failed", str(e)))
+            # The free /rate-limit endpoint: proves the key works and reports the day's credits, at no cost
+            resp = client.get(
+                "https://api.openalex.org/rate-limit", headers={"Authorization": f"Bearer {key}"}, retries=1
+            )
+            left = resp.json().get("rate_limit", {}).get("credits_remaining", "?")
+            checks.append(Check("api:openalex", "ok", f"HTTP {resp.status_code}; {left} credits left today"))
+        except (FetchError, ValueError) as e:
+            checks.append(Check("api:openalex", "failed", str(e) or type(e).__name__))
     else:
         checks.append(Check("api:openalex", "skipped", "no key"))
 
@@ -61,6 +65,10 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
         elif card.adapter == "legislation":
             base = card.params.get("base_url", "https://api.prod.legislation.gov.au/v1")
             probes[f"source:{card.id}"] = (f"{base}/Titles", {"$top": "1", "$select": "id"})
+        elif card.adapter == "abs_sdmx" and card.params.get("queries"):
+            base = card.params.get("base_url", "https://data.api.abs.gov.au/rest")
+            flow = card.params["queries"][0]["dataflow"].split(",")
+            probes[f"source:{card.id}"] = (f"{base}/dataflow/ABS/{flow[1] if len(flow) > 1 else flow[0]}", None)
     for name, (url, params) in sorted(probes.items()):
         try:
             resp = client.get(url, params=params, retries=1)

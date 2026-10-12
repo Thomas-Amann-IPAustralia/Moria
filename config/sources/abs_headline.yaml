@@ -1,0 +1,85 @@
+id: abs_headline
+name: ABS headline series (population and ageing, labour, prices, output, industry, trade in IP, innovation)
+adapter: abs_sdmx
+rings: [adjacent, wider_world]
+domains: [D0, D2, D5]
+family: statistics
+cadence: weekly
+publication_lag: "about 1 to 3 months after the reference period (labour 2 to 3 weeks; national accounts about 2 months; trade in services by country and industry yearly)"
+coverage: >-
+  Curated headline series from the ABS Data API, Australia-wide: population by age and its components of change;
+  labour force; job vacancies; wages; consumer prices; national accounts aggregates, productivity and output by
+  industry; industry structure; trade in services, including charges for the use of intellectual property, by partner
+  country; and business innovation. Each query keeps the whole history from its start period.
+history_start: "from 1959 to 2021 depending on the series (each query's start period)"
+stable_since: null
+breaks:
+  - "CPI: the complete monthly CPI begins 2024-04; the monthly indicator it replaced (CPI_M) ends 2025-09"
+known_biases:
+  - Figures are revised, sometimes for years; each run is kept as a vintage
+  - Innovation (Business Characteristics Survey) has only three years in this API (2021 to 2023)
+  - Business entries and exits (CABEE) and business R&D (BERD) are spreadsheet releases, not in this API, so missing
+  - The monthly business turnover indicator stops at 2025-09 and is left out
+revision_policy: revised in place by the ABS; every run is kept, and a revised series gets a new evidence id
+licence: "ABS data are CC BY 4.0 (attribute the Australian Bureau of Statistics)"
+snapshot_rights: observations stored
+expected_volume: {min_per_run: 700, max_per_run: 1100}
+params:
+  base_url: https://data.api.abs.gov.au/rest
+  max_series_per_query: 2000
+  queries:
+    - id: population_by_age
+      dataflow: ERP_Q
+      key: 1.3..AUS.Q
+      start_period: "1981"
+      note: Estimated resident population, persons, every single year of age and five-year group, quarterly
+    - id: population_change
+      dataflow: ERP_COMP_Q
+      key: 1+2+3+6+9+10.AUS.Q
+      start_period: "1981"
+      note: Births, deaths, natural increase, net internal and overseas migration, and the population
+    - id: labour_force
+      dataflow: ABS,LF,1.0.0
+      key: M3+M9+M12+M13+M16+M22+M24.3.1599+1524.20.AUS.M
+      start_period: "1978"
+      note: Employment, labour force, participation, unemployment, under-employment; all ages and 15 to 24, seasonally adjusted
+    - id: job_vacancies
+      dataflow: JV
+      key: M1.7.TOT+A+B+C+D+E+F+G+H+I+J+K+L+M+N+O+P+Q+R+S.20+10.AUS.Q
+      start_period: "1980"
+      note: Job vacancies, total and by industry division
+    - id: wages
+      dataflow: WPI
+      key: 3.THRPEB.7+1+2.TOT.20+10.AUS.Q
+      start_period: "1997"
+      note: Wage Price Index, annual change, all sectors, private and public
+    - id: consumer_prices
+      dataflow: CPI
+      key: 1+2+3.10001.10.50.M+Q
+      start_period: "1990"
+      note: All-groups CPI, Australia; quarterly, and monthly from 2024-04
+    - id: national_accounts
+      dataflow: ANA_AGG
+      key: ..20.AUS.Q
+      start_period: "1959"
+      note: GDP, GDP per capita, hours worked, GDP per hour worked, market-sector productivity, unit labour costs
+    - id: output_by_industry
+      dataflow: ANA_IND_GVA
+      key: VCH.IND_GVA+GPM.SSS.20..AUS.Q
+      start_period: "1974"
+      note: Gross value added by industry, chain volume, seasonally adjusted
+    - id: industry_structure
+      dataflow: AUSTRALIAN_INDUSTRY
+      key: EMPTOTAL+INCSALGDSSERV+INDUSTRY+EBITDA.A+B+C+D+E+F+G+H+I+J+K+L+M+N+O+P+Q+R+S.1.AUS.A
+      start_period: "2000"
+      note: Employment, sales, value added and earnings by industry division, yearly
+    - id: trade_in_ip_and_knowledge_services
+      dataflow: TRADE_SERV_CNTRY_CY
+      key: EXP+IMP.8+81+811+812+82+83+84+85+9+92+101+TOTAL..A
+      start_period: "1990"
+      note: Credits and debits for charges for the use of IP (with its parts), computer and R&D services, and all services, by partner country, yearly
+    - id: business_innovation
+      dataflow: BCS_INNACT
+      key: P_D_GSNEWY+P_D_PRNEWY+P_IONEWWLD_ASTGSV+P_IONEWAUS_ASTGSV+P_D_IWEBGS_ANY+P_D_IWEBPR_ANY.9999+PB1+PB2+PB3+PB4.TOTAL+A+B+C+D+E+F+G+H+I+J+K+L+M+N+O+P+Q+R+S.TOTAL.9999.0.A
+      start_period: "2000"
+      note: Shares of businesses introducing new goods or services, or processes, new to the world or to Australia, or with environmental benefits; by size and industry
