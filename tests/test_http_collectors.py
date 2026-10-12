@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import date
 from urllib.parse import parse_qs, urlsplit
 
@@ -15,7 +16,7 @@ from moria.collectors.feed import FeedCollector
 from moria.collectors.gdelt import GdeltParams, QueryGroup, build_groups
 from moria.collectors.legislation import LegislationCollector
 from moria.collectors.sitemap import SitemapCollector, extract_page
-from moria.http import FetchError
+from moria.http import FetchError, PoliteClient
 from moria.records import decode_bundle
 
 from .conftest import card, make_client
@@ -184,3 +185,57 @@ def test_failed_collection_still_writes_a_manifest(http_cfg, store):
     r = run_collection(c, store, make_client(http_cfg, lambda r: httpx.Response(500)), Window.for_day(DAY))
     assert r.status == "failed" and "HTTP 500" in r.error
     assert json.loads(store.get(r.manifest_key))["status"] == "failed"
+
+
+def test_every_attempt_and_retry_wait_is_logged_without_query_strings(http_cfg, caplog):
+    waits = []
+    c = PoliteClient(
+        http_cfg.model_copy(update={"backoff_s": 5}),
+        transport=httpx.MockTransport(lambda r: httpx.Response(429)),
+        sleep=waits.append,
+    )
+    with caplog.at_level(logging.INFO, logger="moria"), pytest.raises(FetchError):
+        c.get("https://api.test/v1/search", params={"api_key": "SECRET", "query": "placeholder"})
+    lines = [r.getMessage() for r in caplog.records]
+    assert len(lines) == 3  # max_retries=2: three attempts
+    assert "GET api.test/v1/search -> HTTP 429" in lines[0] and lines[0].endswith("(attempt 1/3); retrying in 5s")
+    assert lines[-1].endswith("(attempt 3/3); giving up")
+    assert not any("SECRET" in line or "placeholder" in line for line in lines)
+    assert waits == [5, 10]  # no wait after the last attempt
+    assert c.outcomes == {"http_429": 3}
+
+
+def test_gdelt_logs_progress_and_the_manifest_counts_request_outcomes(http_cfg, store, caplog):
+    calls = {"n": 0}
+
+    def handler(request):
+        calls["n"] += 1
+        if calls["n"] <= 3:  # the first group's article list is refused on every attempt
+            return httpx.Response(429)
+        return httpx.Response(200, json={"articles": [], "timeline": []})
+
+    c = card("gdelt", {"phrases_per_query": 6, "territory_rings": ["core"], "include_themes": False})
+    with caplog.at_level(logging.INFO, logger="moria"):
+        r = run_collection(c, store, make_client(http_cfg, handler), Window.for_day(DAY), limit=2)
+    assert r.status == "passed" and len(r.warnings) == 1
+    lines = [rec.getMessage() for rec in caplog.records]
+    assert any(line.startswith("gdelt [1/2] ") and "failed: HTTP 429" in line for line in lines)
+    assert any(line.startswith("gdelt [2/2] ") and line.endswith("ok: 2 records") for line in lines)
+    assert "gdelt: 1 of 2 groups ok, 1 failed" in lines
+    assert any(
+        line.startswith("test_gdelt: passed in ") and "requests 6 (http_200=3, http_429=3)" in line for line in lines
+    )
+    counts = json.loads(store.get(r.manifest_key))["counts"]
+    assert counts["requests"] == 6 and counts["requests_http_429"] == 3 and counts["requests_http_200"] == 3
+
+
+def test_gdelt_group_keeps_no_records_when_a_later_call_fails(http_cfg, store):
+    def handler(request):
+        q = parse_qs(urlsplit(str(request.url)).query)
+        if q["mode"] == ["artlist"]:
+            return httpx.Response(200, json={"articles": [{"url": "https://news.test/a", "domain": "news.test"}]})
+        return httpx.Response(503)  # every volume call fails
+
+    c = card("gdelt", {"phrases_per_query": 6, "territory_rings": ["core"], "include_themes": False})
+    r = run_collection(c, store, make_client(http_cfg, handler), Window.for_day(DAY), limit=1)
+    assert r.status == "failed" and "every query group failed" in r.error  # no half-collected group survives

@@ -235,8 +235,9 @@ Territories are used five ways:
 - its volume worldwide and in Australian sources over the last 3 months;
 - a sample of its hits, read for noise. Noisy terms are narrowed or dropped.
 
-An attempt from this session on 2026-10-10 was refused by GDELT (HTTP 429): the session shares a network exit, and
-calls took about 20 s each. So the check runs from the runners instead.
+GDELT's DOC API throttles shared cloud addresses, runners included (D-009), so news volumes come from GDELT's GKG
+bulk files instead (D-010). Three months of GKG is about 24 GB, so the check samples days (for example one a week)
+rather than reading every file.
 
 ### 2.5 Keeping breadth useful
 
@@ -488,7 +489,7 @@ Each source has a card in `config/sources/<id>.yaml`, written on day 1 and check
 | **OpenAlex, whole taxonomy** (all fields, subfields and topics; world against Australia; by year) | Adjacent and wider world | Counts by `group_by`, plus capped samples of abstracts for flagged topics | Answered 429 (rate-limited) without a key. **A free API key is needed.** |
 | **Patents, all CPC subclasses** (Google Patents Public Datasets on BigQuery; world against AU filings, by year) | Adjacent | Aggregate SQL, dry-run first and capped | BigQuery needs a GCP project, even on its free tier |
 | **ABS headline series** (population and ageing, labour, business entries and exits, R&D, trade including IP charges, industry) | Adjacent and wider world | SDMX | Reachable |
-| **GDELT DOC 2.0,** about 200 broad themes drawn from the foresight seed list and the territories | All three | Titles and metadata only; timelines | Rate-limited: on 2026-10-10 it answered 429 to calls from this session's shared network exit, and calls took about 20 s. Collection runs from Actions runners, at one request every 5 s or slower. |
+| **GDELT GKG 2.1 bulk files,** the territory terms and broad themes, matched in titles, URLs, quotations and named entities | All three | Titles, URLs and GDELT's derived metadata only (quotations are searched, never stored); daily volumes against every document | The DOC API answered 429 to shared cloud addresses, Actions runners included (D-009). The bulk files are not throttled: a day is 96 files, about 270 MB, collected in under 2 minutes (D-010). |
 | **IP RAPID** (weekly, CC BY 4.0, 1.35 GB) | Core | Bulk | Reachable |
 | **Federal Register of Legislation** | Core | REST or RSS (to confirm) | Reachable |
 | **IP Australia publications** (Corporate Plan, Annual Report, Australian IP Report, consultations, examination-practice changes, news) | Core | HTML and PDF | Reachable |

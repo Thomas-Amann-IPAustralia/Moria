@@ -3,18 +3,35 @@
 from __future__ import annotations
 
 import json
+import logging
+import sys
+import time
 from datetime import UTC, date, datetime, timedelta
 
 import typer
 
 from .collectors import ADAPTERS, Window, run_collection
 from .collectors.gdelt import GdeltParams, build_groups
+from .collectors.gkg import GkgParams
 from .config import config_hash, load_config, load_sources, load_territories, load_themes
 from .envcheck import run_checks
 from .http import PoliteClient
 from .store import open_store
 
 app = typer.Typer(add_completion=False, no_args_is_help=True, help=__doc__)
+
+
+@app.callback()
+def main(quiet: bool = typer.Option(False, "--quiet", "-q", help="Log warnings and errors only, not each request")):
+    """Progress goes to stderr as timestamped (UTC) log lines: one per HTTP attempt, per retry wait and per source."""
+    handler = logging.StreamHandler(sys.stderr)
+    formatter = logging.Formatter("%(asctime)s %(levelname)-7s %(message)s", datefmt="%H:%M:%SZ")
+    formatter.converter = time.gmtime
+    handler.setFormatter(formatter)
+    root = logging.getLogger("moria")
+    root.handlers[:] = [handler]
+    root.setLevel(logging.WARNING if quiet else logging.INFO)
+    root.propagate = False
 
 
 def _yesterday() -> date:
@@ -40,8 +57,8 @@ def sources() -> None:
 @app.command()
 def terms() -> None:
     """Print the GDELT query groups built from the territories and the broad themes."""
-    card = next(c for c in load_sources().values() if c.adapter == "gdelt")
-    groups = build_groups(GdeltParams.model_validate(card.params))
+    card = next(c for c in load_sources().values() if c.adapter in ("gdelt", "gdelt_gkg"))
+    groups = build_groups((GkgParams if card.adapter == "gdelt_gkg" else GdeltParams).model_validate(card.params))
     for g in groups:
         typer.echo(f"{g.group_id:<28} {g.expression}")
     typer.echo(f"{len(groups)} groups")

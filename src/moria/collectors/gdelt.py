@@ -7,6 +7,7 @@ them is visible.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
@@ -21,16 +22,23 @@ from .base import CollectContext, CollectError
 API = "https://api.gdeltproject.org/api/v2/doc/doc"
 PARSER_VERSION = "gdelt-v1"
 
+log = logging.getLogger("moria.collect.gdelt")
 
-class GdeltParams(Strict):
+
+class QueryGroupParams(Strict):
+    """The query groups and volume scopes, shared by the DOC API adapter and the GKG bulk-file adapter."""
+
     phrases_per_query: int = 6
-    max_records: int = 250
     territory_rings: list[Literal["core", "adjacent", "wider_world"]] = Field(
         default_factory=lambda: ["core", "adjacent", "wider_world"]
     )
     include_themes: bool = True
     volume_scopes: list[Literal["world", "au"]] = Field(default_factory=lambda: ["world", "au"])
     articles: bool = True
+
+
+class GdeltParams(QueryGroupParams):
+    max_records: int = 250
 
 
 @dataclass(frozen=True)
@@ -44,7 +52,7 @@ class QueryGroup:
         return terms[0] if len(terms) == 1 else "(" + " OR ".join(terms) + ")"
 
 
-def build_groups(params: GdeltParams) -> list[QueryGroup]:
+def build_groups(params: QueryGroupParams) -> list[QueryGroup]:
     groups: list[QueryGroup] = []
 
     def chunk(prefix: str, phrases: list[str]) -> None:
@@ -89,6 +97,9 @@ class GdeltCollector:
         self.card = card
         self.params = GdeltParams.model_validate(card.params)
 
+    def _calls_per_group(self) -> int:
+        return int(self.params.articles) + len(self.params.volume_scopes)
+
     def _call(self, ctx: CollectContext, query: str, mode: str, extra: dict) -> dict:
         request = {
             "query": query,
@@ -111,7 +122,9 @@ class GdeltCollector:
         if ctx.limit:
             groups = groups[: ctx.limit]
         failures = 0
-        for g in groups:
+        log.info("gdelt: %d query groups, up to %d calls each", len(groups), self._calls_per_group())
+        for i, g in enumerate(groups, start=1):
+            group_records: list[RawRecord] = []  # kept only if every call for the group succeeds
             try:
                 if self.params.articles:
                     out = self._call(
@@ -125,7 +138,7 @@ class GdeltCollector:
                         if not url:
                             continue
                         payload = {"query_group": g.group_id, "article": art}
-                        records.append(
+                        group_records.append(
                             RawRecord(
                                 envelope=make_envelope(
                                     provider=art.get("domain") or "unknown",
@@ -151,7 +164,7 @@ class GdeltCollector:
                     suffix = "sourcelang:english" if scope == "world" else "sourcecountry:australia"
                     out = self._call(ctx, f"{g.expression} {suffix}", "timelinevolraw", {})
                     payload = {"query_group": g.group_id, "scope": scope, "timeline": out["data"].get("timeline", [])}
-                    records.append(
+                    group_records.append(
                         RawRecord(
                             envelope=make_envelope(
                                 provider="The GDELT Project",
@@ -176,6 +189,11 @@ class GdeltCollector:
             except (FetchError, CollectError) as e:
                 failures += 1
                 ctx.warnings.append(f"gdelt group {g.group_id} failed: {e}")
+                log.warning("gdelt [%d/%d] %s failed: %s", i, len(groups), g.group_id, e)
+                continue
+            records.extend(group_records)
+            log.info("gdelt [%d/%d] %s ok: %d records", i, len(groups), g.group_id, len(group_records))
+        log.info("gdelt: %d of %d groups ok, %d failed", len(groups) - failures, len(groups), failures)
         if groups and failures == len(groups):
             raise CollectError(f"gdelt: every query group failed ({failures}); first: {ctx.warnings[0]}")
         return records

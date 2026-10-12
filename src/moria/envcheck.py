@@ -49,14 +49,12 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
     else:
         checks.append(Check("api:openalex", "skipped", "no key"))
 
-    probes = {
-        "api:gdelt": (
-            "https://api.gdeltproject.org/api/v2/doc/doc",
-            {"query": "patent", "mode": "artlist", "maxrecords": "1", "format": "json"},
-        )
-    }
+    probes: dict[str, tuple[str, dict | None]] = {}
     for card in cards.values():
-        if card.adapter == "feed":
+        if card.adapter == "gdelt_gkg":
+            base = card.params.get("base_url", "https://data.gdeltproject.org/gdeltv2")
+            probes[f"source:{card.id}"] = (f"{base}/lastupdate.txt", None)
+        elif card.adapter == "feed":
             probes[f"source:{card.id}"] = (card.params["url"], None)
         elif card.adapter == "sitemap":
             probes[f"source:{card.id}"] = (card.params["sitemap_url"], None)

@@ -1,30 +1,35 @@
 id: gdelt_news
-name: GDELT DOC 2.0 news titles and volumes
-adapter: gdelt
+name: GDELT GKG 2.1 news titles, metadata and volumes (bulk files)
+adapter: gdelt_gkg
 rings: [core, adjacent, wider_world]
 domains: [D0, D1, D2, D3, D4, D5, D6]
 family: news
 cadence: daily
-publication_lag: minutes to hours after publication
+publication_lag: 15 minutes (one GKG file per quarter hour)
 coverage: >-
-  Worldwide online news monitored by GDELT. Moria queries English-language sources worldwide and Australian sources,
-  for the territory terms and the broad themes.
-history_start: "the DOC 2.0 API searches a rolling three months; older history needs GDELT's bulk files"
+  Worldwide online news monitored by GDELT, English-language web documents. Each document is matched against the
+  territory terms and the broad themes in its title, URL, quotations and named entities. Volumes are counted
+  worldwide and for .au domains, against every document that day.
+history_start: "GKG 2.1 bulk files run from 2015-02-19, so a backfill is possible"
 stable_since: null
 breaks: []
 known_biases:
   - Over-weights English-language and large outlets
+  - Matching uses the title, URL, quotations and names, not the full article text, so recall per article is lower
+    than a full-text search
+  - Australian sources means .au domains; Australian outlets on .com domains count as worldwide only
   - Syndicated stories appear many times (collapsed by de-duplication)
   - GDELT's source list changes over time, so volumes are compared as shares, never raw counts alone
-  - Article lists are capped at 250 per query per day; volumes come from the timeline counts
 revision_policy: none; collected once per day
 licence: "GDELT data are open (attribute The GDELT Project). Article text belongs to publishers: titles, URLs and metadata only"
-snapshot_rights: titles, URLs and metadata may be stored; article text may not
-expected_volume: {min_per_run: 100, max_per_run: 15000}
+snapshot_rights: titles, URLs and GDELT's derived metadata may be stored; article text (including quotations) may not
+expected_volume: {min_per_run: 100, max_per_run: 20000}
 params:
   phrases_per_query: 6
-  max_records: 250
   territory_rings: [core, adjacent, wider_world]
   include_themes: true
   volume_scopes: [world, au]
   articles: true
+  base_url: https://data.gdeltproject.org/gdeltv2
+  match_fields: [title, url, quotations, names]
+  max_missing_files: 4
