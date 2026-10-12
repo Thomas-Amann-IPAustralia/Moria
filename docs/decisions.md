@@ -1014,3 +1014,70 @@ Report (86 pages) states no licence anywhere in its text. Runs into the bucket: 
 comparisons (design §2.4).
 
 Next free decision number: D-016.
+
+## D-016 — The Tier 1 cleanup before day 3: APH's RSS feeds and the Open Australian Legal Corpus; Pile of Law checked and discarded; Tier 2 waits (2026-10-12)
+
+**Context.** The owner asked for every source not yet added and what each still needs. They suggested the Open
+Australian Legal Corpus in lieu of AustLII, Pile of Law for its UN material, and Parliament's sites (ten APH and
+ParlInfo addresses), with a scraper from another project for ParlInfo. The list, the checks and the open questions
+are in `docs/sources-backlog.md`.
+
+**Decision (the owner's).**
+- **Scope:** "Lets not go for tier 2 stuff yet then. But I would like to clean up Tier 1 before we move to day 3
+  work." The cleanup is §2 of `docs/sources-backlog.md` (T1 to T7, and W1 and W2, which wait on the owner). Tier 2
+  stays "not to build yet".
+- **The Open Australian Legal Corpus:** "Something is better than nothing, I bet there's still plenty we can learn
+  from mining bits of it as required." Adopted as a once source in the lake, taken in parts. The default parts are
+  Commonwealth legislation, the Federal Court and the High Court; that is a recommendation, which the owner may
+  widen.
+- **Pile of Law:** "Please double check whether it might [have useful sources] and if not, we can discard." Checked
+  (below); discarded.
+- **Parliament:** "Lets go with the RSS feeds and we can add the other stuff from them to the backlog." Five APH
+  feeds join the cleanup (T1). ParlInfo, Hansard, the Library's pages, the other feeds and the statistics pages go to
+  the backlog (L1 to L4).
+
+**Checked (2026-10-12, from this session's cloud address, with Moria's user agent):**
+- **APH:**
+  - three Senate feeds answered: new inquiries (34 items), reports (134) and upcoming hearings (30);
+  - the House and joint inquiry feeds answered, empty;
+  - `www.aph.gov.au/robots.txt`, the Hansard page, the hearings page and Issues and Insights answered 403 ("Page
+    Blocked by WAF");
+  - ParlInfo, including its robots.txt and its Bills Digest feed, answered 403 with an Azure WAF JavaScript
+    challenge.
+
+  The site's licence, as quoted by the owner, is CC BY-NC-ND 4.0.
+- **The corpus:** release 7.1.0, 232,560 documents in one 9.4 GB file, every source scraped on 10 March 2025, latest
+  versions only. The collection is CC BY 4.0, but its documents keep their own terms. The Federal and High Courts
+  allow unaltered reproduction for personal, non-commercial use or use within an organisation. NSW Caselaw requires
+  compliance with suppression orders and no robots' indexing; it is left out by default.
+- **Pile of Law** (dataset commit `2e96169e`): `undebates` (8,481 UN General Debate speeches, 1970–2020, 2.0% with an
+  IP term), `ijc` (4,932 ICJ and PCIJ texts, 3.8%) and `tos` (50 terms of service, about 2014–2017) were read whole.
+  The first 3,000 records of `uspto_oab`, `congressional_hearings`, `federal_register` and `eurlex` were read as
+  samples. Each useful subset is a copy of an upstream Moria can read directly (USPTO open data, GovInfo, the Federal
+  Register, EUR-Lex), and the copies end between 2019 and 2022. Counts only; no text was kept.
+- **The shared scraper** was read, not run. Its stealth parts (a spoofed browser identity, hidden automation flags,
+  timing-fingerprint evasion, proxy retries, an unpinned driver download) conflict with D-011 and are not adopted. Its
+  text normalisation, trafilatura extraction, DOCX reading and block-page check may be reused. Its block signatures
+  need narrowing first: APH's real RSS page contains "captcha".
+
+**Rejected, a line each:**
+- **Pile of Law:** copies of upstream sources, ending 2019–2022, under a stricter licence (CC BY-NC-SA 4.0), loaded
+  by a third-party script.
+- **The scraper's stealth path:** D-011; Moria identifies itself honestly.
+- **Tier 2 now:** the owner's call above.
+
+**Still open (the owner's):**
+1. Whether Moria's use counts as non-commercial (APH; the Federal and High Courts' terms).
+2. Whether APH summaries may be stored (titles, links and dates until then).
+3. Asking APH for a route to ParlInfo (recommended).
+4. Whether W1 and W2 hold up day 3. The recommendation: day 3 starts once T1 to T7 are done or are themselves waiting
+   on an answer.
+
+**Spend:** $0. About 75 MB of Pile of Law, and samples of four large subsets, were downloaded to the session's
+scratch space for the counts, then deleted.
+
+**Consequences.**
+- The next session builds the Tier 1 cleanup, then day 3.
+- `CLAUDE.md`'s scope and `docs/handover-day2.md` point at `docs/sources-backlog.md`.
+
+Next free decision number: D-017.

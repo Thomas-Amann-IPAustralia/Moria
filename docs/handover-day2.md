@@ -1,7 +1,8 @@
 # Handover: the machinery sprint after day 2
 
 For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-011 to D-015 in `docs/decisions.md`.
-Build day 3 when the owner asks. Nothing in the machinery spends money.
+First build the Tier 1 cleanup in `docs/sources-backlog.md` (D-016); then day 3 when the owner asks. Nothing in
+the machinery spends money.
 
 **Status (2026-10-12):** day 2 is done (D-011 to D-013), and the owner's answers are in (D-014), on branch
 `claude/nice-lovelace-eroum3`. Day 1's handover (`docs/handover-day1.md`) is superseded by this note.
@@ -64,4 +65,4 @@ Build day 3 when the owner asks. Nothing in the machinery spends money.
 - Logs print counts and keys, never content. Reports in the repo are aggregates only; hit samples stay in the bucket.
 - The OpenAlex key's daily budget is shared by every run that day: the weekly run estimates about 2,900 credits
   (it used 2,424) and won't start unless 1,000 would be left after it.
-- Next free decision number: D-014.
+- Next free decision number: D-017.
