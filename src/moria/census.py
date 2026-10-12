@@ -228,6 +228,10 @@ def census_markdown(store: Store, card: SourceCard, all_runs: bool = False) -> s
         lines = [*head, f"Latest collection: `{key.split('/', 2)[2]}` (run `{run}`).", ""]
     if not records:
         return "\n".join([*lines, "The latest collection holds no records.", ""])
+    if all_runs and card.adapter == "documents":
+        # a document read again gets a new record; keep the newest record of each (keys sort by run time)
+        records = list({r.payload["id"]: r for r in records}.values())
+        lines += ["Documents: the newest record of each.", ""]
     lines += generic_profile(records)
     if card.adapter == "openalex_counts":
         lines += openalex_section(records)
