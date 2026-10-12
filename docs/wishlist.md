@@ -39,7 +39,7 @@ they are facts, and enough for the known-trends baseline.
 | Save as | Document | Where to get it | Licence, as far as known | Text stored when |
 |---|---|---|---|---|
 | `jpo_status_report_2026.pdf` | JPO Status Report 2026 (the whole report, about 25 MB) | [jpo.go.jp](https://www.jpo.go.jp/e/resources/report/statusreport/2026/index.html) | JPO website terms, to confirm | the PDF states an open licence |
-| `cipo_business_strategy_2023_2028.html` (or `.pdf`) | CIPO 2023-2028 Business Strategy, linked from the release | [canada.ca](https://www.canada.ca/en/intellectual-property-office/news/2023/02/cipo-releases-its-20232028-business-strategy.html) | Government of Canada terms (section 3) | you confirm those terms |
+| `cipo_business_strategy_2023_2028.html` (or `.pdf`) | CIPO 2023-2028 Business Strategy, linked from the release | [canada.ca](https://www.canada.ca/en/intellectual-property-office/news/2023/02/cipo-releases-its-20232028-business-strategy.html) | Government of Canada terms (section 4) | you confirm those terms |
 | optional, name it `kipo_annual_report_<year>.pdf` | KIPO's latest annual report in English | kipo.go.kr | to find | I add a card entry when it's there |
 
 No action needed for these, which answer from here: the UKIPO's Corporate Plan 2026 to 2027, the USPTO's strategy
@@ -47,7 +47,24 @@ page, the EPO's Strategic Plan 2028 page and its [Annual Work Plan 2026](https:/
 and the EUIPO's [Strategic Plan 2030](https://euipo.europa.eu/tunnel-web/secure/webdav/guest/document_library/contentPdfs/about_euipo/strategic_plan/strategic-plan-2030_en.pdf).
 Not wanted: IPONZ (its newest published business plan is for 2021-22) and IPOS (its terms forbid reproduction).
 
-## 3. Terms to read (nothing to download)
+## 3. Documents the Growth Territories cite (card `territory_evidence`)
+
+Public reports that your territory context cites, listed here with your approval (D-015).
+
+| Save as | Document | Where to get it | Licence, as far as known | Text stored when |
+|---|---|---|---|---|
+| `aic_sr38_serious_organised_crime_costs_2020_21.pdf` | AIC, *Estimating the costs of serious and organised crime in Australia, 2020-21* (Statistical Report 38): the 2021 value of counterfeit and pirated goods | [aic.gov.au](https://www.aic.gov.au/sites/default/files/2022-04/sr38_estimating_the_costs_of_serious_and_organised_crime_v2.pdf) | to confirm | the PDF states an open licence |
+| `aic_sr55_serious_organised_crime_costs_2023_24.pdf` | AIC, *The costs of serious and organised crime in Australia, 2023-24* (Statistical Report 55): the newer edition | [aic.gov.au](https://www.aic.gov.au/sites/default/files/2025-11/sr55_costs_of_serious_and_organised_crime_in_australia_2023-24.pdf) | to confirm | the PDF states an open licence |
+| `patents_accessibility_review_2021.pdf` | *Patents Accessibility Review: Final report* (2021). It is offered as a Word file: open it and save it as PDF | [industry.gov.au](https://www.industry.gov.au/publications/patents-accessibility-review) | to confirm | the PDF states an open licence |
+| `patents_accessibility_review_government_response_2022.pdf` | The Government's response to the review (2022) | [industry.gov.au](https://www.industry.gov.au/sites/default/files/2022-06/iga_patents_accessibility_review.pdf) | to confirm | the PDF states an open licence |
+
+No action needed for these, which answer from here: the Productivity Commission's *Innovation for the 98%*
+([interim report, 2022](https://assets.pc.gov.au/inquiries/completed/productivity/interim3-innovation/productivity-interim3-innovation.pdf),
+and [Volume 5 of the final report, 2023](https://assets.pc.gov.au/inquiries/completed/productivity/report/productivity-volume5-innovation-diffusion.pdf)),
+and IP Australia's [Australian IP Report 2026](https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/IP-Reports/Australian-IP-Report-2026.pdf),
+whose first chapter links a first patent grant or trade mark registration with later income and productivity.
+
+## 4. Terms to read (nothing to download)
 
 | Site | What I could read from here | Your call |
 |---|---|---|
