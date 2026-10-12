@@ -72,6 +72,6 @@ params:
       title: "Australian IP Report 2026"
       publisher: IP Australia
       url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/IP-Reports/Australian-IP-Report-2026.pdf
-      licence: "IP Australia website: CC BY 4.0 (D-011); checked on the document"
-      store_text: if_open_licence
+      licence: "IP Australia website: CC BY 4.0 (D-011); the PDF itself states no licence (checked 2026-10-12)"
+      store_text: true
       note: Chapter 1 links a first patent grant or trade mark registration with later income and productivity
