@@ -27,6 +27,7 @@ on weekly full copies (a base is about 1 GB).
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import re
 import shutil
@@ -218,13 +219,14 @@ def release_info(client: PoliteClient, params: IprParams) -> Release:
 
 
 def _bases(store: Store) -> list[date]:
+    """Releases ingested as a base. A base counts only once its release manifest exists: the manifest is written
+    last, so a run that died while uploading a base never becomes the base for later deltas."""
     found = set()
-    for key in store.list(f"{LAKE}/base="):
-        part = key[len(f"{LAKE}/base=") :].split("/", 1)[0]
-        try:
-            found.add(date.fromisoformat(part))
-        except ValueError:
-            continue
+    for key in store.list("raw/ip_rapid/"):
+        if key.endswith("/manifest.json"):
+            release = json.loads(store.get(key))
+            if release.get("mode") == "base":
+                found.add(date.fromisoformat(release["release_date"]))
     return sorted(found)
 
 

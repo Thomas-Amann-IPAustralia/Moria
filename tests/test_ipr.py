@@ -198,3 +198,18 @@ def test_column_names_are_checked_before_they_reach_sql(name):
 
     with pytest.raises(CollectError):
         column_sql("application", name)
+
+
+def test_a_base_without_its_release_manifest_is_never_used_for_a_delta(http_cfg, store, tmp_path):
+    first = make_zip()
+    refresh(ipr_card(), store, client_for(http_cfg, first), zip_path=write(tmp_path, first))
+    # Simulate a later run that died after uploading part of a new base: its tables exist, its manifest doesn't
+    (store.root / "lake/ip_rapid/base=2026-10-19").mkdir(parents=True)
+    (store.root / "lake/ip_rapid/base=2026-10-19/application.parquet").write_bytes(b"partial")
+    later = make_zip()
+    r = refresh(
+        ipr_card(), store, client_for(http_cfg, later, "2026-10-26T00:30:00"), zip_path=write(tmp_path, later, "c.zip")
+    )
+    assert r.status == "passed", r.error
+    release = json.loads(store.get("raw/ip_rapid/2026-10-26/manifest.json"))
+    assert release["mode"] == "delta" and release["base_release"] == "2026-10-12"
