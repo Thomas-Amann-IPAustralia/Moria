@@ -8,6 +8,7 @@ import sys
 import time
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+from typing import Annotated
 
 import typer
 
@@ -16,6 +17,7 @@ from .collectors import ADAPTERS, Window, run_collection
 from .collectors.gdelt import GdeltParams, build_groups
 from .collectors.gkg import GkgParams
 from .config import config_hash, load_baseline, load_config, load_sources, load_territories, load_themes
+from .discover import discover as discover_urls
 from .envcheck import run_checks
 from .http import PoliteClient
 from .ipr import refresh as ipr_refresh
@@ -129,6 +131,21 @@ def env_check(
     if failed or missing:
         typer.echo(f"required checks not ok: {', '.join(sorted(set(failed) | missing))}", err=True)
         raise typer.Exit(2)
+
+
+@app.command()
+def discover(
+    urls: Annotated[list[str], typer.Argument(help="Addresses to check, e.g. a news page, a feed or a robots.txt")],
+    match: str = typer.Option(None, help="Also list a page's links matching this regular expression"),
+) -> None:
+    """Check what a new source's addresses answer from here: status, type and size; a feed's or sitemap's item count
+    and dates; the feeds a page links. Addresses and counts only, never text. A refusal is an answer, not a failure."""
+    client = PoliteClient(load_config().http)
+    try:
+        for line in discover_urls(client, urls, match):
+            typer.echo(line)
+    finally:
+        client.close()
 
 
 def _collect(source_ids: list[str], day: date, limit: int | None, store_backend: str | None) -> list:
