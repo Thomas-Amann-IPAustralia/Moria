@@ -18,8 +18,9 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   owner uploads of refused documents (`docs/wishlist.md`) with a licence check on every document. The public documents
   the territory context cites are on the wishlist with the owner's approval (`territory_evidence`, D-015); the context
   itself stays private.
-- **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors, artefact checks), day 5
-  (dossiers, register export). Day-2 leftovers are in `docs/handover-day2.md`.
+- **Next:** the Tier 1 cleanup in `docs/sources-backlog.md` (D-016): APH's RSS feeds, the Open Australian Legal
+  Corpus and the Tier 1 leftovers. Then day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors,
+  artefact checks), day 5 (dossiers, register export). Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
   agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
