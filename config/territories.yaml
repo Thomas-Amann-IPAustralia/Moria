@@ -305,7 +305,7 @@ synonyms:
   copycat products: [copycat product, copycat brand]
   knock-off products: [knockoff]
   parallel imports: [parallel import, grey import, gray import]
-  marketplace takedown: [takedown notice, takedown request]
+  marketplace takedown: [takedown notice]  # not "takedown request": its hits were government content takedowns
   platform liability: [intermediary liability]
   fake invoice scam: [invoice scam, invoice fraud]
   small business export: [SME export]

@@ -204,7 +204,7 @@ def summary_markdown(terms: dict[str, TermStats], totals: dict, run_id: str, day
         "documents about the term; *.au/day* is for `.au` domains. *Names only* is the share found only inside",
         "GDELT's named entities, which is often incidental (D-012). *Via synonyms* is the share found only through a",
         "synonym (D-014), with the number of synonyms in brackets.",
-        f"Flags are triage: `silent` no hit at all; `rare` under {RARE_PER_DAY} a day;"
+        f"Flags are triage: `silent` no hit at all; `rare` under {RARE_PER_DAY} a day;",
         f"`broad` over {BROAD_PER_DAY:.0f} a day; `names-heavy` over {NAMES_HEAVY_SHARE:.0%} names-only hits. The hit",
         "samples are in the private bucket; a person reads them before any term is narrowed or dropped.",
         "",
