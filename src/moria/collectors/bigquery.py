@@ -171,10 +171,23 @@ class BigQueryCpcCollector:
             ],
         }
 
+    @staticmethod
+    def _checked(resp, project: str) -> dict:
+        """BigQuery's own error message says what is wrong with a query, so it is passed on, with the project id (and
+        so any service account address) redacted, because logs are public."""
+        data = resp.json() if resp.content else {}
+        if resp.status_code != 200:
+            message = str(data.get("error", {}).get("message", ""))[:300].replace(project, "<project>")
+            raise CollectError(f"bigquery: HTTP {resp.status_code}: {message}")
+        return data
+
     def collect(self, ctx: CollectContext) -> list[RawRecord]:
         project, headers = self._project(), self._headers()
         url = f"{API}/projects/{project}/queries"
-        estimate = ctx.client.post(url, json=self._body(dry_run=True), headers=headers).json()
+        answers = (200, 400, 403, 404)
+        estimate = self._checked(
+            ctx.client.post(url, json=self._body(dry_run=True), headers=headers, ok_statuses=answers), project
+        )
         planned = int(estimate.get("totalBytesProcessed") or 0)
         self.counts["bytes_estimated"] = planned
         log.info(
@@ -189,7 +202,9 @@ class BigQueryCpcCollector:
             ctx.warnings.append(f"bigquery: dry run only; the query would scan {planned / 1e9:.1f} GB (D-011)")
             return []
 
-        resp = ctx.client.post(url, json=self._body(dry_run=False), headers=headers).json()
+        resp = self._checked(
+            ctx.client.post(url, json=self._body(dry_run=False), headers=headers, ok_statuses=answers), project
+        )
         job = resp.get("jobReference", {})
         started = time.monotonic()
         while not resp.get("jobComplete"):

@@ -111,3 +111,13 @@ def test_a_malformed_key_fails_loudly_without_echoing_it(monkeypatch):
     with pytest.raises(CollectError) as e:
         default_credentials()
     assert "GCP_SA_KEY is not a service account key's JSON" in str(e.value) and "PLACEHOLDER" not in str(e.value)
+
+
+def test_bigquerys_error_message_is_passed_on_with_the_project_redacted(http_cfg, store):
+    def handler(request):
+        message = "Unrecognized name: subclas at [12:8]; job in placeholder-project"
+        return httpx.Response(400, json={"error": {"message": message}})
+
+    r = run_collection(bq_card(), store, make_client(http_cfg, handler), Window.for_day(DAY))
+    assert r.status == "failed" and "HTTP 400: Unrecognized name: subclas" in r.error
+    assert "placeholder-project" not in r.error and "<project>" in r.error
