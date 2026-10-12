@@ -28,6 +28,8 @@ Adapter = Literal[
     "documents",
     "bigquery_cpc",
     "hf_corpus",
+    "listpage",
+    "xlsx",
 ]
 
 

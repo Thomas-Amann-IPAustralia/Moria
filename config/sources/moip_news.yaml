@@ -1,0 +1,34 @@
+id: moip_news
+name: "Korea's Ministry of Intellectual Property (MOIP, formerly KIPO): English news"
+adapter: listpage
+rings: [core]
+domains: [D1, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day to a few days
+coverage: >-
+  The English news board of Korea's intellectual property office (KIPO, now the Ministry of Intellectual Property,
+  MOIP): policy, enforcement (its trade mark police), statistics and international cooperation. The board's first
+  page (its ten newest items) is read each day.
+history_start: "the board's newest ten items each day (1,158 items in all on 2026-10-12; a backfill reads only the first page)"
+stable_since: null
+breaks: []
+known_biases:
+  - "English releases only: a selection of the Korean-language news"
+  - "The site has no feed; the list page's layout is read with a pattern, and a run warns if it stops matching"
+revision_policy: none known
+licence: >-
+  The site's footer reads "Copyright(c) MINISTRY OF INTELLECTUAL PROPERTY. All Rights Reserved." (read 2026-10-12);
+  no reuse licence found, so titles, links and dates only
+snapshot_rights: titles, links and dates only
+expected_volume: {min_per_run: 0, max_per_run: 10}
+params:
+  # One item of the news board: the title links by a sequence number, then the date, then a summary
+  item_pattern: >-
+    <p class="btit">.*?detail\('(?P<id>\d+)','kiponews'\);">(?P<title>.*?)</a>\s*</p>\s*<p class="bdate"><span[^>]*>(?P<date>[A-Za-z]+ \d{1,2}, \d{4})</span></p>\s*<p class="bcon"><span[^>]*>(?P<summary>.*?)</span></p>
+  date_format: "%B %d, %Y"
+  link_template: "https://www.kipo.go.kr/en/engBultnDetail.do?board_id=kiponews&catmenu=ek06_01_01&seq={id}"
+  lookback_days: 30
+  keep_summary: false
+  pages:
+    - {id: news, url: "https://www.kipo.go.kr/en/engBultnMgmt.do?board_id=kiponews&catmenu=ek06_01_01"}

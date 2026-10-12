@@ -21,8 +21,10 @@ from .feed import FeedCollector
 from .gdelt import GdeltCollector
 from .gkg import GkgCollector
 from .legislation import LegislationCollector
+from .listpage import ListPageCollector
 from .openalex import OpenAlexCountsCollector
 from .sitemap import SitemapCollector
+from .xlsx import XlsxCollector
 
 ADAPTERS = {
     "abs_sdmx": AbsSdmxCollector,
@@ -32,7 +34,9 @@ ADAPTERS = {
     "gdelt_gkg": GkgCollector,
     "feed": FeedCollector,
     "sitemap": SitemapCollector,
+    "xlsx": XlsxCollector,
     "legislation": LegislationCollector,
+    "listpage": ListPageCollector,
     "openalex_counts": OpenAlexCountsCollector,
 }
 

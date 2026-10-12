@@ -39,6 +39,13 @@ class _Links(HTMLParser):
             self.anchors.append(a["href"])
 
 
+def page_links(html: str) -> list[str]:
+    """Every anchor's href on a page, as written (relative or absolute)."""
+    p = _Links()
+    p.feed(html)
+    return p.anchors
+
+
 def _dates(values: list[str]) -> str:
     parsed = []
     for v in values:

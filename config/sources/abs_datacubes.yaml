@@ -1,0 +1,35 @@
+id: abs_datacubes
+name: ABS spreadsheet releases (business entries and exits, CABEE; business R&D, BERD)
+adapter: xlsx
+rings: [adjacent]
+domains: [D2, D3]
+family: statistics
+cadence: weekly
+publication_lag: "CABEE: yearly, about 7 weeks after June (2026-08-18 for June 2026); BERD: every two years, about 14 months after the year (2023-24 released 2025-08-22)"
+coverage: >-
+  Two ABS publications released as spreadsheet data cubes, not through the ABS Data API. Counts of Australian
+  Businesses, including Entries and Exits (8165.0, CABEE): businesses operating, entering and exiting by industry,
+  state, sector, turnover and employment size, with survival rates, for the four latest financial years. Research
+  and Experimental Development, Businesses (8104.0, BERD): business R&D expenditure and human resources by industry,
+  size, type of expenditure, source of funds, state and type of activity. Each table is one record.
+history_start: "CABEE: the four financial years in the current release (2022-23 to 2025-26); BERD: 2023-24 (older releases are separate workbooks)"
+stable_since: null
+breaks:
+  - "BERD moved to a two-yearly cycle; each release is one reference year"
+known_biases:
+  - "Only the latest release's workbooks are read; earlier releases are not backfilled"
+  - "Tables are kept as published (headings, sections, labels); turning them into series is normalisation's job"
+  - "Small cells are suppressed ('np') and kept as such"
+revision_policy: revised at the next release; each run is kept, and a changed table gets a new evidence id
+licence: "ABS data are CC BY 4.0 (attribute the Australian Bureau of Statistics)"
+snapshot_rights: tables stored in full
+expected_volume: {min_per_run: 20, max_per_run: 80}
+params:
+  max_bytes: 20000000
+  sources:
+    - id: cabee
+      release_page: https://www.abs.gov.au/statistics/economy/business-indicators/counts-australian-businesses-including-entries-and-exits/latest-release
+      link_pattern: '/8165DC\d+\.xlsx$'
+    - id: berd
+      release_page: https://www.abs.gov.au/statistics/industry/technology-and-innovation/research-and-experimental-development-businesses-australia/latest-release
+      link_pattern: '/81040DO\d+_\d+\.xlsx$'

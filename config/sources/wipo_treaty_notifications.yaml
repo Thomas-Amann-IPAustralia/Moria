@@ -1,0 +1,61 @@
+id: wipo_treaty_notifications
+name: WIPO-administered treaties' notifications (WIPO Lex)
+adapter: listpage
+rings: [core, adjacent]
+domains: [D1, D5]
+family: policy
+cadence: weekly
+publication_lag: "days: a notification is dated when WIPO issues it; WIPO Lex lists it soon after"
+coverage: >-
+  The notifications of 26 WIPO-administered treaties (accessions, ratifications, declarations, entry into
+  force, denunciations), from each treaty's notification list in WIPO Lex: the Paris and Berne Conventions, the PCT,
+  the Madrid, Hague and Lisbon systems, the classification agreements, the WCT and WPPT, Marrakesh and Beijing, and
+  the 2024 Riyadh Design Law Treaty and Treaty on Intellectual Property, Genetic Resources and Associated
+  Traditional Knowledge (GRATK)
+history_start: "each treaty's first notification (decades back for the older treaties; a backfill takes them all)"
+stable_since: null
+breaks: []
+known_biases:
+  - "Notifications only: membership itself is read from them, not from WIPO Lex's member tables"
+  - "WIPO's treaty notification pages and its newsletter archive are disallowed by robots.txt; WIPO Lex is allowed"
+  - "Titles, numbers, dates and links only; the notification's own text is not fetched"
+  - "The Rome and Brussels Conventions have no notification list in WIPO Lex (the UN Secretary-General is their depositary)"
+revision_policy: notifications are not revised; a corrected one is a new notification
+licence: >-
+  WIPO's online content is CC BY 4.0 (WIPO's open access policy, D-011); notifications are official acts, stored as
+  titles, numbers, dates and links
+snapshot_rights: titles, numbers, dates and links stored
+expected_volume: {min_per_run: 0, max_per_run: 60}
+params:
+  # One row of a WIPO Lex notification table: number, title (linked), treaty, date
+  item_pattern: >-
+    <tr>\s*<td[^>]*><div>(?P<number>[^<]*)</div></td>\s*<td><div><a href="(?P<link>[^"]*/treaties/notifications/details/[^"]+)"[^>]*>(?P<title>.*?)</a></div></td>\s*<td><div>[^<]*</div></td>\s*<td[^>]*><div>(?P<date>[A-Za-z]+ \d{1,2}, \d{4})</div></td>\s*</tr>
+  date_format: "%B %d, %Y"
+  lookback_days: 30
+  pages:
+    - {id: convention, label: "WIPO Convention", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=1"}
+    - {id: paris, label: "Paris Convention", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=2"}
+    - {id: madrid_source, label: "Madrid Agreement (Indications of Source)", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=3"}
+    - {id: plt, label: "Patent Law Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=4"}
+    - {id: tlt, label: "Trademark Law Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=5"}
+    - {id: pct, label: "Patent Cooperation Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=6"}
+    - {id: budapest, label: "Budapest Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=7"}
+    - {id: madrid_protocol, label: "Madrid Protocol", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=8"}
+    - {id: hague, label: "Hague Agreement", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=9"}
+    - {id: lisbon, label: "Lisbon Agreement", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=10"}
+    - {id: strasbourg, label: "Strasbourg Agreement (IPC)", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=11"}
+    - {id: nice, label: "Nice Agreement", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=12"}
+    - {id: vienna, label: "Vienna Agreement", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=13"}
+    - {id: locarno, label: "Locarno Agreement", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=14"}
+    - {id: berne, label: "Berne Convention", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=15"}
+    - {id: wct, label: "WIPO Copyright Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=16"}
+    - {id: phonograms, label: "Phonograms Convention", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=18"}
+    - {id: wppt, label: "WIPO Performances and Phonograms Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=20"}
+    - {id: madrid_agreement, label: "Madrid Agreement (Marks)", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=21"}
+    - {id: nairobi, label: "Nairobi Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=22"}
+    - {id: washington, label: "Washington Treaty (IPIC)", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=29"}
+    - {id: singapore, label: "Singapore Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=30"}
+    - {id: beijing, label: "Beijing Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=841"}
+    - {id: marrakesh, label: "Marrakesh Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=843"}
+    - {id: gratk, label: "WIPO Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=19830"}
+    - {id: rdlt, label: "Riyadh Design Law Treaty", url: "https://www.wipo.int/wipolex/en/treaties/ShowResults?search_what=N&treaty_id=19852"}

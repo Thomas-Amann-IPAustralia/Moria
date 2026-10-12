@@ -1,0 +1,75 @@
+id: ipaustralia_publications
+name: IP Australia's corporate publications (PDFs its pages link; read once a year, and with each new edition)
+adapter: documents
+rings: [core]
+domains: [D1, D4, D6]
+family: ipa_internal
+cadence: once
+publication_lag: "yearly: the corporate plan by 31 August, the annual report when tabled (about November)"
+coverage: >-
+  The PDFs linked from IP Australia's accountability pages, which the sitemap does not list (D-016, T3): the
+  Strategic Corporate Plan 2026-27, the Annual Report 2024-25, the AI transparency statement, the Minister's
+  statement of expectations and IP Australia's statement of intent, and the cost recovery implementation statement.
+  The Australian IP Report 2026 is in territory_evidence.
+history_start: null
+stable_since: null
+breaks: []
+known_biases:
+  - "IP Australia's own statements of plans and results: strengths and weaknesses for SWOT, not external signals"
+  - "Read once; a new edition is a new entry in this card"
+revision_policy: each new edition is a new document
+licence: "per document (see each entry); text stored where the document's or IP Australia's licence allows it"
+snapshot_rights: per document; otherwise the title, URL, hash, size and page count only
+expected_volume: {min_per_run: 1, max_per_run: 10}
+params:
+  max_bytes: 60000000
+  max_pages: 600
+  documents:
+    - id: ipa_corporate_plan_2026_27
+      title: "IP Australia Strategic Corporate Plan 2026-27"
+      publisher: IP Australia
+      published: "2026-08-31"
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/Strategic-corporate-plan-2026-2027/Strategic-Corporate-Plan-2026-27-Accessible-Version.pdf
+      licence: "IP Australia's website licence: CC BY 4.0 for most content (checked 2026-10-12); the licence check reads the PDF itself"
+      store_text: true
+      note: The accessible version; the plan's HTML pages are also in the site's sitemap
+    - id: ipa_annual_report_2024_25
+      title: "IP Australia Annual Report 2024-25"
+      publisher: IP Australia
+      published: "2025-11-05"
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/Accountability-and-reporting/Annual-Report-2024-25.pdf
+      licence: "IP Australia's website licence: CC BY 4.0 for most content (checked 2026-10-12); the licence check reads the PDF itself"
+      store_text: true
+      note: Tabled on 2025-11-05 (IP Australia's news item); results against the 2024-25 corporate plan
+    - id: ipa_ai_transparency_statement
+      title: "IP Australia AI transparency statement"
+      publisher: IP Australia
+      published: "2026-08-04"
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/Accountability-and-reporting/ip-australia-ai-transparency-statement.pdf
+      licence: "IP Australia's website licence: CC BY 4.0 for most content (checked 2026-10-12); the licence check reads the PDF itself"
+      store_text: true
+      note: The published date is the file's last modification (the PDF states its own date)
+    - id: ipa_ministerial_statement_of_expectations
+      title: "Ministerial statement of expectations for IP Australia"
+      publisher: Minister for Industry and Science
+      published: "2025-12-04"
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/Accountability-and-reporting/ip-australia-ministerial-statement-of-expectations-letter.pdf
+      licence: "Published on IP Australia's website (CC BY 4.0 for most content); a letter from the Minister, so stored only if it states an open licence"
+      store_text: if_open_licence
+      note: The published date is the file's last modification
+    - id: ipa_statement_of_intent
+      title: "IP Australia's statement of intent to Minister Ayres"
+      publisher: IP Australia
+      published: "2025-12-04"
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/Accountability-and-reporting/statement-of-intent-ip-australia-to-minister-ayres.pdf
+      licence: "IP Australia's website licence: CC BY 4.0 for most content (checked 2026-10-12); the licence check reads the PDF itself"
+      store_text: true
+      note: The published date is the file's last modification
+    - id: ipa_cost_recovery_statement_2026_27
+      title: "IP Australia cost recovery implementation statement 2024-25 (updated for the 2026-27 budget)"
+      publisher: IP Australia
+      published: "2026-08-04"
+      url: https://www.ipaustralia.gov.au/-/media/Project/IPA/IPAustralia/PDF/Accountability-and-reporting/CRIS/cost-recovery-implementation-statement-2024-25-budget-update-2026-27.pdf
+      licence: "IP Australia's website licence: CC BY 4.0 for most content (checked 2026-10-12); the licence check reads the PDF itself"
+      store_text: true
+      note: Fees, costs and demand forecasts; the published date is the file's last modification

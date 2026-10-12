@@ -18,6 +18,8 @@ http:
     www.ipaustralia.gov.au: 2.0
     www.wipo.int: 2.0
     www.aph.gov.au: 2.0
+    www.abs.gov.au: 1.0
+    www.kipo.go.kr: 3.0
     www.gov.uk: 1.0
     api.prod.legislation.gov.au: 1.0
     api.openalex.org: 0.2

@@ -54,5 +54,5 @@ params:
       licence: >-
         High Court of Australia copyright: download, display, print and reproduce in unaltered form only, retaining
         the Court's copyright notice, for personal, non-commercial use or use within an organisation
-  memory_limit: 3GB
+  memory_limit: 6GB
   threads: 4

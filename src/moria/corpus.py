@@ -44,6 +44,9 @@ from .lake import LakeResult, fail, file_sha256, finish_release, release_key, up
 from .manifest import Manifest
 
 PARSER_VERSION = "hf-corpus-v1"
+# Row groups are capped by size, not only rows: a legal text can be megabytes, and buffering 20,000 of them runs out
+# of memory
+ROW_GROUPS = "ROW_GROUP_SIZE 100000, ROW_GROUP_SIZE_BYTES '64MB'"
 FIELDS = ("version_id", "type", "jurisdiction", "source", "mime", "date", "citation", "url", "when_scraped", "text")
 
 log = logging.getLogger("moria.corpus")
@@ -64,7 +67,7 @@ class HfCorpusParams(Strict):
     released: str  # the release's date (ISO), for the monitor entry
     sources: dict[str, CorpusSource]
     max_object_bytes: int = 64 * 1024 * 1024  # the largest single document DuckDB will read (its buffer is twice this)
-    memory_limit: str = "3GB"
+    memory_limit: str = "6GB"
     threads: int = 4
     base_url: str = "https://huggingface.co"
 
@@ -136,7 +139,7 @@ def convert(con: duckdb.DuckDBPyConnection, params: HfCorpusParams, src: Path, o
     try:
         con.execute(
             f"COPY ({select}) TO '{_sql_path(out_dir)}' (FORMAT parquet, COMPRESSION zstd, PARTITION_BY (source), "
-            "WRITE_PARTITION_COLUMNS true, ROW_GROUP_SIZE 20000)"
+            f"WRITE_PARTITION_COLUMNS true, {ROW_GROUPS})"
         )
     except duckdb.Error as e:
         first = (str(e).splitlines() or [type(e).__name__])[0]
@@ -148,7 +151,7 @@ def convert(con: duckdb.DuckDBPyConnection, params: HfCorpusParams, src: Path, o
             merged = out_dir / f"{name}.parquet"
             listed = ", ".join(f"'{_sql_path(p)}'" for p in parts)
             con.execute(f"COPY (SELECT * FROM read_parquet([{listed}])) TO '{_sql_path(merged)}' "
-                        "(FORMAT parquet, COMPRESSION zstd, ROW_GROUP_SIZE 20000)")  # fmt: skip
+                        f"(FORMAT parquet, COMPRESSION zstd, {ROW_GROUPS})")  # fmt: skip
             out[name] = merged
         elif parts:
             out[name] = parts[0]
