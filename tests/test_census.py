@@ -37,8 +37,16 @@ def test_census_of_a_source_never_collected(store):
     assert "No collection in the store yet." in census_markdown(store, card("feed", {"url": "https://x.test/rss"}))
 
 
-def test_census_of_documents_keeps_the_newest_record_of_each_and_shows_the_licence_check(http_cfg, store):
+def test_census_of_documents_keeps_the_newest_record_of_each_and_shows_the_licence_check(http_cfg, store, monkeypatch):
+    from datetime import UTC, datetime, timedelta
+
+    import moria.manifest
+
     from .test_documents import doc, docs_card, handler, tiny_pdf
+
+    # run ids carry the run's UTC second; give each run its own second, as real runs have
+    clock = iter(datetime(2026, 10, 12, tzinfo=UTC) + timedelta(seconds=i) for i in range(1000))
+    monkeypatch.setattr(moria.manifest, "utc_now", lambda: next(clock))
 
     c = docs_card([doc("open", "https://docs.test/open.pdf", True), doc("blocked", "https://docs.test/b.pdf", True)])
     store.put("inbox/documents/blocked.pdf", tiny_pdf("Placeholder with no statement"), "application/pdf")
