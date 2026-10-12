@@ -1,0 +1,46 @@
+id: peer_office_strategies
+name: Peer IP offices' strategies and corporate plans (read once; again with each new edition)
+adapter: documents
+rings: [core]
+domains: [D1, D5, D6]
+family: policy
+cadence: once
+publication_lag: "yearly plans, published around the start of each office's financial year"
+coverage: >-
+  What peer IP offices say they will invest in and change (design §2.3, sub-question 7): the UKIPO's corporate
+  plan, the EPO's strategic plan and the USPTO's strategy page. Others (IPONZ, CIPO, IPOS, EUIPO, JPO, KIPO) are to
+  add once their documents and terms are found; EUIPO and JPO refuse the build session.
+history_start: null
+stable_since: null
+breaks: []
+known_biases:
+  - Offices' own statements of intent, not outcomes; annual reports would add results
+revision_policy: each new edition is a new document
+licence: "per document (see each entry); text stored only where the document's licence allows it"
+snapshot_rights: per document; otherwise the title, URL, hash, size and page count only
+expected_volume: {min_per_run: 1, max_per_run: 10}
+params:
+  max_bytes: 60000000
+  max_pages: 500
+  documents:
+    - id: ukipo_corporate_plan_2026_27
+      title: "Intellectual Property Office Corporate Plan 2026 to 2027"
+      publisher: UK Intellectual Property Office
+      published: "2026-05-11"
+      url: https://www.gov.uk/government/publications/intellectual-property-office-corporate-plan-2026-to-2027/intellectual-property-office-corporate-plan-2026-to-2027
+      licence: "Open Government Licence v3.0 (GOV.UK)"
+      store_text: true
+      note: The HTML version of the plan
+    - id: epo_strategic_plan_2028
+      title: "EPO Strategic Plan 2028"
+      publisher: European Patent Office
+      url: https://www.epo.org/en/about-us/office/strategic-plan-2028
+      licence: "EPO website: no general reuse licence found for its web text; metadata only until confirmed"
+      store_text: false
+    - id: uspto_strategy
+      title: "USPTO strategy and reporting (the strategic plan's page)"
+      publisher: United States Patent and Trademark Office
+      url: https://www.uspto.gov/about-us/performance-and-planning/strategy-and-reporting
+      licence: "US federal government work: public domain (USPTO website terms); acknowledge the USPTO"
+      store_text: true
+      note: The link for the 2022-2026 plan's PDF now leads to this page
