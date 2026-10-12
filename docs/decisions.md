@@ -1081,3 +1081,23 @@ scratch space for the counts, then deleted.
 - `CLAUDE.md`'s scope and `docs/handover-day2.md` point at `docs/sources-backlog.md`.
 
 Next free decision number: D-017.
+
+## D-017 — The owner's answers on D-016: non-commercial research; APH summaries stored; ParlInfo later (2026-10-12)
+
+**Context.** D-016 left four questions for the owner (`docs/sources-backlog.md`).
+
+**Decision (the owner's).**
+1. **NonCommercial:** "Yes, Moria's use would be considered non-commercial research purposes." This settles APH's
+   CC BY-NC-ND 4.0 and the Federal and High Courts' terms in the Open Australian Legal Corpus.
+2. **APH summaries:** "Yes it can." The five APH feed cards set `keep_summary: true`. Shared outputs still quote
+   unaltered or link (NoDerivatives).
+3. **ParlInfo:** "We'll address that later. We do not need permission to access the RSS feeds though." The ParlInfo
+   route (L1) waits, and the feeds (T1) go ahead without asking APH.
+4. **Whether W1 and W2 hold up day 3:** "I'll defer judgement for now." The recommendation in D-016 stands until the
+   owner decides.
+
+**Spend:** $0.
+
+**Consequences.** `docs/sources-backlog.md` carries the answers. The Tier 1 cleanup's licence questions are settled.
+
+Next free decision number: D-018.

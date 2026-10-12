@@ -13,15 +13,17 @@ Claude's, not legal advice.*
 | **Pile of Law** | "Please double check whether it might [have useful sources] and if not, we can discard." | Checked (§4). Nothing Moria can't get better from the upstream sources: **discarded**. |
 | **Parliament** | "Lets go with the RSS feeds and we can add the other stuff from them to the backlog." | Five APH feeds join the cleanup (T1). ParlInfo, Hansard, the Library's pages, the other feeds and the statistics go to the backlog (§5). |
 
-**Still open (the owner's calls):**
-1. **NonCommercial.** Does Moria's use count as non-commercial? This covers APH's CC BY-NC-ND 4.0, and the Federal
-   and High Courts' "use within an organisation".
-2. **APH summaries.** Until you decide, Moria stores titles, links and dates only (NoDerivatives).
-3. **ParlInfo.** Ask APH for a route (recommended; L1).
-4. **Day 3 and the items waiting on you.** Do W1 and W2 (§2) hold up day 3? My recommendation: day 3 starts once T1
-   to T7 are done or are themselves waiting on an answer, and W1 and W2 join when you've acted.
-5. **The default parts of the corpus.** Commonwealth legislation, the Federal Court and the High Court are my
-   recommendation; widen them if a question needs more.
+**The owner's answers (D-017, 2026-10-12):**
+1. **NonCommercial:** "Moria's use would be considered non-commercial research purposes." This covers APH's
+   CC BY-NC-ND 4.0, and the Federal and High Courts' "use within an organisation".
+2. **APH summaries:** "Yes it can." The APH feeds keep their summaries (`keep_summary: true`).
+3. **ParlInfo:** "We'll address that later. We do not need permission to access the RSS feeds though." L1 waits; T1
+   goes ahead without asking APH.
+4. **Day 3 and the items waiting on the owner (W1, W2):** deferred ("I'll defer judgement for now"). The
+   recommendation stands: day 3 starts once T1 to T7 are done or are themselves waiting on an answer.
+
+**Still a recommendation:** the default parts of the corpus (Commonwealth legislation, the Federal Court and the High
+Court); the owner may widen them if a question needs more.
 
 ## 1. The steps every new source goes through
 
@@ -82,19 +84,20 @@ storage.
 - Hearings include Estimates, where IP Australia appears with its portfolio.
 
 **Licence.** The site says CC BY-NC-ND 4.0, except the Coat of Arms and where otherwise noted. My reading:
-- **NonCommercial:** open question 1.
+- **NonCommercial:** Moria's use is non-commercial research (the owner, D-017).
 - **NoDerivatives:** Moria may make adaptations (extracted text, embeddings, summaries) for its own use, but may not
-  share them. Shared outputs quote unaltered with attribution, or link. The public repo keeps counts only.
+  share them. Shared outputs quote unaltered with attribution, or link. The public repo keeps counts only. The feeds'
+  own summaries may be stored (the owner, D-017).
 
 **To do.**
 1. **Five cards:** `aph_senate_new_inquiries`, `aph_senate_reports`, `aph_senate_hearings`, `aph_house_inquiries`
    and `aph_joint_inquiries`. Each has core and adjacent rings, domains D1 and D6, family `policy`, and cadence daily.
-2. **`keep_summary: false`** until open question 2 is answered.
+2. **`keep_summary: true`** (the owner, D-017).
 3. **Expected volume.** Watch the House feeds for a week before setting `expected_volume`; they were empty today.
 4. **Host interval.** Add one for `www.aph.gov.au` in `config/moria.yaml`.
 5. **robots.txt.** `www.aph.gov.au/robots.txt` itself answers 403, and Moria's client treats a 401/403 robots.txt as
    "no rules" (`src/moria/http.py:70`), as RFC 9309 permits. The `feed` adapter doesn't read robots.txt in any case.
-   Asking APH (L1) settles it.
+   The owner: no permission is needed to read the RSS feeds (D-017).
 6. **Run from a runner first.** The WAF may treat GitHub's addresses differently.
 
 ### T2. Open Australian Legal Corpus (Isaacus)
@@ -128,7 +131,8 @@ for `legislation_frl`, which collects only from day 1 forward.
   suppression orders, and exclude robots' indexing. That is one reason it is left out by default: a 2025 copy can't
   honour orders made since.
 
-My reading: storing the text privately for IP Australia's internal use fits these terms. Republishing it does not.
+Moria's use is non-commercial research (the owner, D-017), so storing the text privately fits these terms.
+Republishing it does not.
 
 **To do.**
 1. **A new adapter, `hf_corpus`:**
@@ -243,7 +247,8 @@ resolutions.
 
 ### Parliament, beyond T1
 - **L1. ParlInfo: Hansard, Bills Digests, Library papers.** Today ParlInfo, including its robots.txt and its Bills
-  Digest feed, answered 403 with an Azure WAF JavaScript challenge. The routes, in order:
+  Digest feed, answered 403 with an Azure WAF JavaScript challenge. The owner will take this up later (D-017). The
+  routes, in order:
   1. **Ask APH.** The block page gives a reference code and a contact link for "WAF Block" errors. As an IP Australia
      project, ask the Parliament's web team or the Parliamentary Library for a data route (Hansard XML, Bills
      Digests), or for Moria's user agent to be let through.

@@ -65,4 +65,4 @@ the machinery spends money.
 - Logs print counts and keys, never content. Reports in the repo are aggregates only; hit samples stay in the bucket.
 - The OpenAlex key's daily budget is shared by every run that day: the weekly run estimates about 2,900 credits
   (it used 2,424) and won't start unless 1,000 would be left after it.
-- Next free decision number: D-017.
+- Next free decision number: D-018.
