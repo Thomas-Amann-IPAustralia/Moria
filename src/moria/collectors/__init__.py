@@ -15,6 +15,7 @@ from ..records import bundle_key, encode_bundle
 from ..store import Store
 from .abs import AbsSdmxCollector
 from .base import CollectContext, CollectError, Window, monitor_entry
+from .documents import DocumentsCollector
 from .feed import FeedCollector
 from .gdelt import GdeltCollector
 from .gkg import GkgCollector
@@ -24,6 +25,7 @@ from .sitemap import SitemapCollector
 
 ADAPTERS = {
     "abs_sdmx": AbsSdmxCollector,
+    "documents": DocumentsCollector,
     "gdelt": GdeltCollector,
     "gdelt_gkg": GkgCollector,
     "feed": FeedCollector,

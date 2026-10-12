@@ -1,0 +1,91 @@
+id: foresight_syntheses
+name: Foresight syntheses and national strategies (read once; the known-trends baseline is drafted from them)
+adapter: documents
+rings: [wider_world, adjacent, core]
+domains: [D0, D2, D3, D5]
+family: policy
+cadence: once
+publication_lag: "not applicable: each document is read once, and again when a new edition appears"
+coverage: >-
+  Megatrend and risk syntheses, and Australian national strategies, that together say what is already widely
+  expected (design §2.5, §5.2). Read once to draft the known-trends baseline (config/baseline.yaml); re-read when a
+  new edition appears. Fetching was checked from the build session on 2026-10-12: three documents answered, and the
+  others' sites refused cloud addresses (industry.gov.au, dcceew.gov.au and defence.gov.au drop the connection;
+  WEF and OECD answer 403).
+history_start: null
+stable_since: null
+breaks: []
+known_biases:
+  - Syntheses of what experts already expect, by design; they define what is not novel
+  - Australian and European framing; few non-English sources
+revision_policy: each new edition is a new document
+licence: "per document (see each entry); text stored only where the document's licence allows it"
+snapshot_rights: per document; otherwise the title, URL, hash, size and page count only
+expected_volume: {min_per_run: 1, max_per_run: 20}
+params:
+  max_bytes: 60000000
+  max_pages: 1500
+  documents:
+    - id: csiro_our_future_world_2022
+      title: "Our Future World: global megatrends impacting the way we live over coming decades"
+      publisher: CSIRO
+      published: "2022-07-01"
+      url: https://www.csiro.au/-/media/D61/Our-Future-World-Megatrends-report/Our-Future-World-report-2022-2.pdf
+      licence: "Copyright CSIRO 2022: all rights reserved; no reproduction without CSIRO's written permission"
+      store_text: false
+      note: Seven megatrends to 2042. Read in the build session; text not stored (rights reserved)
+    - id: jrc_megatrends_hub
+      title: "Megatrends Hub (booklet): the 14 global megatrends"
+      publisher: European Commission Joint Research Centre
+      published: "2018-01-01"
+      url: https://knowledge4policy.ec.europa.eu/sites/default/files/megatrends_hub_booklet_-_web.pdf
+      licence: "European Union 2018; reuse authorised under the Commission's reuse policy (Decision 2011/833/EU), acknowledging the source; images excluded"
+      store_text: true
+      note: The 14 megatrends, updated continuously on the Megatrends Hub website
+    - id: treasury_intergenerational_report_2023
+      title: "Intergenerational Report 2023: Australia's future to 2063"
+      publisher: Australian Treasury
+      published: "2023-08-24"
+      url: https://treasury.gov.au/sites/default/files/2023-08/p2023-435150.pdf
+      licence: "Commonwealth of Australia 2023, Creative Commons Attribution 3.0 Australia (except the Coat of Arms and images)"
+      store_text: true
+      note: Five major forces shaping the economy to 2063
+    - id: national_science_research_priorities_2024
+      title: "Australia's National Science and Research Priorities 2024"
+      publisher: Department of Industry, Science and Resources
+      published: "2024-08-12"
+      url: https://www.industry.gov.au/sites/default/files/2024-08/australias-national-science-and-research-priorities-2024.pdf
+      licence: "CC BY 4.0 (according to search results; to confirm on the document)"
+      store_text: false
+      note: Refused from the build session; URL from search results
+    - id: critical_technologies_list
+      title: "List of Critical Technologies in the National Interest"
+      publisher: Department of Industry, Science and Resources
+      url: https://www.industry.gov.au/publications/list-critical-technologies-national-interest
+      licence: "to confirm (the site refused the build session)"
+      store_text: false
+      note: Refused from the build session; the landing page, not a PDF
+    - id: net_zero_plan_2025
+      title: "Australia's Net Zero Plan"
+      publisher: Department of Climate Change, Energy, the Environment and Water
+      published: "2025-09-18"
+      url: https://www.dcceew.gov.au/sites/default/files/documents/net-zero-report.pdf
+      licence: "CC BY 4.0 (according to search results; to confirm on the document)"
+      store_text: false
+      note: Refused from the build session; URL from search results; minor corrections published 2025-11-25 and 2026-03-17
+    - id: national_defence_strategy_2026
+      title: "2026 National Defence Strategy and 2026 Integrated Investment Program"
+      publisher: Department of Defence
+      published: "2026-04-16"
+      url: https://www.defence.gov.au/about/strategic-planning/2026-national-defence-strategy-2026-integrated-investment-program
+      licence: "to confirm (the site refused the build session)"
+      store_text: false
+      note: Supersedes the 2024 strategy named in the design. Refused from the build session; the landing page
+    - id: wef_global_risks_report_2026
+      title: "Global Risks Report 2026"
+      publisher: World Economic Forum
+      published: "2026-01-14"
+      url: https://www.weforum.org/publications/global-risks-report-2026/
+      licence: "World Economic Forum terms (to confirm; WEF reports usually reserve all rights)"
+      store_text: false
+      note: HTTP 403 from the build session; the landing page

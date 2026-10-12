@@ -15,7 +15,7 @@ CONFIG_DIR = REPO_ROOT / "config"
 
 Ring = Literal["core", "adjacent", "wider_world"]
 Family = Literal["research", "patent", "policy", "legal", "news", "social", "statistics", "ipa_internal"]
-Cadence = Literal["daily", "weekly", "monthly", "quarterly"]
+Cadence = Literal["daily", "weekly", "monthly", "quarterly", "once"]
 
 
 class Strict(BaseModel):
@@ -57,7 +57,9 @@ class SourceCard(Strict):
 
     id: str
     name: str
-    adapter: Literal["gdelt", "gdelt_gkg", "feed", "sitemap", "legislation", "openalex_counts", "abs_sdmx", "ip_rapid"]
+    adapter: Literal[
+        "gdelt", "gdelt_gkg", "feed", "sitemap", "legislation", "openalex_counts", "abs_sdmx", "ip_rapid", "documents"
+    ]
     rings: list[Ring]
     domains: list[str]
     family: Family
