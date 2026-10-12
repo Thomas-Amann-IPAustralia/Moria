@@ -57,7 +57,7 @@ class SourceCard(Strict):
 
     id: str
     name: str
-    adapter: Literal["gdelt", "feed", "sitemap", "legislation"]
+    adapter: Literal["gdelt", "gdelt_gkg", "feed", "sitemap", "legislation"]
     rings: list[Ring]
     domains: list[str]
     family: Family

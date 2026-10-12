@@ -227,3 +227,15 @@ def test_gdelt_logs_progress_and_the_manifest_counts_request_outcomes(http_cfg, 
     )
     counts = json.loads(store.get(r.manifest_key))["counts"]
     assert counts["requests"] == 6 and counts["requests_http_429"] == 3 and counts["requests_http_200"] == 3
+
+
+def test_gdelt_group_keeps_no_records_when_a_later_call_fails(http_cfg, store):
+    def handler(request):
+        q = parse_qs(urlsplit(str(request.url)).query)
+        if q["mode"] == ["artlist"]:
+            return httpx.Response(200, json={"articles": [{"url": "https://news.test/a", "domain": "news.test"}]})
+        return httpx.Response(503)  # every volume call fails
+
+    c = card("gdelt", {"phrases_per_query": 6, "territory_rings": ["core"], "include_themes": False})
+    r = run_collection(c, store, make_client(http_cfg, handler), Window.for_day(DAY), limit=1)
+    assert r.status == "failed" and "every query group failed" in r.error  # no half-collected group survives

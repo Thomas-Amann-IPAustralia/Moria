@@ -16,11 +16,13 @@ from ..store import Store
 from .base import CollectContext, CollectError, Window, monitor_entry
 from .feed import FeedCollector
 from .gdelt import GdeltCollector
+from .gkg import GkgCollector
 from .legislation import LegislationCollector
 from .sitemap import SitemapCollector
 
 ADAPTERS = {
     "gdelt": GdeltCollector,
+    "gdelt_gkg": GkgCollector,
     "feed": FeedCollector,
     "sitemap": SitemapCollector,
     "legislation": LegislationCollector,

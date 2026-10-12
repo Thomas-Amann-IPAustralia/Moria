@@ -25,15 +25,20 @@ PARSER_VERSION = "gdelt-v1"
 log = logging.getLogger("moria.collect.gdelt")
 
 
-class GdeltParams(Strict):
+class QueryGroupParams(Strict):
+    """The query groups and volume scopes, shared by the DOC API adapter and the GKG bulk-file adapter."""
+
     phrases_per_query: int = 6
-    max_records: int = 250
     territory_rings: list[Literal["core", "adjacent", "wider_world"]] = Field(
         default_factory=lambda: ["core", "adjacent", "wider_world"]
     )
     include_themes: bool = True
     volume_scopes: list[Literal["world", "au"]] = Field(default_factory=lambda: ["world", "au"])
     articles: bool = True
+
+
+class GdeltParams(QueryGroupParams):
+    max_records: int = 250
 
 
 @dataclass(frozen=True)
@@ -47,7 +52,7 @@ class QueryGroup:
         return terms[0] if len(terms) == 1 else "(" + " OR ".join(terms) + ")"
 
 
-def build_groups(params: GdeltParams) -> list[QueryGroup]:
+def build_groups(params: QueryGroupParams) -> list[QueryGroup]:
     groups: list[QueryGroup] = []
 
     def chunk(prefix: str, phrases: list[str]) -> None:
@@ -119,7 +124,7 @@ class GdeltCollector:
         failures = 0
         log.info("gdelt: %d query groups, up to %d calls each", len(groups), self._calls_per_group())
         for i, g in enumerate(groups, start=1):
-            before = len(records)
+            group_records: list[RawRecord] = []  # kept only if every call for the group succeeds
             try:
                 if self.params.articles:
                     out = self._call(
@@ -133,7 +138,7 @@ class GdeltCollector:
                         if not url:
                             continue
                         payload = {"query_group": g.group_id, "article": art}
-                        records.append(
+                        group_records.append(
                             RawRecord(
                                 envelope=make_envelope(
                                     provider=art.get("domain") or "unknown",
@@ -159,7 +164,7 @@ class GdeltCollector:
                     suffix = "sourcelang:english" if scope == "world" else "sourcecountry:australia"
                     out = self._call(ctx, f"{g.expression} {suffix}", "timelinevolraw", {})
                     payload = {"query_group": g.group_id, "scope": scope, "timeline": out["data"].get("timeline", [])}
-                    records.append(
+                    group_records.append(
                         RawRecord(
                             envelope=make_envelope(
                                 provider="The GDELT Project",
@@ -186,7 +191,8 @@ class GdeltCollector:
                 ctx.warnings.append(f"gdelt group {g.group_id} failed: {e}")
                 log.warning("gdelt [%d/%d] %s failed: %s", i, len(groups), g.group_id, e)
                 continue
-            log.info("gdelt [%d/%d] %s ok: %d records", i, len(groups), g.group_id, len(records) - before)
+            records.extend(group_records)
+            log.info("gdelt [%d/%d] %s ok: %d records", i, len(groups), g.group_id, len(group_records))
         log.info("gdelt: %d of %d groups ok, %d failed", len(groups) - failures, len(groups), failures)
         if groups and failures == len(groups):
             raise CollectError(f"gdelt: every query group failed ({failures}); first: {ctx.warnings[0]}")

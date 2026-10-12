@@ -43,7 +43,8 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   - Jobs log counts and keys, never content.
   - `config/territories.context.yaml` (the owner's private territory context) is git-ignored and must never be
     committed. The owner said on 2026-10-10 to keep it private.
-- News: titles, URLs and metadata only, never article text. Web pages: extracted text plus the original HTML's hash
+- News: titles, URLs and metadata only, never article text. Text may be searched in memory (GDELT quotations), then
+  dropped. Web pages: extracted text plus the original HTML's hash
   and size.
 - robots.txt is honoured for web pages. Per-host minimum intervals are in `config/moria.yaml`: GDELT at 5.5 s.
 - Third-party model code (for example, a model repo's own runtime) is read before it is run, pinned and hashed.
@@ -79,7 +80,7 @@ Local runs default to `--store local`, which writes to `data/store/` (git-ignore
 
 | Id | Adapter | Notes |
 |---|---|---|
-| `gdelt_news` | gdelt | 41 query groups from `config/territories.yaml` and `config/themes.yaml`. Each group gets an article list (worldwide English), a daily volume worldwide, and a daily volume from Australian sources. GDELT's API throttles shared cloud addresses, Actions runners included (HTTP 429); the bulk-file switch awaits the owner (D-009). |
+| `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 41 query groups (`config/territories.yaml`, `config/themes.yaml`) in title, URL, quotations and named entities; matches are kept, with daily volumes worldwide and for `.au` domains against every document. Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
 | `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. A full first snapshot is a separate backfill. |
 | `wipo_press`, `ukipo_news` | feed | Items dated in the window plus a 3-day lookback |

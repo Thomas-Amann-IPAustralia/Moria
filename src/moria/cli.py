@@ -12,6 +12,7 @@ import typer
 
 from .collectors import ADAPTERS, Window, run_collection
 from .collectors.gdelt import GdeltParams, build_groups
+from .collectors.gkg import GkgParams
 from .config import config_hash, load_config, load_sources, load_territories, load_themes
 from .envcheck import run_checks
 from .http import PoliteClient
@@ -56,8 +57,8 @@ def sources() -> None:
 @app.command()
 def terms() -> None:
     """Print the GDELT query groups built from the territories and the broad themes."""
-    card = next(c for c in load_sources().values() if c.adapter == "gdelt")
-    groups = build_groups(GdeltParams.model_validate(card.params))
+    card = next(c for c in load_sources().values() if c.adapter in ("gdelt", "gdelt_gkg"))
+    groups = build_groups((GkgParams if card.adapter == "gdelt_gkg" else GdeltParams).model_validate(card.params))
     for g in groups:
         typer.echo(f"{g.group_id:<28} {g.expression}")
     typer.echo(f"{len(groups)} groups")
