@@ -7,9 +7,9 @@ Spending guard (CLAUDE.md: nothing in the machinery spends money):
 - every real query carries `maximumBytesBilled`, so BigQuery refuses one that would scan more than the cap;
 - the project should be a BigQuery sandbox, with no billing account, so nothing can ever be billed (docs/setup.md).
 
-Credentials are Google's application default credentials: whatever GOOGLE_APPLICATION_CREDENTIALS points to (a
-service-account key, or a workload identity federation file from GitHub Actions). The project id comes from the
-environment variable named in the card. Neither is ever logged.
+Credentials: a service account key's JSON in GCP_SA_KEY (how GitHub Actions secrets and Claude Code environment
+variables hold it), or else Google's application default credentials (for example a workload identity federation
+file). The project id comes from the environment variable named in the card. Neither is ever logged.
 """
 
 from __future__ import annotations
@@ -70,15 +70,28 @@ class BigQueryCpcParams(Strict):
     wait_s: int = 900  # how long to wait for the query to finish
 
 
+KEY_ENV = "GCP_SA_KEY"  # a service account key's JSON content, as GitHub Actions and Claude Code hold it
+
+
 def default_credentials():
-    """Google's application default credentials, scoped to BigQuery. Raises CollectError when there are none."""
+    """A service account key from GCP_SA_KEY if set, else Google's application default credentials (for example a
+    workload identity federation file). Scoped to BigQuery. Raises CollectError when there are none."""
+    import json
+
     import google.auth
     from google.auth.exceptions import DefaultCredentialsError
+    from google.oauth2 import service_account
 
+    info = os.environ.get(KEY_ENV, "")
+    if info:
+        try:
+            return service_account.Credentials.from_service_account_info(json.loads(info), scopes=[SCOPE])
+        except (ValueError, KeyError) as e:
+            raise CollectError(f"bigquery: {KEY_ENV} is not a service account key's JSON ({type(e).__name__})") from e
     try:
         credentials, _ = google.auth.default(scopes=[SCOPE])
     except DefaultCredentialsError as e:
-        raise CollectError("bigquery: no Google credentials (set GOOGLE_APPLICATION_CREDENTIALS; docs/setup.md)") from e
+        raise CollectError(f"bigquery: no Google credentials (set {KEY_ENV}; docs/setup.md)") from e
     return credentials
 
 

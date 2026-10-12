@@ -54,7 +54,10 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
         checks.append(Check("api:openalex", "skipped", "no key"))
 
     project = os.environ.get(cfg.secrets.get("gcp_project", ""), "")
-    if project and os.environ.get(cfg.secrets.get("gcp_credentials", ""), ""):
+    has_key = bool(
+        os.environ.get(cfg.secrets.get("gcp_sa_key", ""), "") or os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+    )
+    if project and has_key:
         try:
             from .collectors.bigquery import API, default_credentials
 

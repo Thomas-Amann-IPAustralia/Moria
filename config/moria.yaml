@@ -27,5 +27,5 @@ secrets:
   r2_account_id: R2_ACCOUNT_ID
   r2_access_key_id: R2_ACCESS_KEY_ID
   r2_secret_access_key: R2_SECRET_ACCESS_KEY
-  gcp_project: GCP_PROJECT_ID                      # BigQuery patent counts; not set up yet (D-011)
-  gcp_credentials: GOOGLE_APPLICATION_CREDENTIALS  # the path of a credentials file, never the key itself
+  gcp_project: GCP_PROJECT_ID   # BigQuery patent counts; not set up yet (D-011, docs/setup.md)
+  gcp_sa_key: GCP_SA_KEY        # a service account key's JSON (BigQuery Job User on a project with no billing)

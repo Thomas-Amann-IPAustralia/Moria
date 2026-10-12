@@ -101,3 +101,13 @@ def test_missing_project_or_bad_table_fail_loudly(http_cfg, store, monkeypatch):
     assert r.status == "failed" and "GCP_PROJECT_ID is not set" in r.error
     with pytest.raises(Exception, match="unexpected table name"):
         BigQueryCpcCollector(bq_card(table="x`; DROP TABLE y; --"))
+
+
+def test_a_malformed_key_fails_loudly_without_echoing_it(monkeypatch):
+    from moria.collectors.base import CollectError
+    from moria.collectors.bigquery import default_credentials
+
+    monkeypatch.setenv("GCP_SA_KEY", "not-json PLACEHOLDER-SECRET")
+    with pytest.raises(CollectError) as e:
+        default_credentials()
+    assert "GCP_SA_KEY is not a service account key's JSON" in str(e.value) and "PLACEHOLDER" not in str(e.value)
