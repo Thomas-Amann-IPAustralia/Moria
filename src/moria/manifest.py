@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from importlib import metadata
@@ -59,6 +60,7 @@ class Manifest:
     command: str
     run_id: str = field(default_factory=new_run_id)
     started_at: str = field(default_factory=lambda: utc_now().isoformat(timespec="seconds"))
+    started_ns: int = field(default_factory=time.time_ns)  # orders runs that start within the same second
     finished_at: str | None = None
     status: str = "running"
     error: str | None = None

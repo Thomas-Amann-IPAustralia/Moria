@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 
 import pyarrow as pa
 import pyarrow.parquet as pq
 
+from .config import REPO_ROOT
 from .lake import PARQUET, file_sha256
 from .manifest import Manifest
 from .store import Store
@@ -109,6 +111,12 @@ QUARANTINE = pa.schema(
 )
 
 
+def cache_root() -> Path:
+    """Where store objects are cached locally (git-ignored): `MORIA_CACHE_DIR`, else data/cache. Tests set their own,
+    so they never touch a real cache."""
+    return Path(os.environ.get("MORIA_CACHE_DIR") or REPO_ROOT / "data" / "cache")
+
+
 def write_rows(rows: list[dict], schema: pa.Schema, path: Path, sort: tuple[str, ...]) -> int:
     """Rows sorted by `sort`, written as one zstd Parquet file; returns the row count."""
     rows = sorted(rows, key=lambda r: tuple("" if r.get(k) is None else r[k] for k in sort))
@@ -144,9 +152,14 @@ def cached_get(store: Store, key: str, sha256: str | None, cache_root: Path) -> 
 
 
 def latest_manifest(store: Store, command: str) -> dict | None:
-    """The newest run manifest of a command (run ids sort by time)."""
+    """The newest run manifest of a command. Run ids sort by their start second; runs that started in the same
+    second are ordered by their start time in nanoseconds."""
     keys = sorted(k for k in store.list(f"manifests/{command}/") if k.endswith(".json"))
-    return json.loads(store.get(keys[-1])) if keys else None
+    if not keys:
+        return None
+    second = keys[-1].rsplit("/", 1)[1][:16]
+    tied = [json.loads(store.get(k)) for k in keys if k.rsplit("/", 1)[1][:16] == second]
+    return max(tied, key=lambda m: (m.get("started_ns") or 0, m["run_id"]))
 
 
 class StageInputError(RuntimeError):

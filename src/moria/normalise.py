@@ -32,18 +32,26 @@ from pathlib import Path
 
 import duckdb
 
-from .config import REPO_ROOT, FeaturesConfig, SourceCard
+from .config import FeaturesConfig, SourceCard
 from .lake import releases
 from .manifest import Manifest
 from .records import canonical_json, decode_bundle, sha256_hex
 from .store import Store
 from .sweep import SWEEP_VERSION, SweepFile, sweep
-from .tables import DOCUMENTS, OBSERVATIONS, QUARANTINE, SERIES, cached_get, latest_manifest, upload, write_rows
+from .tables import (
+    DOCUMENTS,
+    OBSERVATIONS,
+    QUARANTINE,
+    SERIES,
+    cache_root,
+    cached_get,
+    upload,
+    write_rows,
+)
 from .text import canonical_url, cut, parse_moment, period_start, plain_text, title_key
 
 NORMALISE_VERSION = "normalise-v1"
 COMMAND = "normalise"
-CACHE = REPO_ROOT / "data" / "cache"
 
 log = logging.getLogger("moria.normalise")
 
@@ -697,7 +705,7 @@ def normalise_source(store: Store, card: SourceCard, cfg: FeaturesConfig, sweep_
     quarantined: list[dict] = []
     files: dict[str, Path] = {}
     if lake:
-        paths = {k: cached_get(store, k, sha, CACHE) for k, sha in inputs}
+        paths = {k: cached_get(store, k, sha, cache_root()) for k, sha in inputs}
         if card.adapter in LAKE_DOCS:
             docs, quarantined = documents_from_lake(card, cfg, rel, paths, sweep_cfg, counts)
         else:
@@ -791,14 +799,7 @@ def run(
 
 
 def latest_passed(store: Store) -> dict | None:
-    m = latest_manifest(store, COMMAND)
-    if m is None:
-        return None
-    if m["status"] == "passed":
-        return m
-    keys = sorted(k for k in store.list(f"manifests/{COMMAND}/") if k.endswith(".json"))
-    for k in reversed(keys):
-        m = json.loads(store.get(k))
-        if m["status"] == "passed":
-            return m
-    return None
+    """The newest normalise run that passed."""
+    runs = [json.loads(store.get(k)) for k in store.list(f"manifests/{COMMAND}/") if k.endswith(".json")]
+    passed = [m for m in runs if m["status"] == "passed"]
+    return max(passed, key=lambda m: (m["run_id"][:16], m.get("started_ns") or 0, m["run_id"])) if passed else None

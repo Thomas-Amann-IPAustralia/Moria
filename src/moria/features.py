@@ -32,11 +32,21 @@ from .config import FeaturesConfig
 from .embed import Encoder, from_blobs, to_blob
 from .lake import file_sha256
 from .manifest import Manifest
-from .normalise import CACHE
 from .normalise import COMMAND as NORMALISE
 from .records import canonical_json, sha256_hex
 from .store import Store
-from .tables import STRS, TS, cached_get, fetch_outputs, latest_manifest, read_rows, upload, upstream, write_rows
+from .tables import (
+    STRS,
+    TS,
+    cache_root,
+    cached_get,
+    fetch_outputs,
+    latest_manifest,
+    read_rows,
+    upload,
+    upstream,
+    write_rows,
+)
 from .text import cut
 
 log = logging.getLogger("moria.features")
@@ -74,7 +84,7 @@ VOCABULARY = pa.schema(
 def documents_in(store: Store) -> tuple[dict, dict[str, Path]]:
     """The latest passed normalise run and its documents, by source, as local files checked against its hashes."""
     m = upstream(store, NORMALISE)
-    files = fetch_outputs(store, m, "lake/documents/", CACHE)
+    files = fetch_outputs(store, m, "lake/documents/", cache_root())
     return m, {k.split("/source=")[1].split("/")[0]: p for k, p in files.items()}
 
 
@@ -160,13 +170,13 @@ def embed(store: Store, cfg: FeaturesConfig, encoder_factory, config_hash: str |
 def _reuse_pool(store: Store, previous: dict | None, source: str, prefix: str) -> dict[str, bytes]:
     for o in (previous or {}).get("outputs", []):
         if o["key"] == f"{prefix}source={source}/embeddings.parquet" and store.exists(o["key"]):
-            rows = read_rows(cached_get(store, o["key"], o["sha256"], CACHE), ["text_sha256", "vector"])
+            rows = read_rows(cached_get(store, o["key"], o["sha256"], cache_root()), ["text_sha256", "vector"])
             return {r["text_sha256"]: r["vector"] for r in rows}
     return {}
 
 
 def _checkpoint_path(cfg: FeaturesConfig, source: str) -> Path:
-    return CACHE / "embed-checkpoints" / f"{cfg.embed.revision[:12]}-{cfg.embed.max_tokens}" / source
+    return cache_root() / "embed-checkpoints" / f"{cfg.embed.revision[:12]}-{cfg.embed.max_tokens}" / source
 
 
 def _checkpoint_save(cfg: FeaturesConfig, source: str, part: dict[str, bytes]) -> None:
@@ -207,7 +217,7 @@ def _failed(store: Store, manifest: Manifest, e: Exception) -> tuple[str, str, d
 
 def embeddings_in(store: Store) -> tuple[dict, dict[str, Path]]:
     m = upstream(store, EMBED)
-    files = fetch_outputs(store, m, "features/embeddings/", CACHE)
+    files = fetch_outputs(store, m, "features/embeddings/", cache_root())
     return m, {k.split("/source=")[1].split("/")[0]: p for k, p in files.items()}
 
 

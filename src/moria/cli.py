@@ -268,6 +268,22 @@ def ipr_refresh_command(
         raise typer.Exit(2)
 
 
+@ipr_app.command("metrics")
+def ipr_metrics_command(
+    threads: int = typer.Option(4, help="DuckDB threads"),
+    memory_limit: str = typer.Option("3GB", help="DuckDB memory limit"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Monthly demand, outcome and timeliness series from the latest IP RAPID release, into lake/ipr_metrics (the
+    same shapes as lake/series and lake/observations). Organisation, sector and country level only."""
+    from .iprmetrics import COMMAND, metrics
+
+    cfg, cards = load_config(), load_sources()
+    card = next(c for c in cards.values() if c.adapter == "ip_rapid")
+    status, mkey, counts = metrics(open_store(cfg.store, store), card, config_hash(card), threads, memory_limit)
+    _stage_line(COMMAND, status, mkey, counts)
+
+
 @app.command()
 def census(
     source: str = typer.Argument(..., help="A source id from `moria sources`"),
@@ -434,21 +450,20 @@ def search(
     terminal: titles are evidence, so never run this in a scheduled job, whose logs are public."""
     from .features import INDEX
     from .features import search as bm25
-    from .normalise import CACHE
-    from .tables import fetch_outputs, upstream
+    from .tables import cache_root, fetch_outputs, upstream
 
     cfg = load_config()
     st = open_store(cfg.store, store)
     m = upstream(st, INDEX)
-    (db,) = fetch_outputs(st, m, "features/index/", CACHE).values()
+    (db,) = fetch_outputs(st, m, "features/index/", cache_root()).values()
     for score, item, src, day, title in bm25(db, query, limit, source, since):
         typer.echo(f"{score:>7} {day} {src:<24} {item[:12]} {title}")
 
 
 @app.command()
 def prepare(store: str = typer.Option(None, help="local or r2; default from config/moria.yaml")) -> None:
-    """The evidence layer's whole chain: normalise, embed, dedup, keyphrases, tag and index. Stops at the first
-    stage that fails."""
+    """The evidence layer's whole chain: normalise, embed, dedup, keyphrases, tag, index and the IP RAPID metrics.
+    Stops at the first stage that fails."""
     from .features import DEDUP, EMBED, INDEX, KEYPHRASES, dedup, embed, index, keyphrases
     from .normalise import run as normalise_run
     from .sweep import load_sweep
@@ -471,6 +486,27 @@ def prepare(store: str = typer.Option(None, help="local or r2; default from conf
     tag_hash = config_hash(features, codebook, territories, baseline)
     _stage_line(COMMAND, *tag_run(st, features, codebook, territories, baseline, cards, factory, tag_hash))
     _stage_line(INDEX, *index(st, features, chash))
+    from .iprmetrics import COMMAND as IPRM
+    from .iprmetrics import metrics as ipr_metrics
+
+    ipr_card = next(c for c in cards.values() if c.adapter == "ip_rapid")
+    _stage_line(IPRM, *ipr_metrics(st, ipr_card, config_hash(ipr_card)))
+
+
+@app.command("evidence-report")
+def evidence_report_command(
+    out: str = typer.Option("reports/evidence-layer.md", help="Where to write the report (aggregates only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Profile the evidence layer after `moria prepare`: counts by source, date basis, sweep finding, dedup rule and
+    tag. Safe for the public repo: no titles, text, URLs or keyphrases."""
+    from .evidence_report import evidence_report
+
+    text = evidence_report(open_store(load_config().store, store))
+    path = Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    typer.echo(f"wrote {path}")
 
 
 @app.command()
