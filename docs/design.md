@@ -500,8 +500,11 @@ Each source has a card in `config/sources/<id>.yaml`, written on day 1 and check
 ### 5.3 Gaps, stated in every output
 
 - **D4 (customers) is low coverage,** because its best evidence is internal.
-- **Courts:** AustLII's terms restrict automated bulk access.
-- **Parliament** is blocked from cloud IPs, as found today.
+- **Courts:** AustLII's terms restrict automated bulk access, and the Federal Court, the High Court and AustLII
+  refuse cloud addresses (D-018). The Open Australian Legal Corpus covers the Federal and High Courts to 10 March 2025.
+- **Parliament:** APH's committee feeds are read (D-018); ParlInfo, Hansard and Estimates transcripts are blocked
+  from cloud addresses.
+- **Peer offices:** EUIPO and JPO refuse cloud addresses (D-018).
 - **Non-English sources** are absent.
 
 ### 5.4 Tier 2
@@ -986,7 +989,9 @@ Candidate developments:
 
 **Progress:** day 1 was built on 2026-10-10 (D-007), and the memory probe ran on a real runner (D-008). Day 2 was
 built on 2026-10-12 (D-011 to D-013); the BigQuery patent counts wait on a GCP project, and five foresight documents
-on a route past their sites' blocks. The rules and commands are in `CLAUDE.md`, and what's next is in
+on a route past their sites' blocks. The Tier 1 cleanup (`docs/sources-backlog.md`) was built on 2026-10-12 and 13
+(D-018): APH's committee feeds, the Open Australian Legal Corpus, IP Australia's full snapshot and PDFs, MOIP news,
+WIPO's treaty notifications and bulk statistics, and the ABS's CABEE and BERD; EUIPO, JPO and the courts are gaps. The rules and commands are in `CLAUDE.md`, and what's next is in
 `docs/handover-day2.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.

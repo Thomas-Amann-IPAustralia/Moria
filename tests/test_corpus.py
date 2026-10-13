@@ -103,10 +103,9 @@ def test_the_corpus_goes_to_the_lake_in_parts_with_observable_dates(http_cfg, st
     ]
     fca = {x["version_id"]: x for x in rows(store, lake[0])}
     assert fca["federal_court_of_australia:2"]["observable"] == "2024-05-06T00:00"  # judgments: the decision date
-    assert (
-        fca["federal_court_of_australia:5"]["observable"] is None
-        and fca["federal_court_of_australia:5"]["date"] is None
-    )
+    # a judgment without a date is observable from its scrape: never earlier than Moria could know
+    assert fca["federal_court_of_australia:5"]["observable"] == "2025-03-09T22:00"
+    assert fca["federal_court_of_australia:5"]["date"] is None
     assert fca["federal_court_of_australia:2"]["licence"] == "FCA terms"
     text = "a placeholder judgment's text"
     assert fca["federal_court_of_australia:2"]["text_sha256"] == hashlib.sha256(text.encode()).hexdigest()

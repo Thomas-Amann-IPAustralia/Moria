@@ -7,14 +7,16 @@ a Futures Cone, each finding traceable to its evidence. Free by default: scikit-
 models (including a free Jev-class decision model), with Cloudflare R2 for storage and GitHub Actions or the GCE
 free tier for compute.
 
-**Status: days 1 and 2 of the machinery sprint are built** (D-007, D-011 to D-013). Eleven daily sources (news,
-legislation, IP Australia, WIPO, and peer IP offices: UKIPO, EPO (two feeds), IPONZ, CIPO, USPTO and IPOS), three
-weekly ones (OpenAlex counts over the whole topic
-taxonomy, ABS headline series, the IP RAPID lake with individuals' names hashed), patent counts on BigQuery (dry run
-until a GCP project exists), the foresight syntheses and a draft known-trends baseline, the terms check, and census
-reports. Read [`CLAUDE.md`](CLAUDE.md) for the rules and commands, and [`docs/design.md`](docs/design.md) for the
-design. The decisions are in [`docs/decisions.md`](docs/decisions.md); what's next is in
-[`docs/handover-day2.md`](docs/handover-day2.md).
+**Status: days 1 and 2 of the machinery sprint and the Tier 1 cleanup are built** (D-007, D-011 to D-013, D-018).
+Seventeen daily sources (news, legislation, IP Australia, WIPO, APH's committee feeds, and peer IP offices: UKIPO,
+EPO (two feeds), IPONZ, CIPO, USPTO, IPOS and Korea's MOIP), five weekly ones (OpenAlex counts over the whole topic
+taxonomy, ABS headline series and spreadsheet data cubes, WIPO treaty notifications, the IP RAPID lake with
+individuals' names hashed), bulk sources in the lake (the Open Australian Legal Corpus, WIPO's bulk statistics),
+patent counts on BigQuery (dry run), documents read once (foresight syntheses, peer offices' strategies, IP
+Australia's publications), a known-trends baseline, the terms check, and census reports. Read
+[`CLAUDE.md`](CLAUDE.md) for the rules and commands, and [`docs/design.md`](docs/design.md) for the design. The
+decisions are in [`docs/decisions.md`](docs/decisions.md); what's next is in
+[`docs/handover-day2.md`](docs/handover-day2.md) and [`docs/sources-backlog.md`](docs/sources-backlog.md).
 
 ```bash
 uv sync --group dev                          # install
@@ -23,7 +25,9 @@ uv run moria sources                         # the source cards
 uv run moria env-check                       # which keys are present; one cheap call per service
 uv run moria collect legislation_frl         # yesterday (UTC), into data/store/ (git-ignored)
 uv run moria collect-daily --store r2        # what the daily workflow runs
-uv run moria collect-weekly --store r2       # what the weekly workflow runs (OpenAlex, ABS, IP RAPID)
+uv run moria collect-weekly --store r2       # what the weekly workflow runs (OpenAlex, ABS, IP RAPID, WIPO Lex)
+uv run moria collect ipaustralia_site --backfill  # a first snapshot: every page in the sitemap
+uv run moria discover https://example.org/news   # what a new source's address answers (never its text)
 uv run moria ipr refresh --limit 1           # IP RAPID smoke test: convert one table locally, upload nothing
 uv run moria terms check --weeks 2           # search terms against sampled days of news
 uv run moria census abs_headline             # profile a source's latest collection (aggregates only)
@@ -38,7 +42,7 @@ uv run moria baseline                        # the known-trends baseline
 | `docs/setup.md` | Accounts and keys: what goes where (GitHub Actions secrets, the Claude Code environment) |
 | `docs/mining-explained.md` | How the mining works, in plain terms, with a worked example and what labelling looks like |
 | `config/` | Settings, source cards, territories (public parts), broad themes |
-| `src/moria/` | The package: store, records, manifests, HTTP client, collectors, IP RAPID, terms check, census, CLI |
+| `src/moria/` | The package: store, records, manifests, HTTP client, collectors, the bulk stages (IP RAPID, the legal corpus, WIPO statistics), terms check, census, discover, CLI |
 | `.github/workflows/` | `ci`, `collect-daily`, `collect-weekly`, `collect-source`, `terms-check`, `probe` |
 | `config/territories.yaml` | The five Growth Territories: descriptions, search terms, pathways and IP RAPID indicators |
 | `config/baseline.yaml` | The known-trends baseline (a draft for the owner), drafted from the foresight syntheses |

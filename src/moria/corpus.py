@@ -1,10 +1,11 @@
 """The Open Australian Legal Corpus (Isaacus, on Hugging Face), into the lake in parts (D-016): adapter `hf_corpus`.
 
 The corpus is one newline-delimited JSON file (9.4 GB, 232,560 documents in release 7.1.0) of legislation and
-judgments, each a document with nine fields. It is a snapshot, re-run when a new release appears:
+judgments, each a document with ten fields (its README says nine but lists ten). It is a snapshot, re-run when a new
+release appears:
 1. The file is downloaded by stream at a pinned dataset commit (never `main`) and its SHA-256 is checked against the
    card's (the Hugging Face file's LFS object id). The file itself is not kept.
-2. Its first record's fields are checked against the nine published ones, so a schema change fails the run.
+2. Its first record's fields are checked against the ten published ones, so a schema change fails the run.
 3. DuckDB keeps only the card's sources (by default the Federal Register of Legislation, the Federal Court and the
    High Court) and writes one zstd Parquet file per source to `lake/<source id>/release=<release>/<source>.parquet`.
 4. A release manifest (`raw/<source id>/<release>/manifest.json`) records the commit, the file's hash and size, the
@@ -12,9 +13,11 @@ judgments, each a document with nine fields. It is a snapshot, re-run when a new
 
 Each row keeps the corpus's fields, typed (`date` as DATE, `when_scraped` as TIMESTAMPTZ), plus:
 - `event_at`: the document's own date;
-- `observable_at` (design §11.3): for judgments, the decision date; for legislation, `when_scraped`, because only the
-  latest version is in the corpus and its text was not public before it was in force, so a hindsight test must not
-  see it earlier;
+- `observable_at` (design §11.3): for judgments, the decision date (or, for a judgment without one, `when_scraped`:
+  never too early); for legislation, `when_scraped`, because only the latest version is in the corpus and its text
+  was not public before it was in force, so a hindsight test must not see it earlier. (Release 7.1.0 was ingested
+  with parser hf-corpus-v1, which left `observable_at` empty for the 4,354 High Court decisions without a date;
+  normalisation applies the same fallback to them.)
 - `licence`: each document keeps its own source's terms (the corpus's LICENCE.md);
 - `text_chars`, `text_sha256`, and `evidence_id` = sha256(provider | version_id | text_sha256).
 
@@ -43,7 +46,7 @@ from .http import PoliteClient
 from .lake import LakeResult, fail, file_sha256, finish_release, release_key, upload_table
 from .manifest import Manifest
 
-PARSER_VERSION = "hf-corpus-v1"
+PARSER_VERSION = "hf-corpus-v2"
 # Row groups are capped by size, not only rows: a legal text can be megabytes, and buffering 20,000 of them runs out
 # of memory
 ROW_GROUPS = "ROW_GROUP_SIZE 100000, ROW_GROUP_SIZE_BYTES '64MB'"
@@ -126,7 +129,8 @@ def convert(con: duckdb.DuckDBPyConnection, params: HfCorpusParams, src: Path, o
     by_date = [s for s, c in params.sources.items() if c.observable_from == "date"]
     observable = (
         f"CASE WHEN source IN ({', '.join(_sql_text(s) for s in by_date) or 'NULL'}) "
-        "THEN CAST(CAST(date AS DATE) AS TIMESTAMPTZ) ELSE CAST(when_scraped AS TIMESTAMPTZ) END"
+        "THEN coalesce(CAST(CAST(date AS DATE) AS TIMESTAMPTZ), CAST(when_scraped AS TIMESTAMPTZ)) "
+        "ELSE CAST(when_scraped AS TIMESTAMPTZ) END"
     )
     select = (
         "SELECT version_id, type, jurisdiction, source, mime, CAST(date AS DATE) AS date, citation, url, "

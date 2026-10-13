@@ -5,8 +5,8 @@ start period. Every series a query returns becomes one record holding all its ob
 code and label, its unit and each observation's status. ABS revises figures, so each run is a vintage: an unchanged
 series gets the same evidence id run after run, and a revised one gets a new id (design §5.1, revision_policy).
 
-Business entries and exits (CABEE) and business R&D (BERD) are published as spreadsheets, not through this API, so
-they are not covered here.
+Business entries and exits (CABEE) and business R&D (BERD) are published as spreadsheets, not through this API;
+the `xlsx` adapter reads them (card abs_datacubes).
 """
 
 from __future__ import annotations

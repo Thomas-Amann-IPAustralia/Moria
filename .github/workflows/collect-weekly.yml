@@ -1,7 +1,7 @@
 name: collect-weekly
 
 # Collects every weekly source into the private R2 bucket: OpenAlex whole-taxonomy counts, the ABS headline series
-# and the IP RAPID release (a base or a delta in the lake). Mondays, after IP Australia rebuilds IP RAPID (about
+# and data cubes (CABEE, BERD), WIPO's treaty notifications and the IP RAPID release (a base or a delta in the lake). Mondays, after IP Australia rebuilds IP RAPID (about
 # 00:30 UTC) and after OpenAlex's daily budget resets (00:00 UTC). Schedules run only from the default branch.
 # Logs are public: commands print counts and keys, never content.
 on:
