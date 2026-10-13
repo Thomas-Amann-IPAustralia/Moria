@@ -35,6 +35,7 @@ sets:
           - venture capital funding for start-ups falls
           - a national research and innovation strategy or funding programme
           - universities and public research institutes collaborate with industry
+          - competition, consumer protection or corporate regulation of businesses
       wider_world:
         description: >-
           The wider world beyond innovation: demographics and health, climate and energy, security and conflict,
@@ -45,6 +46,8 @@ sets:
           - a severe heatwave and bushfire season
           - an armed conflict disrupts shipping
           - trust in institutions declines
+          - a court case on migration, tax, employment, family or criminal law
+          - regulations on social security, health, transport, defence or public administration
 
   domain:
     choice: multi
