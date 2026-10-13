@@ -1,0 +1,29 @@
+id: aph_house_inquiries
+name: "APH: new House of Representatives committee inquiries (RSS)"
+adapter: feed
+rings: [core, adjacent]
+domains: [D1, D6]
+family: policy
+cadence: daily
+publication_lag: same day to a few days
+coverage: >-
+  New inquiries of House of Representatives committees, from the Department of the House's feed
+history_start: "the feed was empty on 2026-10-12"
+stable_since: null
+breaks: []
+known_biases:
+  - "Empty when checked (2026-10-12): its expected volume is a placeholder until a week of runs is seen"
+revision_policy: items change in place; a changed item is a new record
+licence: >-
+  CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise
+  noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted
+  text, embeddings, summaries) are for its own use and are not shared
+snapshot_rights: >-
+  titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with
+  attribution, or link
+expected_volume: {min_per_run: 0, max_per_run: 20}
+params:
+  url: https://www.aph.gov.au/house/rss/house_inquiries
+  lookback_days: 30
+  keep_summary: true
+  item_id: link_and_content

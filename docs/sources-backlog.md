@@ -1,6 +1,7 @@
 # Sources backlog: the Tier 1 cleanup before day 3, and what waits
 
-*Started 2026-10-12. The owner's decisions are D-016. Checks marked "today" were run from a Claude Code session's
+*Started 2026-10-12; the cleanup was built on 2026-10-12 and 13 (D-018, §2). The owner's decisions are D-016 and
+D-017. Checks marked "today" were run from a Claude Code session's
 cloud address with Moria's own user agent; a GitHub Actions runner may get different answers. Licence readings are
 Claude's, not legal advice.*
 
@@ -53,17 +54,24 @@ From `CLAUDE.md` and the day-1 handover ("Adding a source"). Each item below lis
 Effort: **S** is a card on an existing adapter; **M** is a new small adapter; **L** is a new adapter plus lake
 storage.
 
-| # | Item | Status today | Adapter | Effort | Waits on |
+| # | Item | Status (D-018) | Adapter | Cards | Waits on |
 |---|---|---|---|---|---|
-| T1 | APH feeds: Senate new inquiries, reports, upcoming hearings; House and joint inquiries | **answer** (the House feeds empty today) | `feed` | S | nothing |
-| T2 | Open Australian Legal Corpus: Commonwealth legislation, Federal Court, High Court | reachable (Hugging Face) | new `hf_corpus` | L | nothing |
-| T3 | IP Australia: the full first snapshot, and the PDFs its pages link | sitemap with a 50-page cap | `sitemap`, `documents` | S | nothing |
-| T4 | Peer offices: EUIPO and JPO news; KIPO | 403 to the build session; KIPO has no feed | `feed`, `sitemap`, or a list-page adapter | S–M | a runner's answer |
-| T5 | WIPO statistics and treaties | only the press feed is carded | to choose | M | nothing |
-| T6 | ABS business entries and exits (CABEE), business R&D (BERD) | spreadsheets | new `xlsx` | M | nothing |
-| T7 | Courts after March 2025; IP Australia's hearing decisions | not carded | to find | M–L | permission, where scraping |
-| W1 | Wishlist documents (11, plus KIPO's optional report) and the EPO's and Canada.ca's terms | waiting on your uploads and answers | `documents` | S | **you** |
-| W2 | `patent_cpc_counts` on BigQuery | built, dry run; no GCP project | `bigquery_cpc` | S | **you** |
+| T1 | APH feeds: Senate new inquiries, reports, upcoming hearings; House and joint inquiries | **built**, backfilled into the bucket | `feed` | `aph_senate_new_inquiries`, `aph_senate_reports`, `aph_senate_hearings`, `aph_house_inquiries`, `aph_joint_inquiries` | nothing |
+| T2 | Open Australian Legal Corpus: Commonwealth legislation, Federal Court, High Court | **built**, release 7.1.0 in the lake | new `hf_corpus` | `oalc` | nothing |
+| T3 | IP Australia: the full first snapshot, and the PDFs its pages link | **built**: a backfill run, and six PDFs | `sitemap --backfill`, `documents` | `ipaustralia_site`, `ipaustralia_publications` | nothing |
+| T4 | Peer offices: EUIPO and JPO news; KIPO | **KIPO built** (now MOIP); **EUIPO and JPO are gaps**: 403 to the session and to a runner | new `listpage` | `moip_news` | **you**, for EUIPO and JPO (below) |
+| T5 | WIPO statistics and treaties | **built**: treaty notifications (WIPO Lex) and the bulk statistics files | `listpage`, new `zip_csv` | `wipo_treaty_notifications`, `wipo_ipstats` | nothing |
+| T6 | ABS business entries and exits (CABEE), business R&D (BERD) | **built** | new `xlsx` | `abs_datacubes` | nothing |
+| T7 | Courts after March 2025; IP Australia's hearing decisions | **gap**: the Federal Court and AustLII answer 403 to the session and to a runner; the High Court times out | — | — | the owner is looking for feeds; day 3 doesn't wait (D-019) |
+| W1 | Wishlist documents (11, plus KIPO's optional report) and the EPO's and Canada.ca's terms | waiting on your uploads and answers | `documents` | — | **you** |
+| W2 | `patent_cpc_counts` on BigQuery | **switched on** (D-019): the first live run gave 961 codes, 17.07 GB of the free 1 TiB a month | `bigquery_cpc` | `patent_cpc_counts` | nothing; monthly by hand |
+
+**New tools from the cleanup (D-018):**
+- `moria discover URL…` checks a new source's addresses (status, type, item counts and dates, feed links; never
+  text). `collect-source` runs it from a runner with the source `discover`, so a site that refuses the build session
+  can be tried from GitHub's addresses.
+- `moria collect <source> --backfill` takes a first snapshot: a feed's every item, a sitemap's every page (up to
+  `backfill_max_pages`), a list page's every item. `collect-source` takes a `backfill` input.
 
 ### T1. APH RSS feeds
 
@@ -99,6 +107,13 @@ storage.
    "no rules" (`src/moria/http.py:70`), as RFC 9309 permits. The `feed` adapter doesn't read robots.txt in any case.
    The owner: no permission is needed to read the RSS feeds (D-017).
 6. **Run from a runner first.** The WAF may treat GitHub's addresses differently.
+
+**Built (D-018).** The five cards, daily, with a 30-day lookback: items are dated by their referral or tabling and
+may be added later. The feeds have no guids and repeat an inquiry's link for several items, so each item's id is
+its link plus a hash of its title, date and summary (`item_id: link_and_content`). The hearings feed carries no
+dates: every item is kept each run, observable from the run that first sees it. First runs (backfill, from this
+session): 34 new inquiries, 134 reports, 30 hearings; the House and joint feeds were still empty. The feeds answered
+from both the session and, through `env-check`, a runner.
 
 ### T2. Open Australian Legal Corpus (Isaacus)
 
@@ -153,16 +168,39 @@ Republishing it does not.
    a slice instead: decisions citing the Patents, Trade Marks, Designs, Copyright or Plant Breeder's Rights Acts, the
    Copyright Tribunal's decisions, and titles for everything. Further slices are pulled by question later.
 
+**Built (D-018).** The `hf_corpus` stage downloads `corpus.jsonl` at dataset commit `ef45e3fe` (2026-03-07), checks
+it against its SHA-256 (the file's LFS object id), checks its ten fields, and lets DuckDB keep the three default
+parts as Parquet with row groups capped at 64 MB (20,000-row groups ran out of memory at 3 GB). Each row has its
+own licence, `event_at` (the document's date), `observable_at` (judgments: the decision date; legislation:
+`when_scraped`, which runs from 2024-09-15 to 2025-03-10 within the legislation part, not one day), its text's
+length and SHA-256, and an evidence id. Results are in D-018 and `reports/census/oalc.md`. The slice for embeddings
+(step 6) is day 3's.
+
 ### T3. IP Australia
 - **The full first snapshot** (about 850 pages): a one-off run with a higher page cap (handover-day1, item 2).
 - **PDFs linked from pages** (the Corporate Plan and the Annual Report) aren't in the sitemap. Add them as
   `documents` entries; the Australian IP Report 2026 is already in `territory_evidence`.
+
+**Built (D-018).** The snapshot is `moria collect ipaustralia_site --backfill` (every page in the sitemap, with or
+without a lastmod, up to 2,000): 844 of 846 pages on 2026-10-13, in 29 minutes. `ipaustralia_publications` reads six PDFs from the accountability pages: the
+Strategic Corporate Plan 2026-27, the Annual Report 2024-25, the AI transparency statement, the Minister's statement
+of expectations, IP Australia's statement of intent and the cost recovery implementation statement. The licence
+check found CC BY in two; the Minister's letter states no licence, so its text is not stored.
 
 ### T4. Peer offices not covered
 - **EUIPO and JPO** answered 403 to the build session. Try from a runner; if they still refuse, they become gaps or
   owner uploads.
 - **KIPO** has no feed, only an HTML list. It needs a small list-page adapter, or a sitemap if it has one.
 - Each office's terms are read before any text is stored.
+
+**Built and checked (D-018).** From a runner (`collect-source` with `discover`, 2026-10-12):
+- **KIPO** answered. It is now Korea's Ministry of Intellectual Property (MOIP). Its robots.txt addresses only
+  Googlebot. Its English news board has no feed, so the new `listpage` adapter reads the first page with a pattern
+  (`moip_news`, daily). Its footer reads "All Rights Reserved", so titles, links and dates only.
+- **EUIPO** (www.euipo.europa.eu, robots.txt included) and **JPO** (www.jpo.go.jp, robots.txt included) answered
+  403 to the runner as to the build session. The EU's own press-release feed carries no EUIPO items. Both are gaps.
+  Routes, for the owner: ask EUIPO and JPO (through IP Australia's contacts with the offices) whether Moria's user
+  agent may read their news pages or feeds; until then, their annual reports can come as owner uploads.
 
 ### T5. WIPO statistics and treaties
 The design's Tier 1 names "WIPO statistics, news and treaties", but only the press feed is carded. To do:
@@ -172,9 +210,26 @@ The design's Tier 1 names "WIPO statistics, news and treaties", but only the pre
 
 WIPO's online content is CC BY 4.0 (D-011); the statistics' terms are still to confirm.
 
+**Built (D-018).** WIPO's robots.txt disallows its treaty notification pages (`/treaties/*/notifications/`), the
+newsletter archive's data (`/o/`) and the IP Statistics Data Center (`www3.wipo.int` disallows everything but a
+list). Two routes are allowed:
+- **Treaties:** WIPO Lex lists each treaty's notifications as a dated table. `wipo_treaty_notifications` (weekly)
+  reads 26 treaties' lists with the `listpage` adapter: 2,945 notifications from 1967 to 2026-09-28 on the first
+  run. The Rome and Brussels Conventions have no list there (the UN Secretary-General is their depositary).
+- **Statistics:** the bulk ZIPs on WIPO's statistics page (`wipo_ipstats`, the new `zip_csv` stage): patents by
+  technology field, trade marks and designs by class, by office and origin, 2000-2022, 6.2 million rows in the lake.
+  The files were last rebuilt in 2024, so they are a baseline, not a current series. WIPO's terms: no republishing
+  or reselling of its datasets, and cite "WIPO Statistics Database"; Moria keeps them private.
+
 ### T6. ABS business entries and exits (CABEE) and business R&D (BERD)
 These are spreadsheet releases a runner can fetch. They need a new `xlsx` adapter (a new dependency, such as
 openpyxl), producing series as observations with vintages, as `abs_headline` does. ABS data are CC BY 4.0.
+
+**Built (D-018).** `abs_datacubes` (weekly) finds the workbooks on each latest-release page (CABEE: one workbook of
+16 tables, June 2026, released 2026-08-18; BERD: twelve workbooks of 21 tables, 2023-24, released 2025-08-22). Each
+table is one observation record, kept as published: headings, sections, labelled rows, the ABS's symbols, notes. It
+is dated by the release date printed in the workbook, and an unchanged table keeps its evidence id. Turning tables
+into series is normalisation's job (day 3).
 
 ### T7. Courts and tribunals the corpus misses
 - **Federal Court and High Court decisions after 10 March 2025.** Read the courts' own judgment lists, checking for
@@ -185,6 +240,23 @@ openpyxl), producing series as observations with vintages, as `abs_headline` doe
   know, they are published on AustLII, whose terms restrict automated bulk access. Ask AustLII, or IP Australia, for
   a public route.
 - **The Administrative Review Tribunal**, if a question needs it.
+
+**Checked (D-018): a gap until the owner asks.** From both the build session and a runner, with Moria's user agent:
+`www.fedcourt.gov.au` and `www.judgments.fedcourt.gov.au` (robots.txt, the RSS page, the IP practice area) and
+`www.austlii.edu.au` (robots.txt and the Patent and Trade Marks Office databases) answered 403;
+`www.hcourt.gov.au` and `eresources.hcourt.gov.au` timed out or reset. IP Australia's own site lists no decisions.
+Nothing is collected; the corpus covers the Federal and High Courts to 10 March 2025.
+
+*A draft request, for the owner to send if they choose (to the Federal Court's web team, AustLII, and the High
+Court):*
+
+> IP Australia is building Moria, a non-commercial research tool for its strategic foresight. It reads public
+> sources politely: it names itself in its user agent (`Moria/0.1 (+https://github.com/Thomas-Amann-IPAustralia/Moria;
+> public-data horizon scanning)`), honours robots.txt, waits between requests and runs at most once a day from
+> GitHub Actions. We would like to read your [judgments RSS feed / list of new decisions, including IP Australia's
+> hearing decisions] once a day: titles, citations, dates and links, and the text of decisions about intellectual
+> property for internal analysis, which we would not republish. Our requests from GitHub's addresses currently
+> receive HTTP 403. Could Moria's user agent be allowed, or is there a route you prefer (a feed, a data export)?
 
 ### W1. Wishlist documents and two sites' terms (`docs/wishlist.md`)
 - **Waiting on your uploads to `inbox/documents/`:**
@@ -212,6 +284,10 @@ openpyxl), producing series as observations with vintages, as `abs_headline` doe
   above).
 - **Embeddings** take only the corpus slice in T2, step 6.
 - **BM25** can index the corpus's titles and citations cheaply; its full text only for the slice.
+- **New record shapes (D-018):** list-page items (`moip_news`, `wipo_treaty_notifications`: a date, no text);
+  spreadsheet tables (`abs_datacubes`: headings, sections and labelled rows, to pivot into series with vintages);
+  lake parts (`oalc`, `wipo_ipstats`) read straight from Parquet; undated feed items (APH hearings) observable from
+  first sight.
 
 ## 4. Pile of Law: checked and discarded
 

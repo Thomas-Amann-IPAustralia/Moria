@@ -265,3 +265,80 @@ def test_gdelt_group_keeps_no_records_when_a_later_call_fails(http_cfg, store):
     c = card("gdelt", {"phrases_per_query": 6, "territory_rings": ["core"], "include_themes": False})
     r = run_collection(c, store, make_client(http_cfg, handler), Window.for_day(DAY), limit=1)
     assert r.status == "failed" and "every query group failed" in r.error  # no half-collected group survives
+
+
+# APH's committee feeds: no guid, several items under one link, and (hearings) no dates at all
+APH_LIKE = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
+<item><title>Inquiry A</title><link>https://feed.test/inquiry-a</link>
+<description>Placeholder: first hearing</description></item>
+<item><title>Inquiry A</title><link>https://feed.test/inquiry-a</link>
+<description>Placeholder: second hearing</description></item>
+<item><title>Inquiry B</title><link>https://feed.test/inquiry-b</link>
+<pubDate>Thu, 08 Oct 2026 00:00:00 +1000</pubDate><description>Placeholder</description></item>
+</channel></rss>"""
+
+
+def test_feed_items_sharing_a_link_get_their_own_ids_and_undated_items_are_kept(http_cfg):
+    params = {"url": "https://feed.test/rss", "item_id": "link_and_content", "undated_items": "expected"}
+    c = card("feed", params)
+    ctx = CollectContext(
+        card=c,
+        client=make_client(http_cfg, lambda r: httpx.Response(200, content=APH_LIKE)),
+        window=Window.for_day(DAY),
+    )
+    collector = FeedCollector(c)
+    recs = collector.collect(ctx)
+    ids = [x.envelope.provider_record_id for x in recs]
+    assert len(recs) == 3 and len(set(ids)) == 3
+    assert all(i.startswith(("https://feed.test/inquiry-a#", "https://feed.test/inquiry-b#")) for i in ids)
+    undated = [x for x in recs if x.payload["published"] is None]
+    assert len(undated) == 2 and all(x.envelope.observable_at == x.envelope.retrieved_at for x in undated)
+    dated = next(x for x in recs if x.payload["published"])
+    assert dated.envelope.observable_at == "2026-10-07T14:00:00+00:00"
+    assert ctx.warnings == [] and collector.counts == {"items_in_feed": 3, "items_undated": 2}
+    # the same feed collected again gives the same ids
+    again = FeedCollector(c).collect(ctx)
+    assert sorted(x.envelope.evidence_id for x in again) == sorted(x.envelope.evidence_id for x in recs)
+
+
+def test_undated_feed_items_warn_once_unless_expected(http_cfg):
+    c = card("feed", {"url": "https://feed.test/rss"})
+    ctx = CollectContext(
+        card=c,
+        client=make_client(http_cfg, lambda r: httpx.Response(200, content=APH_LIKE)),
+        window=Window.for_day(DAY),
+    )
+    recs = FeedCollector(c).collect(ctx)
+    assert len({x.envelope.provider_record_id for x in recs}) == 2  # guid_or_link: the undated two share their link
+    assert ctx.warnings == ["feed: 2 items without a usable date; observable_at is the retrieval time"]
+
+
+def test_backfill_takes_every_feed_item_and_every_sitemap_page(http_cfg):
+    c = card("feed", {"url": "https://feed.test/rss", "lookback_days": 3})
+    ctx = CollectContext(
+        card=c,
+        client=make_client(http_cfg, lambda r: httpx.Response(200, content=RSS)),
+        window=Window.for_day(DAY),
+        backfill=True,
+    )
+    assert sorted(x.envelope.provider_record_id for x in FeedCollector(c).collect(ctx)) == ["g1", "g2"]
+
+    nolastmod = SITEMAP.replace(b"</urlset>", b"<url><loc>https://site.test/about</loc></url></urlset>")
+
+    def handler(request):
+        if request.url.path == "/sitemap.xml":
+            return httpx.Response(200, content=nolastmod)
+        if request.url.path == "/robots.txt":
+            return httpx.Response(404)
+        return httpx.Response(200, text=PAGE)
+
+    s = card("sitemap", {"sitemap_url": "https://site.test/sitemap.xml", "max_pages": 1, "backfill_max_pages": 10})
+    ctx = CollectContext(card=s, client=make_client(http_cfg, handler), window=Window.for_day(DAY), backfill=True)
+    recs = SitemapCollector(s).collect(ctx)
+    assert sorted(x.payload["url"] for x in recs) == [
+        "https://site.test/about",
+        "https://site.test/news/new",
+        "https://site.test/old",
+    ]
+    about = next(x for x in recs if x.payload["url"].endswith("/about"))
+    assert about.envelope.observable_at == about.envelope.retrieved_at  # no lastmod: observable from this run

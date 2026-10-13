@@ -91,6 +91,16 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
         elif card.adapter == "legislation":
             base = card.params.get("base_url", "https://api.prod.legislation.gov.au/v1")
             probes[f"source:{card.id}"] = (f"{base}/Titles", {"$top": "1", "$select": "id"})
+        elif card.adapter == "listpage" and card.params.get("pages"):
+            probes[f"source:{card.id}"] = (card.params["pages"][0]["url"], None)
+        elif card.adapter == "xlsx" and card.params.get("sources"):
+            probes[f"source:{card.id}"] = (card.params["sources"][0]["release_page"], None)
+        elif card.adapter == "hf_corpus":
+            base = card.params.get("base_url", "https://huggingface.co")
+            probes[f"source:{card.id}"] = (
+                f"{base}/api/datasets/{card.params['repo']}/revision/{card.params['revision']}",
+                None,
+            )
         elif card.adapter == "abs_sdmx" and card.params.get("queries"):
             base = card.params.get("base_url", "https://data.api.abs.gov.au/rest")
             flow = card.params["queries"][0]["dataflow"].split(",")

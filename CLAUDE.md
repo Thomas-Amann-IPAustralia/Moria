@@ -6,20 +6,25 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Days 1 and 2 are built.**
+**Current scope: the one-week machinery sprint (design §13). Days 1 and 2 and the Tier 1 cleanup are built.**
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
 - **Built (day 2, D-011 to D-013):** six peer-office sources (daily); OpenAlex whole-taxonomy counts, the ABS headline
-  series and the IP RAPID lake (weekly, `collect-weekly`); patent counts by CPC subclass on BigQuery (built, dry run
-  only: it waits on a GCP project); the foresight syntheses and a draft known-trends baseline; `moria terms check`;
+  series and the IP RAPID lake (weekly, `collect-weekly`); patent counts by CPC subclass on BigQuery (switched on by
+  the owner, D-019); the foresight syntheses and a draft known-trends baseline; `moria terms check`;
   `moria census` and its reports; the collect-weekly and terms-check workflows.
 - **The owner's answers (D-014):** the 19-trend baseline is confirmed, and a known trend is a tag, never a reason to
   reject a signal (reinforcement counts); synonyms for the territory terms and an `ip_system` theme for the core ring;
   owner uploads of refused documents (`docs/wishlist.md`) with a licence check on every document. The public documents
   the territory context cites are on the wishlist with the owner's approval (`territory_evidence`, D-015); the context
   itself stays private.
-- **Next:** the Tier 1 cleanup in `docs/sources-backlog.md` (D-016): APH's RSS feeds, the Open Australian Legal
-  Corpus and the Tier 1 leftovers. Then day 3 (normalise, de-duplicate, embeddings, BM25, tags), day 4 (detectors,
+- **Built (the Tier 1 cleanup, D-016 to D-018; `docs/sources-backlog.md`):** APH's five committee feeds; the Open
+  Australian Legal Corpus in the lake (Commonwealth legislation, the Federal and High Courts); IP Australia's full
+  site snapshot (`--backfill`) and its corporate PDFs; MOIP (formerly KIPO) news; WIPO's treaty notifications and bulk
+  statistics; the ABS's CABEE and BERD spreadsheets; `moria discover` for checking a source's addresses from a runner.
+  **Gaps** (refused to the build session and to a runner): EUIPO and JPO news, the Federal Court, the High Court and
+  AustLII (so IP Australia's hearing decisions). The owner is looking for feeds; day 3 does not wait on them (D-019).
+- **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), when the owner asks; then day 4 (detectors,
   artefact checks), day 5 (dossiers, register export). Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
   agents. Shape outputs for them only.
@@ -60,6 +65,8 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 - robots.txt is honoured for web pages. Per-host minimum intervals are in `config/moria.yaml`: GDELT at 5.5 s.
 - Third-party model code (for example, a model repo's own runtime) is read before it is run, pinned and hashed.
   `trust_remote_code` needs the owner's exception.
+- Judgments (the legal corpus) name parties and witnesses: their text stays in the bucket's lake; logs and the census
+  show counts by source, type and year only.
 - IP RAPID: every party that is not an organisation has its name hashed and its postcode dropped inside the
   conversion query, before anything is written; each table's columns are checked against the published schema
   first (D-011).
@@ -74,22 +81,26 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 | Stage | Command | Reads | Writes (private bucket) |
 |---|---|---|---|
 | Environment check | `moria env-check [--require store:r2,...]` | environment | nothing (prints the status) |
-| Collect one source | `moria collect <source> [--day D] [--limit N] [--store local\|r2]` | the source | `raw/<source>/<yyyy>/<mm>/<dd>/<run_id>.jsonl.zst`, a monitor entry, a manifest |
+| Collect one source | `moria collect <source> [--day D] [--limit N] [--backfill] [--store local\|r2]` | the source | `raw/<source>/<yyyy>/<mm>/<dd>/<run_id>.jsonl.zst`, a monitor entry, a manifest; bulk sources write the lake instead (below) |
 | Collect daily sources | `moria collect-daily [--day D] [--store r2]` | daily sources | the same, per source |
-| Collect weekly sources | `moria collect-weekly [--store r2]` | OpenAlex, ABS, IP RAPID | the same; IP RAPID as below |
+| Collect weekly sources | `moria collect-weekly [--store r2]` | OpenAlex, ABS (both), IP RAPID, WIPO treaty notifications | the same; IP RAPID as below |
 | IP RAPID | `moria ipr refresh [--zip PATH] [--limit N] [--store r2]` | data.gov.au's weekly zip | `lake/ip_rapid/base=<release>/<table>.parquet` or `delta=<release>/…`, `raw/ip_rapid/<release>/manifest.json` |
+| Bulk sources (once per release) | `moria collect oalc`, `moria collect wipo_ipstats` | a pinned Hugging Face file; WIPO's ZIPs | `lake/<source>/release=<release>/<part>.parquet`, `raw/<source>/<release>/manifest.json` (written last) |
+| Discover | `moria discover URL… [--match RE]` | the addresses | nothing (prints status, type, item counts, feed links; never text) |
 | Terms check | `moria terms check [--end D] [--weeks 13] [--store r2]` | sampled GKG days | `reports/terms-check/<run_id>.json` (with hit samples); `reports/terms-check.md` in the repo (counts only) |
 | Census | `moria census <source> [--all-runs]` | the store | `reports/census/<source>.md` in the repo (aggregates only) |
 | Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` | config | nothing |
 
 Local runs default to `--store local`, which writes to `data/store/` (git-ignored). GitHub Actions passes
-`--store r2`. The `documents` adapter reads an owner upload at `inbox/documents/<document id>.pdf` (or `.html`) in the
-store instead of the document's URL.
+`--store r2`. `--backfill` is a first snapshot: a feed's every item, a sitemap's every page, a list page's every
+item. The `documents` adapter reads an owner upload at `inbox/documents/<document id>.pdf` (or `.html`) in the store
+instead of the document's URL.
 
 **Workflows** (`.github/workflows/`):
 - `ci.yml`: lint, format and tests on every push.
 - `collect-daily.yml`: 02:23 UTC daily, for the previous UTC day. Schedules run from the default branch only.
 - `collect-weekly.yml`: Mondays 03:41 UTC (after IP Australia rebuilds IP RAPID and OpenAlex's budget resets).
+- `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
 
@@ -102,6 +113,10 @@ store instead of the document's URL.
 - **Point-in-time logic uses `observable_at`, never `event_at`.**
 - Counts and statistics (OpenAlex, ABS, BigQuery) are `observation` records; each weekly run is a vintage, and an
   unchanged series keeps its evidence id.
+- Bulk sources live in the lake as typed Parquet, one release at a time, each with a release manifest written last:
+  the legal corpus (`lake/oalc/release=<v>/<part>.parquet`, a row per document with its licence and dates) and WIPO's
+  statistics (`lake/wipo_ipstats/release=<date>/`). A spreadsheet table (`abs_datacubes`) is one observation record,
+  kept as published.
 - IP RAPID lives in the lake as typed Parquet: a base about quarterly and weekly deltas against it (`_change` is
   `added` or `removed`). The zip is not kept; its SHA-256 is in the release manifest.
 - `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
@@ -113,15 +128,22 @@ store instead of the document's URL.
 |---|---|---|
 | `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 47 query groups (`config/territories.yaml`, `config/themes.yaml`, including the `ip_system` theme for the core ring) in title, URL, quotations and named entities, in Australian and US spelling, with a plural last word, and with each term's synonyms counted as the term (D-014); matches are kept, with daily volumes worldwide and for `.au` domains against every document. Each volume also counts documents about the group (title or URL) and names-only ones, which are often incidental: `about_documents` is the cleaner series (D-012). Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
-| `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. A full first snapshot is a separate backfill. |
+| `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. The full first snapshot was a `--backfill` run (D-018). |
 | `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO and CIPO keep titles and links only until the owner confirms their terms (`docs/wishlist.md`). |
+| `aph_senate_new_inquiries`, `aph_senate_reports`, `aph_senate_hearings`, `aph_house_inquiries`, `aph_joint_inquiries` | feed | Daily. APH's committee feeds with their summaries (CC BY-NC-ND 4.0; non-commercial research, D-017). A 30-day lookback (items are dated by referral or tabling); items without a guid that share a link get the link plus a content hash as id; the hearings feed is undated, so each item is observable from first sight. The House and joint feeds were empty on 2026-10-12. |
+| `moip_news` | listpage | Daily. Korea's Ministry of Intellectual Property (formerly KIPO): the English news board's first page, read with a pattern. Titles, links and dates only: its footer reserves all rights. |
+| `wipo_treaty_notifications` | listpage | Weekly. Notifications of 26 WIPO-administered treaties from WIPO Lex (accessions, ratifications, entry into force), titles, numbers, dates and links. WIPO's own notification pages are disallowed by robots.txt. |
 | `uspto_news`, `ipos_news` | sitemap | News pages by lastmod. IPOS keeps titles only: its terms forbid reproduction. |
 | `openalex_counts` | openalex_counts | Weekly. Works by primary topic at four taxonomy levels, each year from 2010 and each of the last 36 months, worldwide and with an Australian author; research output types only (D-011). About 2,400 of the 10,000 free daily credits. |
 | `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
 | `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
-| `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. `dry_run: true` until the owner has a GCP project and has seen the estimate. |
+| `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. Switched on by the owner (D-019): about 17.1 GB a run, under 2% of the free 1 TiB a month; every query capped at 200 GB. Run it with `collect-source` (the key is only in GitHub's secrets). |
 | `foresight_syntheses` | documents | Once. Nine documents; three fetched (CSIRO as metadata only); the other six wait on owner uploads (`docs/wishlist.md`), stored as text only where the document states an open licence. |
 | `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5) and IP Australia's *Australian IP Report 2026* read; the AIC's crime-cost reports and the Patents Accessibility Review wait on owner uploads. |
+| `ipaustralia_publications` | documents | Once a year. IP Australia's PDFs that the sitemap misses: the corporate plan 2026-27, the annual report 2024-25, the AI transparency statement, the Minister's statement of expectations (metadata only: no licence stated) and the statement of intent, the cost recovery statement. The full site snapshot is `ipaustralia_site` with `--backfill`. |
+| `abs_datacubes` | xlsx | Weekly. The ABS's CABEE (business entries and exits) and BERD (business R&D) spreadsheets, found on their latest-release pages; each table one observation record, dated by the release date printed in the workbook. |
+| `oalc` | hf_corpus | Once (a new release is a new run). The Open Australian Legal Corpus 7.1.0 at a pinned dataset commit, hash-checked: Commonwealth legislation and the Federal and High Courts (104,201 documents) as Parquet in the lake, each document with its own licence; judgments observable from their date, legislation from its scrape. NSW Caselaw and state legislation left out (D-016). |
+| `wipo_ipstats` | zip_csv | Once (re-run when WIPO rebuilds the files; unchanged files are skipped). WIPO's bulk indicators: patents by technology field, trade marks and designs by class, by office and origin, 2000-2022, in the lake. Not to be republished (WIPO's terms). |
 | `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the USPTO's strategy page, the EPO's strategic plan and work plan and the EUIPO's plan (metadata only); the JPO's report and CIPO's strategy wait on owner uploads. |
 
 ## Model choice

@@ -1,0 +1,32 @@
+id: aph_senate_hearings
+name: "APH: upcoming Senate committee hearings (RSS)"
+adapter: feed
+rings: [core, adjacent]
+domains: [D1, D6]
+family: policy
+cadence: daily
+publication_lag: days to weeks ahead of the hearing
+coverage: >-
+  Upcoming public hearings of Senate committees, including Estimates, with the date and place in each item's summary
+history_start: "the feed's current items (30 on 2026-10-12)"
+stable_since: null
+breaks: []
+known_biases:
+  - "No item carries a date: each is observable from the run that first sees it; the whole feed is kept every run"
+  - "Several hearings of one inquiry share its link; each item's id adds a hash of its title and summary"
+  - "The hearing's own date is text in the summary, read at normalisation"
+revision_policy: items change in place; a changed item is a new record
+licence: >-
+  CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise
+  noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted
+  text, embeddings, summaries) are for its own use and are not shared
+snapshot_rights: >-
+  titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with
+  attribution, or link
+expected_volume: {min_per_run: 0, max_per_run: 80}
+params:
+  url: https://www.aph.gov.au/senate/rss/upcoming_hearings
+  lookback_days: 30
+  keep_summary: true
+  item_id: link_and_content
+  undated_items: expected

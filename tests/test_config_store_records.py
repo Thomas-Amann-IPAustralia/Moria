@@ -13,8 +13,8 @@ from moria.config import (
     load_themes,
     synonym_map,
 )
-from moria.ipr import IprParams
 from moria.records import RawRecord, decode_bundle, encode_bundle, make_envelope
+from moria.stages import LAKE_PARAMS
 from moria.store import StoreError
 
 from .conftest import terms_config
@@ -26,8 +26,8 @@ def test_repo_config_files_validate():
     cards = load_sources()
     assert {"gdelt_news", "legislation_frl", "ipaustralia_site", "wipo_press", "ukipo_news"} <= set(cards)
     for c in cards.values():
-        if c.adapter == "ip_rapid":  # a bulk stage of its own, not a collector
-            IprParams.model_validate(c.params)
+        if c.adapter in LAKE_PARAMS:  # a bulk stage of its own, not a collector
+            LAKE_PARAMS[c.adapter].model_validate(c.params)
         else:
             ADAPTERS[c.adapter](c)  # each adapter validates its card's params
     territories = load_territories().territories

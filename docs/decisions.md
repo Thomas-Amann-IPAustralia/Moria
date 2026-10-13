@@ -1101,3 +1101,144 @@ Next free decision number: D-017.
 **Consequences.** `docs/sources-backlog.md` carries the answers. The Tier 1 cleanup's licence questions are settled.
 
 Next free decision number: D-018.
+
+## D-018 — The Tier 1 cleanup built: APH's feeds, the legal corpus, IP Australia's snapshot and PDFs, MOIP, WIPO's treaties and statistics, CABEE and BERD; EUIPO, JPO and the courts are gaps (2026-10-13)
+
+**Context.** The owner asked: "Please finish adding all the sources that need to be added before Day 3 (as defined
+in docs/sources-backlog.md)." That is T1 to T7 of the Tier 1 cleanup (D-016, D-017); W1 and W2 wait on the owner.
+
+**Decision (the owner's request; the build choices are this session's and stand until the owner says otherwise).**
+- **T1, APH:** five `feed` cards, daily, summaries kept (D-017), a 30-day lookback (items are dated by referral or
+  tabling and may be added later). The feeds have no guids and repeat an inquiry's link, so an item's id is its link
+  plus a hash of its title, date and summary. The hearings feed has no dates: each item is observable from the run
+  that first sees it, and the whole feed is kept every run (parser `feed-v2`).
+- **T2, the Open Australian Legal Corpus:** a bulk stage (`hf_corpus`, card `oalc`) into the lake, not raw bundles.
+  The file is read at a pinned dataset commit, checked against its SHA-256 and its ten fields, and DuckDB keeps the
+  three default parts (Commonwealth legislation, the Federal Court, the High Court) as Parquet at
+  `lake/oalc/release=7.1.0/`. Each row carries its own licence, `event_at`, `observable_at` (judgments: the
+  decision date; legislation: the scrape), its text's length and hash, and an evidence id. A release manifest,
+  written last, marks the release as ingested. The day-3 slice for embeddings is unchanged (D-016).
+- **T3, IP Australia:** `moria collect --backfill` takes a first snapshot (a sitemap's every page, up to 2,000; a
+  feed's or list page's every item), and the full site snapshot is a backfill run of `ipaustralia_site`.
+  `ipaustralia_publications` reads six PDFs its accountability pages link: the Strategic Corporate Plan 2026-27,
+  the Annual Report 2024-25, the AI transparency statement, the Minister's statement of expectations, IP Australia's
+  statement of intent and the cost recovery implementation statement.
+- **T4, peer offices:** KIPO is now Korea's Ministry of Intellectual Property (MOIP). Its English news board has no
+  feed, so a new `listpage` adapter reads its first page with a pattern (`moip_news`, daily). Its footer reserves all
+  rights: titles, links and dates only. EUIPO and JPO are gaps (below).
+- **T5, WIPO:** WIPO's robots.txt disallows its treaty notification pages, the newsletter archive's data and the IP
+  Statistics Data Center. Allowed routes: WIPO Lex's notification list for each treaty (`wipo_treaty_notifications`,
+  weekly, `listpage`, 26 treaties; Rome and Brussels have no list there), and the bulk indicator ZIPs on WIPO's
+  statistics page (`wipo_ipstats`, a new `zip_csv` stage into the lake; unchanged files are skipped).
+- **T6, ABS:** a new `xlsx` adapter (openpyxl, a new pinned dependency) and `abs_datacubes` (weekly): the workbooks
+  on CABEE's and BERD's latest-release pages; each table one observation record kept as published (headings,
+  sections, labelled rows, the ABS's symbols, notes), dated by the release date printed in the workbook. An
+  unchanged table keeps its evidence id; turning tables into series is day 3's.
+- **T7, courts:** nothing is collected. The Federal Court and AustLII refuse the build session and a runner (403), and
+  the High Court times out, so post-March 2025 judgments and IP Australia's hearing decisions (on AustLII) wait on
+  permission. A draft request for the owner is in `docs/sources-backlog.md`, T7.
+- **Tools:** `moria discover` checks a source's addresses (status, type, item counts and dates, feed links; never
+  text), and `collect-source` runs it from a runner (the source `discover`) or a backfill. `env-check` probes the new
+  adapters. `moria census` has sections for list pages, data cubes, the corpus and bulk tables (counts only).
+
+**Rejected, a line each:**
+- **A browser identity to get past the 403s:** D-011; Moria names itself.
+- **WIPO's notification pages, newsletter archive and IP Statistics Data Center:** robots.txt disallows them.
+- **The EU's press-release feed as an EUIPO route:** it carried no EUIPO items.
+- **Raw bundles for the corpus and WIPO's statistics:** 104,201 long texts and 6.2 million rows; the lake, as for IP
+  RAPID.
+- **Hugging Face's own Parquet copy of the corpus:** a conversion made by Hugging Face, not the release file whose
+  hash the dataset publishes.
+- **Interpreting ABS tables into series in the collector:** layouts vary (two-level headings, sections, footnotes);
+  normalisation does it from a faithful record.
+
+**Checked:**
+- **Tests:** 87 pass (no network): the APH-like feed (shared links, undated items), backfill for feeds and
+  sitemaps, list pages (a notification table, a news board, a layout change failing loudly), data cubes (headings,
+  sections, symbols, notes, a stable evidence id), the corpus (pinned commit, hash and field checks, parts,
+  observable dates, the census), the bulk ZIPs (conversion, unchanged files skipped, changed files under an
+  existing release refused), `discover`.
+- **From a runner** (`collect-source` with `discover`, run 38322410092, 2026-10-12): EUIPO and JPO (robots.txt
+  included) 403; the Federal Court (both hosts) and AustLII 403; the High Court timed out; KIPO 200 (robots.txt
+  addresses only Googlebot). The `env-check` of run 38325135244 (2026-10-13) got HTTP 200 from a runner for every
+  new card: the five APH feeds, MOIP, WIPO Lex, the ABS release pages and Hugging Face.
+- **First runs into the bucket:**
+
+  | Source | Run | Commit | Result |
+  |---|---|---|---|
+  | APH: new inquiries, reports, hearings, House, joint (backfill) | `20261012T233628Z-953977c2` to `…233645Z-d565170d` | `75fb646` | 34, 134, 30, 0 and 0 items |
+  | `oalc` | `20261012T235416Z-c73a8ca6` | `5e33029` | 104,201 documents (32,356 legislation; 63,749 Federal Court; 8,096 High Court), 981 MB of Parquet; file hash matched |
+  | `wipo_treaty_notifications` (backfill) | `20261012T235442Z-55e3a98e` | `5e33029` | 2,945 notifications, 1967 to 2026-09-28 |
+  | `abs_datacubes` | `20261012T235425Z-2fe86bdb` | `5e33029` | 37 tables (CABEE 16, released 2026-08-18; BERD 21, 2025-08-22) |
+  | `ipaustralia_publications` | `20261012T235537Z-a9ae9eca` | `5e33029` | 6 PDFs; CC BY found in 2; the Minister's letter states none (metadata only) |
+  | `moip_news` (backfill) | `20261012T235558Z-24769863` | `5e33029` | 10 items |
+  | `wipo_ipstats` | `20261012T235949Z-e420e5ab` | `facf9c0` | 6,242,077 rows in 6 tables, release 2024-06-21 (data 2000-2022) |
+  | `ipaustralia_site` (backfill) | `20261012T235611Z-a03315ee` | `5e33029` | 844 of 846 sitemap pages in 29 minutes; one 404, and the site's own 404 page loops on redirects |
+  | `patent_cpc_counts` (a runner, dry run) | `20261013T000152Z-ec6d9eab` | `facf9c0` | the query would scan 17.1 GB (cap 200 GB); nothing billed |
+
+- **Census reports** for the new sources are in `reports/census/` (aggregates only). The corpus's census shows 4,354
+  of the 8,096 High Court decisions without a date.
+- **The bucket:** 2.00 GB of the free 10 GB.
+
+**Runs and slips, disclosed:**
+- The first `oalc` run failed (manifest `20261012T233623Z-6cfa4e46`): DuckDB ran out of memory at its 3 GB limit
+  writing 20,000-row groups of long texts. Row groups are now capped at 64 MB (`5e33029`); a smoke conversion of a
+  hash-checked local copy passed (peak about 4.8 GB of memory, 54 s) before the run from a fresh download.
+- `wipo_ipstats` ran with `CLAUDE.md` edited but not committed (its manifest says `dirty: true`); the change was
+  documentation only, and the code is `facf9c0`'s.
+- Release 7.1.0 was ingested with parser `hf-corpus-v1`, which leaves `observable_at` empty for the 4,354 undated
+  High Court decisions. `hf-corpus-v2` falls back to the scrape (never too early); normalisation applies the same
+  fallback to release 7.1.0.
+- The first runner discovery waited 90 s per timeout at the High Court; `discover` now waits 30 s, once.
+- Two `collect-source` runs were dispatched on this branch (its workflow file), not on `main`.
+
+**Spend:** $0. Downloads, all free: the corpus three times (28 GB from Hugging Face: the failed run, a local copy for
+the smoke test, the run), WIPO's ZIPs (23 MB), ABS's workbooks (1 MB). BigQuery: one dry run, nothing billed.
+
+**Consequences.**
+- After the merge, `collect-daily` takes six more sources and `collect-weekly` two more, by their cadence.
+- Day 3 reads new record shapes: list items, data-cube tables, lake parts and undated feed items
+  (`docs/sources-backlog.md`, §3). The recommendation of D-016 is met: T1 to T7 are built or wait on an answer.
+- **For the owner:**
+  1. **Merge this branch** (or ask for a pull request).
+  2. **BigQuery (W2):** the monthly query would scan 17.1 GB, under 2% of the free 1 TiB a month, and every real
+     query is capped at 200 GB. Switch `dry_run` off? (D-011)
+  3. **The gaps:** whether to ask the Federal Court, AustLII and the High Court (draft request in the backlog, T7),
+     and EUIPO and JPO, for access for Moria's user agent.
+  4. **The wishlist (W1)** is unchanged.
+
+Next free decision number: D-019.
+
+## D-019 — The owner's answers on D-018: BigQuery switched on; the court and office gaps don't hold up day 3; uploads before day 3 (2026-10-13)
+
+**Context.** D-018 asked the owner four things: merge, switch BigQuery on, ask the courts and offices for access, and
+the wishlist uploads.
+
+**Decision (the owner's).**
+1. **BigQuery:** "Yes switch on BigQuery." `patent_cpc_counts` sets `dry_run: false`. Every query still carries
+   `maximumBytesBilled` (200 GB), and the run checks its dry-run estimate against that cap before the real query.
+   The card stays monthly, by hand (`collect-source`), since the key is only in GitHub's secrets.
+2. **The gaps** (EUIPO, JPO, the Federal Court, the High Court, AustLII): "Not right now I'll see if I can find RSS
+   feeds or something but I don't want it to stop our progress." No request is sent; day 3 does not wait on them.
+   A feed the owner finds is checked from a runner first (`collect-source` with `discover`).
+3. **The wishlist:** "I'll add some documents between now and when we commence Day 3." Uploads go to the private
+   bucket at `inbox/documents/<name>` (`docs/wishlist.md`); each card is then run with `collect-source`.
+4. **The merge** was not answered; it stays open.
+
+**Checked: the first live run** (from a runner, run 38332703599, manifest `20261013T013416Z-66227a80`, commit
+`ce45929`, clean): 961 records, one per four-character CPC code, priority years 2000 to 2026; 17.07 GB processed
+and billed against the free 1 TiB a month (the estimate was exact), in one query. `reports/census/patent_cpc_counts.md`.
+- The 961 codes are more than the card expected (500 to 800): they include subclasses no longer in use (290 have
+  fewer than 100 families), the Y section (21) and 17 malformed codes (`Z…`, `C121`). The card's band is now 800 to
+  1,100 and its biases say so; normalisation filters to the current scheme.
+- **A flag for day 3, not a finding:** summed over codes, the share of families with an Australian member falls from
+  about 22% (priority year 2000) to 5% (2010) and 2% (2020) while world counts rise. That looks like the dataset's
+  coverage of AU publications, not a trend; check it against IP RAPID before using the AU series.
+- The last three priority years are incomplete (publication lag), as the card says.
+
+**Spend:** $0. BigQuery: 17.07 GB of the free 1 TiB a month.
+
+**Consequences.** Day 3 starts when the owner asks, with the uploads that are in the inbox by then. The next BigQuery
+run is due about mid-November (monthly).
+
+Next free decision number: D-020.

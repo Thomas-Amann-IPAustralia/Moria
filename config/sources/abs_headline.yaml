@@ -18,7 +18,7 @@ breaks:
 known_biases:
   - Figures are revised, sometimes for years; each run is kept as a vintage
   - Innovation (Business Characteristics Survey) has only three years in this API (2021 to 2023)
-  - Business entries and exits (CABEE) and business R&D (BERD) are spreadsheet releases, not in this API, so missing
+  - Business entries and exits (CABEE) and business R&D (BERD) are spreadsheet releases, not in this API; see abs_datacubes
   - The monthly business turnover indicator stops at 2025-09 and is left out
 revision_policy: revised in place by the ABS; every run is kept, and a revised series gets a new evidence id
 licence: "ABS data are CC BY 4.0 (attribute the Australian Bureau of Statistics)"

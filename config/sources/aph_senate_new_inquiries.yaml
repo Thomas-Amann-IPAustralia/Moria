@@ -1,0 +1,30 @@
+id: aph_senate_new_inquiries
+name: "APH: new Senate committee inquiries (RSS)"
+adapter: feed
+rings: [core, adjacent]
+domains: [D1, D6]
+family: policy
+cadence: daily
+publication_lag: same day to a few days; an item is dated by its referral
+coverage: >-
+  New inquiries referred to Senate committees (legislation and references committees), from the Department of the Senate's feed
+history_start: "the feed's current items (34 on 2026-10-12, dated 2025-07-31 to 2026-09-15)"
+stable_since: null
+breaks: []
+known_biases:
+  - "Senate committees only; House and joint committees have feeds of their own"
+  - "Items are dated by their referral and may be added later; a 30-day lookback catches late additions"
+revision_policy: items change in place; a changed item is a new record
+licence: >-
+  CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise
+  noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted
+  text, embeddings, summaries) are for its own use and are not shared
+snapshot_rights: >-
+  titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with
+  attribution, or link
+expected_volume: {min_per_run: 0, max_per_run: 20}
+params:
+  url: https://www.aph.gov.au/senate/rss/new_inquiries
+  lookback_days: 30
+  keep_summary: true
+  item_id: link_and_content

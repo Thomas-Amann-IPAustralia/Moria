@@ -2,15 +2,30 @@ name: collect-source
 
 # Collects one source by hand into the private R2 bucket: for example the BigQuery patent counts (a dry run until the
 # owner switches it on), the foresight syntheses (to see whether a runner gets past sites that refuse the build
-# session), or a re-run after a source failed. Logs are public: commands print counts and keys, never content.
+# session), or a re-run after a source failed. With the source `discover`, it checks a new source's addresses from a
+# runner instead (`moria discover`: status, type, item counts and feed links). Logs are public: commands print
+# counts, keys and addresses, never content.
 on:
   workflow_dispatch:
     inputs:
       source:
-        description: "A source id from `moria sources`, e.g. patent_cpc_counts or foresight_syntheses"
+        description: "A source id from `moria sources`, e.g. patent_cpc_counts, or discover"
         required: true
       day:
         description: "UTC day (YYYY-MM-DD); empty means yesterday"
+        required: false
+        default: ""
+      backfill:
+        description: "A first snapshot: every feed item, or every page in a sitemap"
+        type: boolean
+        required: false
+        default: false
+      urls:
+        description: "discover only: addresses to check, separated by spaces"
+        required: false
+        default: ""
+      match:
+        description: "discover only: also list links matching this regular expression"
         required: false
         default: ""
 
@@ -40,14 +55,27 @@ jobs:
         run: uv sync --frozen
       - name: Environment check (the bucket must answer)
         run: uv run moria env-check --require store:r2
+      - name: Discover
+        if: inputs.source == 'discover'
+        env:
+          URLS: ${{ inputs.urls }}
+          MATCH: ${{ inputs.match }}
+        run: |
+          read -ra list <<< "$URLS"
+          re='^https?://[^[:space:]]+$'
+          for u in "${list[@]}"; do
+            if [[ ! "$u" =~ $re ]]; then echo "not an address: $u"; exit 2; fi
+          done
+          if [ -n "$MATCH" ]; then uv run moria discover --match "$MATCH" "${list[@]}"; else uv run moria discover "${list[@]}"; fi
       - name: Collect
+        if: inputs.source != 'discover'
         env:
           SOURCE: ${{ inputs.source }}
           DAY: ${{ inputs.day }}
+          BACKFILL: ${{ inputs.backfill }}
         run: |
           if [[ ! "$SOURCE" =~ ^[a-z0-9_]+$ ]]; then echo "source must be a source id"; exit 2; fi
-          if [ -n "$DAY" ]; then
-            uv run moria collect "$SOURCE" --store r2 --day "$DAY"
-          else
-            uv run moria collect "$SOURCE" --store r2
-          fi
+          args=(--store r2)
+          if [ -n "$DAY" ]; then args+=(--day "$DAY"); fi
+          if [ "$BACKFILL" = "true" ]; then args+=(--backfill); fi
+          uv run moria collect "$SOURCE" "${args[@]}"
