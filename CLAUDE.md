@@ -6,7 +6,7 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Days 1 and 2, the Tier 1 cleanup and the widening of
+**Current scope: the one-week machinery sprint (design §13). Days 1 to 3, the Tier 1 cleanup and the widening of
 sources (D-020) are built.**
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
@@ -31,8 +31,15 @@ sources (D-020) are built.**
   Conversation, the Lowy Interpreter, the European Commission, ASPI's Strategist, arXiv, Standards Australia, the
   Federal Register's USPTO and Copyright Office documents); the owner's eleven uploads read (named uploads, Word
   files); five proposed known trends (KT20 to KT24), awaiting the owner. Sources: 43 (wider world 5 to 15).
-- **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), when the owner asks; then day 4 (detectors,
-  artefact checks), day 5 (dossiers, register export). Pile of Law was checked and discarded (D-016).
+- **Built (day 3, D-021):** `moria normalise` (documents, series and observations per source, every source's dates,
+  first sight, vintages) with the security sweep inside it; `moria features embed|dedup|keyphrases|index`
+  (bge-small at a pinned revision, 256 tokens; news URL, news title and cosine de-duplication; keyphrases with first
+  observable dates; BM25); `moria tag` (zero-shot ring, domain, PESTLE, rights, territories and known trends, with the
+  territory terms matched in every source; `config/codebook.yaml` is proposed); `moria ipr metrics` (monthly demand,
+  outcomes and timeliness); `moria prepare` (the chain, weekly); `moria search`; `moria evidence-report`. The
+  decision model's T4 speed test is a script for the owner (`scripts/t4_jevstyle_speed.py`).
+- **Next:** day 4 (detectors, artefact checks), when the owner asks; then day 5 (dossiers, register export).
+  `docs/handover-day3.md` lists what day 4 reads and its flags. Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, the rest of Tier 2 (the OECD
   and the breadth pack came forward, D-020), a dashboard, agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
@@ -79,6 +86,10 @@ sources (D-020) are built.**
   first (D-011).
 - A source whose terms don't clearly allow storing its text keeps titles, links and dates only (`keep_summary:
   false` for feeds, `store_text: false` for sitemaps and documents).
+- The sweep (inside `moria normalise`) quarantines high-severity items: AI-directed instructions, secrets, Unicode
+  tag characters. Only the owner adds `config/sweep.yaml` allowlist entries; Claude proposes them in chat.
+- `moria search` prints titles: the analyst's own terminal only, never a scheduled job. Repo reports never hold
+  titles, text, URLs or keyphrases.
 - Owner uploads go to `inbox/documents/` in the private bucket, never into the repo. Every document's own licence
   statements are checked; one that reserves its rights is never stored as text, and `store_text: if_open_licence`
   stores text only when the document states an open licence (D-014).
@@ -96,6 +107,16 @@ sources (D-020) are built.**
 | Discover | `moria discover URL… [--match RE]` | the addresses | nothing (prints status, type, item counts, feed links; never text) |
 | Terms check | `moria terms check [--end D] [--weeks 13] [--store r2]` | sampled GKG days | `reports/terms-check/<run_id>.json` (with hit samples); `reports/terms-check.md` in the repo (counts only) |
 | Census | `moria census <source> [--all-runs]` | the store | `reports/census/<source>.md` in the repo (aggregates only) |
+| Normalise | `moria normalise [<source>…] [--store r2]` | passed raw bundles (hashes checked against their manifests) and the latest bulk releases | `lake/documents/source=<id>/documents.parquet`, `lake/series/…/series.parquet`, `lake/observations/…/observations.parquet`, `lake/quarantine/…` (ids and codes) |
+| Embed | `moria features embed [<source>…]` (needs `uv sync --extra models`) | normalise's documents | `features/embeddings/source=<id>/embeddings.parquet` (float16; reused while a text is unchanged) |
+| Dedup | `moria features dedup` | documents, embeddings | `features/dedup/groups.parquet` |
+| Keyphrases | `moria features keyphrases` | documents | `features/keyphrases/source=<id>/keyphrases.parquet`, `features/keyphrases/vocabulary.parquet` |
+| Tag | `moria tag [--backend zeroshot]` | documents, embeddings, codebook, territories (and their private context), baseline | `features/tags/source=<id>/tags.parquet` |
+| Index | `moria features index` | documents | `features/index/bm25.duckdb` (DuckDB fts) |
+| IP RAPID metrics | `moria ipr metrics` | the latest IP RAPID base and delta | `lake/ipr_metrics/series.parquet`, `lake/ipr_metrics/observations.parquet` |
+| Prepare (the chain) | `moria prepare [--store r2]` | the raw store | all of the above, in order; stops at the first failure |
+| Search | `moria search "words" [--source S] [--since D]` | the index | nothing (prints matches to the analyst's terminal) |
+| Evidence report | `moria evidence-report` | every stage's latest manifest | `reports/evidence-layer.md` in the repo (aggregates only) |
 | Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` (proposed trends marked) | config | nothing |
 
 Local runs default to `--store local`, which writes to `data/store/` (git-ignored). GitHub Actions passes
@@ -105,8 +126,11 @@ instead of the document's URL.
 
 **Workflows** (`.github/workflows/`):
 - `ci.yml`: lint, format and tests on every push.
-- `collect-daily.yml`: 02:23 UTC daily, for the previous UTC day. Schedules run from the default branch only.
+- `collect-daily.yml`: 02:23 UTC daily, for the previous UTC day, then `moria normalise`. Schedules run from the
+  default branch only.
 - `collect-weekly.yml`: Mondays 03:41 UTC (after IP Australia rebuilds IP RAPID and OpenAlex's budget resets).
+- `prepare.yml`: Mondays 07:17 UTC, after collect-weekly: `moria prepare` (embeddings, dedup, keyphrases, tags,
+  index, IP RAPID metrics), with the model files cached by their pinned revision.
 - `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
@@ -117,7 +141,14 @@ instead of the document's URL.
   source_collection, provider_record_id, kind (document, observation or ipr_record), family, rings, domains,
   `event_at`, `observable_at`, retrieved_at, the request hash, the tool identity, the content hash, the licence and
   the parser version.
-- **Point-in-time logic uses `observable_at`, never `event_at`.**
+- **Point-in-time logic uses `observable_at`, never `event_at`.** Normalise sets it to the source's own date, or
+  to Moria's first sight when the source gives none or a later one (`observable_basis`); a scan at `as_of` also
+  needs `first_seen_at <= as_of`.
+- `lake/documents/` holds one row per item (its latest version, `n_versions`, `first_seen_at`), an excerpt of stored
+  text (4,000 characters; the full text stays where it was collected), `url_canonical`, `outlet` and `title_key`.
+  Count one item per `dedup_group` (`features/dedup/groups.parquet`).
+- `lake/observations/` and `lake/ipr_metrics/`: a row per series, period and vintage; the value at `as_of` is the
+  latest `vintage_at <= as_of`. A snapshot source adds a vintage only when a series' values change.
 - Counts and statistics (OpenAlex, ABS, the OECD, BigQuery) are `observation` records; each weekly run is a vintage,
   and an unchanged series keeps its evidence id. An OECD series is keyed by agency and flow, not version.
 - Bulk sources live in the lake as typed Parquet, one release at a time, each with a release manifest written last:
@@ -165,8 +196,10 @@ instead of the document's URL.
 
 ## Model choice
 Free first (design §9):
-- embeddings: `BAAI/bge-small-en-v1.5`;
-- per-item tags: scikit-learn on embeddings, calibrated on the owner's labels;
+- embeddings: `BAAI/bge-small-en-v1.5`, its own ONNX export at a pinned revision, every file hash-checked
+  (`config/features.yaml`); 256 tokens (measured: 22 texts/s against 9 at 512, D-021);
+- per-item tags: zero-shot similarity to `config/codebook.yaml` until the owner's labels exist; then scikit-learn
+  on embeddings, calibrated on those labels;
 - signal-level decisions: `chaoliangUNSW/Jev-Style-0.8B-Decision-v3`.
 
 Matilda-Jev is the measured paid upgrade (M1). A judge never shares the writer's family.

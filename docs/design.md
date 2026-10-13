@@ -996,8 +996,10 @@ Candidate developments:
 built on 2026-10-12 (D-011 to D-013); the BigQuery patent counts wait on a GCP project, and five foresight documents
 on a route past their sites' blocks. The Tier 1 cleanup (`docs/sources-backlog.md`) was built on 2026-10-12 and 13
 (D-018): APH's committee feeds, the Open Australian Legal Corpus, IP Australia's full snapshot and PDFs, MOIP news,
-WIPO's treaty notifications and bulk statistics, and the ABS's CABEE and BERD; EUIPO, JPO and the courts are gaps. The rules and commands are in `CLAUDE.md`, and what's next is in
-`docs/handover-day2.md`.
+WIPO's treaty notifications and bulk statistics, and the ABS's CABEE and BERD; EUIPO, JPO and the courts are gaps. Day 3 was built and
+run on 2026-10-13 (D-021): normalise with the sweep, embeddings, de-duplication, keyphrases, BM25, zero-shot tags
+and the IP RAPID metrics; the decision model's T4 test waits on the owner (a free notebook needs a person). The rules
+and commands are in `CLAUDE.md`, and what's next is in `docs/handover-day3.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 

@@ -1383,3 +1383,179 @@ owner's uploads read from the bucket (about 100 MB).
   4. **Merge this branch** (or ask for a pull request).
 
 Next free decision number: D-021.
+
+## D-021 — Day 3 built and run: the evidence layer normalised, swept, embedded, de-duplicated, keyphrased, indexed and tagged; IP RAPID metrics; the T4 test waits on the owner (2026-10-13)
+
+**Context.** The owner: "You are to commence the Day 3 build." Design §13 day 3: normalise, de-duplicate, event and
+observable dates; territories wired in; embeddings, keyphrases, BM25, zero-shot tags; the decision model's speed on a
+T4. Done when every Tier 1 item is embedded and tagged. The handover (open item 1) added `moria ipr metrics`.
+
+**Built (this session's engineering choices; they stand until the owner says otherwise).**
+- **`moria normalise`** (`src/moria/normalise.py`). It reads every raw bundle whose collection run passed, checked
+  against that run manifest's SHA-256, and the latest release of each bulk source. It writes, per source:
+  `lake/documents/` (one row per item: its latest version, `n_versions` and `first_seen_at` across runs), and
+  `lake/series/` with `lake/observations/` (long form, one row per series, period and vintage). IP RAPID is left to
+  its metrics stage.
+  - **Dates** (`src/moria/text.py`): ISO with and without zones, FRL's seven-digit fractions, RFC 2822 (feeds),
+    GDELT's stamps and bare years, all to UTC; a time without a zone is read as UTC. `observable_at` is the source's
+    date, or first sight when the source gives none, or first sight when the source's date is more than a day after
+    it (`observable_basis`: `source`, `first_sight`, `clamped`). Every source date parsed: 0 clamped; 4,363 items
+    observable from first sight (4,354 legal-corpus documents without a date, and 9 documents without a
+    publication date).
+  - **Vintages:** a snapshot source (ABS, the OECD, OpenAlex, the CPC counts, spreadsheets) adds a vintage only when
+    a series' values change; an append source (GDELT's daily volumes) adds each period once. The value at `as_of`
+    is the latest `vintage_at <= as_of`.
+  - **Per source:** GDELT's GKG volumes become `matching`, `about` and `names_only` series per query group and
+    scope, plus the day's total (the DOC API's early timelines, D-009, are left out); OpenAlex groups become one
+    series per topic, level, scope and period kind; CPC counts become world and AU series, 17 malformed codes left
+    out; ABS spreadsheet cells are one series each, as published, their period the release's (`2023-24`); SDMX
+    series keep words as `value_text`; WIPO's bulk tables become 966,306 office-by-origin-by-class series; STIP
+    Compass becomes one document per initiative (its instruments' names and descriptions in the text, observable
+    from `CreatedInSurvey`); the legal corpus keeps a 4,000-character excerpt (the full text stays in its lake).
+  - **Unchanged sources are carried over:** a digest of a source's inputs (bundle keys and hashes, its card, the
+    normaliser's settings) skips the rebuild and carries the outputs into the new manifest. The re-run took 40 s.
+  - **Layout:** partitioned by source, not by family and month or by series and vintage (design §4.3): a source is
+    the unit of collection and of rebuilding, and per-series files would be 17,712 objects for the OECD alone. DuckDB
+    filters on `observable_at` and `family` across the files.
+- **The sweep** (`src/moria/sweep.py`), inside normalise rather than a separate `moria sweep` stage, so that every
+  text field normalise keeps is swept once, before anything reads it. It removes hidden characters (zero-width,
+  bidirectional controls, Unicode tag characters) and grades AI-directed instructions, chat markup, secrets and
+  active content; personal data (e-mail addresses, phone numbers) is counted, not changed. High severity quarantines
+  the item: left out of `lake/documents`, listed by id and finding codes in `lake/quarantine/`. It does not fail the
+  run (design §12; SOP §22 would also fail it): one abstract quoting an injection should not stop the daily chain.
+  The allowlist (`config/sweep.yaml`) is empty and the owner's alone.
+- **`moria features embed`** (`src/moria/embed.py`): `BAAI/bge-small-en-v1.5`, its own ONNX export at revision
+  `5c38ec7c`, each file checked against its SHA-256 before loading, run by onnxruntime and `tokenizers` (an optional
+  `models` extra, so CI stays light); CLS pooling, L2-normalised, as the model's pooling config says; vectors stored
+  as float16. Text: the title, summary and opening text, cut at 1,500 characters, read to **256 tokens**, measured on
+  600 sampled items here (4 threads): 22.1 texts/s at 256 tokens against 9.2 at 512. A vector is reused while its
+  text is unchanged; local checkpoints let an interrupted backfill resume.
+- **`moria features dedup`:** union of three rules within 30 days, each group named by its earliest member: the same
+  canonical URL between news items; the same news title of at least six words; cosine >= 0.95 between different
+  outlets (design §8.3). Two corrections came from reading the first groups: the URL rule had joined 344 STIP
+  initiatives that share a ministry's link and an APH progress report with the inquiry it reports on (both link the
+  committee's page). URLs identify an item only in news, so the rule now needs both items to be news.
+- **`moria features keyphrases`:** candidate phrases are runs of words between punctuation and stopwords, and their
+  1- to 3-grams. Document frequencies are counted in hashed buckets first, then exactly for phrases that can pass
+  (memory bounded), with min_df 3, max_df 5% and at most 200,000 phrases. The top 8 per document are scored by
+  TF-IDF times the square root of the phrase's length, a phrase dropped when a longer kept one holds it. The
+  vocabulary records each phrase's first observable date, sources and families: the input of day 4's `new_term`.
+- **`moria features index`:** DuckDB `fts` (BM25, Porter stemming) over the title, summary and 4,000 characters,
+  with source, family, dates and URL; `moria search` for the analyst's own terminal.
+- **`moria tag --backend zeroshot`** (`src/moria/tags.py`): cosine similarity to prototypes, each the mean of its
+  label's embedded description and examples. Ring and PESTLE are single-choice (a softmax at temperature 0.02, with
+  the top label and its margin). Domains, rights and territories keep raw similarities, and each item gets its
+  nearest known trend and the second. **Territories wired in:** the territory prototypes use the name, aim and
+  description, plus the owner's private context (imagine, recently changed, jobs to be done) read from the bucket.
+  Only vectors and similarities are derived from it, in the bucket. The 47 query groups GDELT is searched with are
+  now matched in every source's text too (`term_groups`, `term_territories`). The tagger's name carries the
+  codebook's version and a hash of every prototype text (design §8.3, label drift). **`config/codebook.yaml`** is
+  drafted from the design's definitions (§2.1, §10.1) and is `proposed`.
+- **`moria ipr metrics`** (`src/moria/iprmetrics.py`): 59 monthly series from 2000 in `lake/ipr_metrics/`, from the
+  latest base with the latest delta applied (base minus its removed rows, plus its added rows).
+  - Demand: applications by sub-type, by founding applicants' origin, self-filed, first-time applicants, Madrid
+    designations of Australia, and patent applications in G06N (AI).
+  - Outcomes by event month: registrations, grants, acceptances, lapses, withdrawals, refusals, oppositions, non-use
+    removals, ownership changes, examination requests.
+  - Timeliness: median days from filing to registration, by registration month.
+  - Each release is a vintage, and its own month is marked `incomplete`.
+  - Three corrections came from reading the first output. Country codes are lower case, so origin had matched
+    nothing. In 715,462 of 2,331,535 trade mark applications the founding agent is the applicant itself, so
+    self-filed now ignores such an agent. The `accepted` event gave 3 to 14 days to acceptance for trade marks, so
+    it isn't examination acceptance; timeliness now uses the application table's registration date, a median
+    221 days for trade marks, and about 600 to 1,200 days for patents (rising since 2021).
+  - Six series with no month in the last 12 are left out and listed: trade mark renewals and examination requests
+    stop in November 2018 (a system change); petty patents ended in 2001; design and PBR refusals are too sparse.
+  - Check: applications by year match the IP RAPID census exactly (2025: 97,343 trade marks, 37,379 patents).
+- **`moria prepare`** runs the chain and stops at the first failure. **`.github/workflows/prepare.yml`** runs it
+  weekly (Mondays 07:17 UTC, after collect-weekly), with the model files cached by revision, and **`collect-daily`**
+  now normalises after collecting.
+- **`moria evidence-report`** writes `reports/evidence-layer.md`, aggregates only.
+- **The T4 test** (`scripts/t4_jevstyle_speed.py`): free Kaggle and Colab GPUs need a person to start them, so the
+  test is a one-cell script for the owner. It fetches the decision model's files at revision `edf37c26`, each
+  hash-checked; builds llama.cpp at the card's commit with CUDA, and the model's own scorer; and times 60 synthetic
+  items and an 8k-token state. The model repo's wrapper, scorer and build script were read first: the wrapper
+  launches only the local scorer, with no network calls. **The rule, fixed before the number:** per-item tags if the
+  median item (7 questions) takes <= 0.15 s, so the 122k items take <= 5 h in one free session; otherwise signals
+  only.
+
+**Rejected, a line each:**
+- **fastembed:** it downloads at run time and serves Qdrant's quantised re-export, not the design's model at a
+  pinned revision.
+- **scikit-learn's `TfidfVectorizer` for keyphrases:** it builds the whole n-gram vocabulary before pruning, too
+  much memory for 122k documents.
+- **512 tokens:** 2.4 times slower, for text past the opening of a judgment or report.
+- **A per-item decision model:** not before the T4 number (the CPU took 5.1 s an item, design §4.2).
+- **Embedding series labels** (topics, indicators): series keep their cards' rings; day 4 can embed labels if a
+  detector needs them.
+- **Tuning the codebook further** against unlabelled outputs: the owner's labels are the yardstick (§11.2).
+
+**Checked:**
+- **Tests:** 118 pass with no network: dates, URLs, text, the sweep and its allowlist; normalise (versions, first
+  sight, clamping, quarantine, a failed run's bundle left out, carrying over, vintages, GDELT volumes, an unmapped
+  payload failing loudly); embed reuse; dedup's three rules and its refusal of stale embeddings; keyphrases; tags
+  with territory terms; BM25; IP RAPID metrics over a base and a delta. The BM25 test is skipped in CI, which makes
+  no downloads. A new hygiene test refuses literal invisible or bidirectional characters in tracked files.
+- **CI:** green on `9356410`; red on `2cc8e7e` (see below).
+- **Runs into the bucket** (this session's machine, `--store r2`), from clean commits:
+
+  | Stage | Run | Commit | Result |
+  |---|---|---|---|
+  | `normalise` | `20261013T160437Z-613b21bb`, then `…161842Z-c5694100` | `2cc8e7e`, `9356410` | 122,243 documents from 28 sources; 1,012,530 series, 7,214,318 observations; 0 quarantined; then all 42 sources unchanged |
+  | `features.embed` | `20261013T161922Z-93c79f44` | `9356410` | 122,243 documents; 112,161 embedded, 8,192 taken from the stopped run's checkpoints; 86 minutes |
+  | `features.dedup` | `20261013T174549Z-51a8353d` | `9356410` | 120,344 groups; 354 with copies, all GDELT news (URL 20, title 1,703, cosine 176 joins) |
+  | `features.keyphrases` | `20261013T174606Z-9f6c8132` | `9356410` | 200,000 phrases; 954,535 kept for 122,155 documents |
+  | `tag` | `20261013T180027Z-9f045240` | `353e458` | 122,243 items, tagger `zeroshot-v1\|codebook-v2\|fcafc078c410`; 16,632 match a territory or theme term |
+  | `features.index` | `20261013T175042Z-439c893c` | `9356410` | 122,243 documents, 517 MB |
+  | `ipr.metrics` | `20261013T175207Z-2dd7d5c0` | `9356410` | 59 series, 17,540 observations, release 2026-10-12 |
+
+- **Read in the output:**
+  - Near-duplicate joins are syndication: the same wire story on different outlets at cosine 0.96 to 0.99, and a
+    radio network's 146 copies of one item.
+  - The sweep found 554 items with e-mail addresses, 230 with hidden characters and 98 with phone numbers, mostly
+    in judgments, nothing of high severity.
+  - The first tags put 97% of the legal corpus in the core ring: the codebook showed law only under the IP system.
+    Examples drawn from §2.1 (law on migration, tax, employment and administration under the wider world;
+    competition and consumer law under adjacent) bring it to 57%. Of the legal-corpus items matching IP-system
+    terms, 90% stay core.
+  - The same examples pull WIPO's treaty notifications from 88% core to 56%: the zero-shot ring is weak on legal text
+    and short titles.
+
+**Runs and slips, disclosed:**
+- **The first chain** started from `2cc8e7e` and was stopped while embedding: files edited for the next commit would
+  have marked its later manifests dirty, though the code that ran was the commit's. It was restarted from
+  `9356410`; its normalise run passed clean, and its partial embeddings were overwritten.
+- **CI red on `2cc8e7e`:** run ids sort to the second, so two runs in the same second could come back in the wrong
+  order (a test caught it). Manifests now carry a nanosecond start time, which breaks ties.
+- **The tests wrote embedding checkpoints into the real cache** under fixture source ids. Removed; tests now cache
+  in their own directory (`MORIA_CACHE_DIR`).
+- **Literal invisible characters:** this session's tooling turned typed escapes into literal zero-width and
+  bidirectional characters in two files, and an older fixture held a literal BOM. All are escapes now, and the new
+  hygiene test refuses them.
+- **A dirty tag manifest:** `tag` run `20261013T175717Z-9c466acf` says `dirty: true`, because the untracked
+  evidence report sat in the tree. It was re-run clean (`…175844Z`, then `…180027Z` with the codebook's version
+  bumped). The dirty manifest stays in the bucket (manifests are immutable).
+
+**Spend:** $0. The bucket grows from 2.09 GB to 2.92 GB of the free 10 GB, of which the index is 0.52 GB.
+Downloads: the model's files (134 MB) from Hugging Face; the legal corpus and IP RAPID from the bucket to this
+session's cache.
+
+**Consequences.**
+- Day 4 reads the evidence layer as `docs/handover-day3.md` lists it, with its flags:
+  - the legal corpus is 85% of documents, so shares and quotas go per source or family;
+  - IP RAPID's latest 30 months of patents are composition-lagged: national-phase entries arrive later, so the AU
+    and self-filed shares jump in 2025 and 2026;
+  - the zero-shot ring and the nearest known trend are weak until calibrated, so use the cards' rings and the term
+    matches for the core ring;
+  - GDELT's first GKG day has one measure, not three.
+- Scale: dedup's cosine pass will need approximate neighbours or day blocking once GDELT holds months of titles.
+- **For the owner:**
+  1. **The T4 test:** run `scripts/t4_jevstyle_speed.py` in a free Kaggle or Colab T4 notebook and paste back its
+     one JSON line. The rule decides between per-item tags and signals only.
+  2. **The codebook** (`config/codebook.yaml`, proposed): confirm or edit the labels' descriptions and examples.
+     They also frame the 200 labels (docs/mining-explained.md).
+  3. **The territory context:** it now shapes the territory prototypes inside the bucket; nothing of it is
+     published. Say so if it shouldn't be used that way.
+  4. Still open: KT20 to KT24 (D-020), the wishlist, and the merge of this branch (or a pull request).
+
+Next free decision number: D-022.
