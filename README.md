@@ -36,6 +36,7 @@ uv run moria baseline                        # the known-trends baseline
 
 | Path | What it is |
 |---|---|
+| `index.html` | A visual index (open it in a browser): purpose, the questions and their expected sources, the three rings, what is stored and what is not, what is built and what is still to come |
 | `CLAUDE.md` | The rulebook for build sessions: scope, rules, commands |
 | `docs/design.md` | The system design (v0.3) |
 | `docs/decisions.md` | The decision log (append-only) |

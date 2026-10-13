@@ -1,0 +1,1593 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moria Index</title>
+<meta name="description" content="What Moria is for, the questions it asks, the sources it reads, what it stores and what it deliberately does not, what is built and what is still to come.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: a survey index. A sticky contents rail beside one reading column; diagrams and tables use the column's
+   full width. Rings are one blue ramp (core darkest); build status has its own colours, never blue. */
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #eaeef4;
+  --fg: #162033;
+  --muted: #566176;
+  --line: #d2d9e3;
+  --line-strong: #9aa6b8;
+  --core: #1d3d8c;
+  --adj: #3c6cc2;
+  --wide: #7b98cf;
+  --core-t: #d3def5;
+  --adj-t: #e2e9f8;
+  --wide-t: #f0f4fb;
+  --wide-ink: #4a669c;
+  --ok: #1f7346;
+  --sprint: #9a5800;
+  --after: #0e7470;
+  --future: #6643b3;
+  --gap: #ad3434;
+  --f-display: "Barlow Semi Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d121a; --surface: #141b26; --surface-2: #1b2432; --fg: #e2e8f0; --muted: #9ba7b9;
+    --line: #2a3546; --line-strong: #4f5d72;
+    --core: #a9c1ff; --adj: #7d9fe6; --wide: #5a77b2;
+    --core-t: #26375e; --adj-t: #1d2b49; --wide-t: #162136; --wide-ink: #8fa8d8;
+    --ok: #62cc8e; --sprint: #eea64a; --after: #4cc6c0; --future: #b59dff; --gap: #ff8b82;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d121a; --surface: #141b26; --surface-2: #1b2432; --fg: #e2e8f0; --muted: #9ba7b9;
+  --line: #2a3546; --line-strong: #4f5d72;
+  --core: #a9c1ff; --adj: #7d9fe6; --wide: #5a77b2;
+  --core-t: #26375e; --adj-t: #1d2b49; --wide-t: #162136; --wide-ink: #8fa8d8;
+  --ok: #62cc8e; --sprint: #eea64a; --after: #4cc6c0; --future: #b59dff; --gap: #ff8b82;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 16px/1.62 var(--f-body);
+  padding-inline: 20px;
+  padding-block: 0 64px;
+}
+a { color: var(--core); text-underline-offset: 2px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--core); outline-offset: 2px; border-radius: 2px; }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--surface-2); padding: 0.05em 0.35em; border-radius: 3px; overflow-wrap: anywhere; }
+h1, h2, h3, h4 { font-family: var(--f-display); line-height: 1.12; text-wrap: balance; margin: 0; }
+h2 { font-size: 2rem; font-weight: 600; letter-spacing: 0.005em; }
+h3 { font-size: 1.32rem; font-weight: 600; margin-top: 2.2rem; }
+h4 { font-size: 1.08rem; font-weight: 600; }
+p { margin: 0.75rem 0 0; max-width: 72ch; }
+ul, ol { margin: 0.75rem 0 0; padding-left: 1.25rem; max-width: 72ch; }
+li + li { margin-top: 0.3rem; }
+strong { font-weight: 600; }
+.muted { color: var(--muted); }
+.small { font-size: 0.88rem; }
+
+/* page frame */
+.layout {
+  max-width: 1260px; margin: 0 auto;
+  display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 56px;
+}
+.toc {
+  position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto;
+  padding-block: 28px 28px; font-size: 0.9rem;
+}
+.toc .brand { font-family: var(--f-display); font-weight: 700; font-size: 1.5rem; letter-spacing: 0.02em; }
+.toc .brand-sub { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+.toc ol { list-style: none; padding: 0; margin: 18px 0 0; counter-reset: toc; }
+.toc li { margin: 0; counter-increment: toc; }
+.toc li a {
+  display: grid; grid-template-columns: 2.1em 1fr; padding: 4px 0; color: var(--fg); text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.toc li a::before { content: counter(toc, decimal-leading-zero); color: var(--muted); font-family: var(--f-mono); font-size: 0.78rem; padding-top: 2px; }
+.toc li a:hover { color: var(--core); }
+.toc details summary { display: none; }
+main { min-width: 0; padding-block: 28px 0; }
+
+@media (max-width: 960px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .toc { position: static; max-height: none; padding-block: 16px 0; }
+  .toc details { border: 1px solid var(--line); background: var(--surface); border-radius: 4px; padding: 10px 14px; }
+  .toc details summary { display: block; cursor: pointer; font-weight: 600; }
+  .toc .brand, .toc .brand-sub { display: none; }
+}
+
+/* header */
+.masthead { padding-block: 8px 28px; border-bottom: 1px solid var(--line); }
+.eyebrow {
+  font-family: var(--f-display); font-weight: 600; font-size: 0.82rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--muted);
+}
+.masthead h1 { font-size: clamp(3rem, 7vw, 4.6rem); font-weight: 700; letter-spacing: 0.01em; margin-top: 6px; }
+.masthead h1 span { font-weight: 500; color: var(--muted); font-size: 0.42em; letter-spacing: 0.02em; margin-left: 0.4em; vertical-align: 0.5em; }
+@media (max-width: 560px) { .masthead h1 span { display: block; margin: 4px 0 0; vertical-align: baseline; font-size: 0.34em; } }
+.lede { font-size: 1.14rem; line-height: 1.55; max-width: 66ch; margin-top: 12px; }
+.facts {
+  display: flex; flex-wrap: wrap; gap: 8px 26px; margin: 22px 0 0; padding: 14px 0 0; border-top: 1px dashed var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.facts div { display: flex; align-items: baseline; gap: 6px; }
+.facts dt { font-family: var(--f-display); font-size: 1.6rem; font-weight: 700; line-height: 1; }
+.facts dd { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+/* status badges */
+.st {
+  display: inline-flex; align-items: center; gap: 5px; vertical-align: 0.1em;
+  font-family: var(--f-display); font-weight: 600; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid currentColor; border-radius: 3px; padding: 1px 6px; white-space: nowrap; line-height: 1.5;
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+.st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.st.built { color: var(--ok); }
+.st.partial { color: var(--ok); border-style: dashed; }
+.st.partial::before { background: transparent; border: 1.5px solid currentColor; width: 5px; height: 5px; }
+.st.sprint { color: var(--sprint); }
+.st.after { color: var(--after); }
+.st.future { color: var(--future); }
+.st.gap { color: var(--gap); }
+td .st { white-space: normal; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 14px; font-size: 0.88rem; }
+.legend div { display: flex; align-items: center; gap: 8px; }
+
+/* ring chips */
+.rings { display: inline-flex; gap: 3px; vertical-align: 0.05em; }
+.rg {
+  display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 3px;
+  font-family: var(--f-display); font-weight: 700; font-size: 0.78rem; line-height: 1;
+}
+.rg.c { background: var(--core); color: var(--bg); }
+.rg.a { background: var(--adj); color: var(--bg); }
+.rg.w { background: var(--wide-t); color: var(--fg); border: 1px solid var(--wide); }
+.rg.off { background: transparent; color: var(--line-strong); border: 1px dashed var(--line); }
+
+/* sections */
+section { padding-block: 56px 0; scroll-margin-top: 12px; }
+.sec-head { display: grid; gap: 6px; padding-bottom: 10px; border-bottom: 2px solid var(--fg); max-width: none; }
+.sec-head .eyebrow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sec-head .num { font-family: var(--f-mono); font-weight: 500; letter-spacing: 0; color: var(--muted); }
+
+/* figures */
+figure { margin: 26px 0 0; }
+.fig-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; }
+figcaption { margin-top: 10px; font-size: 0.88rem; color: var(--muted); max-width: 80ch; }
+figcaption strong { color: var(--fg); }
+.dg { display: block; width: 100%; height: auto; min-width: 640px; color: var(--fg); font-family: var(--f-display); }
+.dg text { fill: var(--fg); font-size: 13px; }
+.dg .t-s { font-size: 11.5px; fill: var(--muted); font-family: var(--f-body); }
+.dg .t-i { font-size: 12px; font-family: var(--f-body); }
+.dg .t-b { font-weight: 600; font-size: 14px; }
+.dg .t-big { font-weight: 700; font-size: 20px; }
+.dg .t-cap { font-size: 11px; font-weight: 700; letter-spacing: 0.09em; }
+.dg .ln { stroke: var(--fg); stroke-width: 1.3; fill: none; }
+.dg .ln-m { stroke: var(--line-strong); stroke-width: 1; fill: none; }
+.dg .ln-d { stroke: var(--muted); stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+.dg .box { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
+.dg .box-2 { fill: var(--surface-2); stroke: var(--line); stroke-width: 1; }
+.dg .box-d { fill: var(--surface); stroke: var(--muted); stroke-width: 1; stroke-dasharray: 5 4; }
+.dg .f-core { fill: var(--core-t); stroke: var(--core); stroke-width: 1.2; }
+.dg .f-adj { fill: var(--adj-t); stroke: var(--adj); stroke-width: 1.2; }
+.dg .f-wide { fill: var(--wide-t); stroke: var(--wide); stroke-width: 1.2; }
+.dg .tc-core { fill: var(--core); }
+.dg .tc-adj { fill: var(--adj); }
+.dg .tc-wide { fill: var(--wide-ink); }
+.dg .tc-gap { fill: var(--gap); }
+.dg .tc-ok { fill: var(--ok); }
+.dg .tc-sprint { fill: var(--sprint); }
+.dg .tc-after { fill: var(--after); }
+.dg .s-built { fill: var(--ok); }
+.dg .s-sprint { fill: var(--sprint); }
+.dg .s-after { fill: var(--after); }
+.dg .s-gap { fill: var(--gap); }
+.dg .s-muted { fill: var(--line-strong); }
+.dg .s-core { fill: var(--core); }
+.dg .proj { stroke: var(--core); stroke-width: 2.4; fill: none; }
+.dg .lead { stroke: var(--line-strong); stroke-width: 1; fill: none; }
+
+/* tables */
+.tbl { overflow-x: auto; margin-top: 18px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+tbody tr:last-child td { border-bottom: 0; }
+th {
+  font-family: var(--f-display); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--muted); background: var(--surface-2); white-space: nowrap;
+}
+td.nw, th.nw { white-space: nowrap; }
+td .mono { color: var(--muted); }
+tr.grp td { background: var(--surface-2); font-family: var(--f-display); font-weight: 600; letter-spacing: 0.04em; font-size: 0.86rem; }
+
+/* question matrix */
+.matrix { min-width: 880px; }
+.matrix th { white-space: normal; font-size: 0.72rem; line-height: 1.25; vertical-align: bottom; text-align: center; }
+.matrix th:first-child { text-align: left; }
+.matrix td { text-align: center; padding: 7px 6px; font-size: 1rem; }
+.matrix td:first-child { text-align: left; font-size: 0.86rem; white-space: nowrap; }
+.matrix td:first-child b { font-family: var(--f-mono); font-weight: 500; margin-right: 6px; }
+.dot-p { color: var(--core); }
+.dot-s { color: var(--muted); }
+
+/* question cards */
+.q { margin-top: 26px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 18px 20px 20px; }
+.q-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; align-items: baseline; }
+.q-id { font-family: var(--f-mono); font-weight: 500; font-size: 0.95rem; color: var(--core); }
+.q-text { font-family: var(--f-display); font-size: 1.28rem; font-weight: 600; line-height: 1.22; text-wrap: balance; }
+.q dl { display: grid; grid-template-columns: 11.5em minmax(0, 1fr); gap: 10px 18px; margin: 16px 0 0; }
+.q dt { font-family: var(--f-display); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.q dd { margin: 0; min-width: 0; }
+.q dd ul { margin: 0; }
+@media (max-width: 640px) { .q dl { grid-template-columns: minmax(0, 1fr); gap: 2px 0; } .q dd { margin-bottom: 10px; } }
+
+/* explanatory blocks */
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 20px; }
+.cols > div { min-width: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); padding: 14px 16px; }
+.cols h4 { margin-bottom: 4px; }
+.cols p, .cols ul { font-size: 0.93rem; }
+.asbuilt {
+  margin-top: 24px; border: 1px solid var(--line-strong); border-radius: 4px; background: var(--surface-2);
+  padding: 14px 18px; font-size: 0.94rem; max-width: 86ch;
+}
+.asbuilt h4 { font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.asbuilt ul { margin-top: 8px; list-style: none; padding: 0; max-width: none; }
+.asbuilt li { display: grid; grid-template-columns: 9.6em minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.asbuilt li + li { margin-top: 6px; }
+.asbuilt li > .st { justify-self: start; }
+@media (max-width: 560px) { .asbuilt li { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+.mech { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-top: 18px; }
+.mech div { min-width: 0; padding: 12px 14px; border-top: 3px solid var(--fg); background: var(--surface); }
+.mech h4 { font-size: 1.05rem; }
+.mech p { font-size: 0.92rem; margin-top: 6px; }
+
+/* filter */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
+.filters span { font-size: 0.86rem; color: var(--muted); margin-right: 4px; }
+.filters button {
+  font: 600 0.82rem/1 var(--f-display); letter-spacing: 0.06em; text-transform: uppercase;
+  border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); padding: 7px 11px; border-radius: 3px; cursor: pointer;
+}
+.filters button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+/* timeline */
+.tl { list-style: none; padding: 0; margin: 22px 0 0; max-width: 86ch; }
+.tl li { display: grid; grid-template-columns: 8.4em 18px minmax(0, 1fr); gap: 0 14px; margin: 0; }
+.tl .when { font-family: var(--f-mono); font-size: 0.82rem; color: var(--muted); padding-top: 3px; text-align: right; }
+.tl .rail { position: relative; }
+.tl .rail::before { content: ""; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.tl .rail::after { content: ""; position: absolute; left: 3px; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: var(--bg); border: 2px solid var(--line-strong); }
+.tl li.done .rail::after { background: var(--ok); border-color: var(--ok); }
+.tl li.next .rail::after { border-color: var(--sprint); background: var(--bg); }
+.tl li.later .rail::after { border-color: var(--after); }
+.tl li.fut .rail::after { border-color: var(--future); border-style: dashed; }
+.tl .what { padding-bottom: 18px; min-width: 0; }
+.tl .what h4 { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.tl .what p { margin-top: 4px; font-size: 0.93rem; }
+@media (max-width: 560px) { .tl li { grid-template-columns: 18px minmax(0, 1fr); } .tl .when { grid-column: 2; text-align: left; order: -1; } .tl .rail { grid-row: 1 / span 2; } }
+
+dl.gloss { display: grid; grid-template-columns: 13em minmax(0, 1fr); gap: 10px 22px; margin-top: 18px; max-width: 92ch; }
+dl.gloss dt { font-weight: 600; }
+dl.gloss dd { margin: 0; min-width: 0; }
+@media (max-width: 640px) { dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px; } dl.gloss dd { margin-bottom: 10px; } }
+
+footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.86rem; color: var(--muted); max-width: 86ch; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contents">
+  <div class="brand">Moria</div>
+  <div class="brand-sub">Repository index</div>
+  <details open id="toc-details">
+    <summary>Contents</summary>
+    <ol>
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#questions">The questions</a></li>
+      <li><a href="#rings">Three rings</a></li>
+      <li><a href="#pathways">Pathways to the IP system</a></li>
+      <li><a href="#territories">Growth Territories</a></li>
+      <li><a href="#process">The process, end to end</a></li>
+      <li><a href="#storage">Stored, and not stored</a></li>
+      <li><a href="#sources">The sources</a></li>
+      <li><a href="#mining">From items to signals</a></li>
+      <li><a href="#lenses">Validation and the lenses</a></li>
+      <li><a href="#evaluation">How we will know</a></li>
+      <li><a href="#progress">Built, and next</a></li>
+      <li><a href="#endstate">The end state</a></li>
+      <li><a href="#rules">Rules that always hold</a></li>
+      <li><a href="#repo">Repository map</a></li>
+      <li><a href="#glossary">Glossary</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main>
+
+<header class="masthead">
+  <div class="eyebrow">For IP Australia's strategic foresight · repository index</div>
+  <h1>Moria <span>signal detection and validation</span></h1>
+  <p class="lede">Moria mines public data for change that could reach Australia's IP system between now and 2036. It reads
+  broadly, across the IP system, its adjacent fields and the wider world, without filtering for IP keywords. It looks for
+  trends, accelerations, anomalies and weak signals, checks each candidate for false alarms, and puts the survivors in
+  front of a person, who decides what is real. Validated signals are then read through PESTLE, SWOT/TOWS and a Futures
+  Cone, and every finding stays traceable to its evidence.</p>
+  <p>This page describes the system's intended end state and marks, everywhere, how much of it exists today.
+  <strong>On 13 October 2026 the collection machinery is built and running</strong> (days 1 and 2 of a five-day
+  sprint, a cleanup of the first source tier, and a widening of sources). The mining, review and lens stages are
+  designed but not built. Each claim carries one of these labels:</p>
+  <div class="legend" role="list" aria-label="Status labels">
+    <div role="listitem"><span class="st built">Built</span> running now</div>
+    <div role="listitem"><span class="st partial">Partly built</span> some of it runs</div>
+    <div role="listitem"><span class="st sprint">Sprint days 3–5</span> next in the build</div>
+    <div role="listitem"><span class="st after">After the sprint</span> needs the owner's labels or review</div>
+    <div role="listitem"><span class="st future">Future state</span> context only, not to build yet</div>
+    <div role="listitem"><span class="st gap">Gap</span> wanted, blocked</div>
+  </div>
+  <dl class="facts" aria-label="Moria in figures">
+    <div><dt>43</dt><dd>sources</dd></div>
+    <div><dt>3</dt><dd>rings</dd></div>
+    <div><dt>6</dt><dd>pathways</dd></div>
+    <div><dt>4 + 7</dt><dd>questions</dd></div>
+    <div><dt>5</dt><dd>Growth Territories</dd></div>
+    <div><dt>24</dt><dd>known trends (19 confirmed)</dd></div>
+    <div><dt>$0</dt><dd>spent</dd></div>
+  </dl>
+</header>
+
+<!-- ============================================================ 1 -->
+<section id="purpose">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">01</span> Purpose</div>
+    <h2>One register, read two ways</h2>
+  </div>
+  <p>Moria exists to inform IP Australia's strategic direction (the owner, D-003). IPAVentures, the agency's in-house
+  innovation lab, is the agency's strategic canary, so there is one <strong>signal register</strong> with two views
+  of it, one per audience.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>View</th><th>For</th><th>Shows</th><th>Ranked by</th><th>Cadence</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Early warning</strong></td><td>IPAVentures</td><td>Weak signals, low-base surges, novel items and new combinations, once past the artefact checks; validated or not, clearly marked</td><td>Pathway strength × novelty × lead time</td><td class="nw">Weekly digest</td><td><span class="st sprint">Day 5</span></td></tr>
+        <tr><td><strong>Strategic</strong></td><td>Agency strategy</td><td>Validated trends, accelerations and drivers, with their places in each lens</td><td>Pathway strength × breadth across sources × impact on objectives</td><td class="nw">Each cycle (quarterly)</td><td><span class="st after">After</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cols">
+    <div>
+      <h4>Horizon</h4>
+      <p>Now to 2036, in three bands: <strong>H1</strong> 0 to 2 years, <strong>H2</strong> 2 to 5 years,
+      <strong>H3</strong> 5 to 10 years and beyond.</p>
+    </div>
+    <div>
+      <h4>The idea that shapes everything</h4>
+      <p>Collect broadly, with no IP filter. Ask for a <strong>pathway</strong> to the IP system only later, at the
+      signal stage, before anyone spends time on a candidate.</p>
+    </div>
+    <div>
+      <h4>Not in scope</h4>
+      <ul class="small">
+        <li>Internal or non-public data</li>
+        <li>Decisions about individual applications</li>
+        <li>Replacing human judgement on values, or choosing the preferable future</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="questions">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">02</span> The questions <span class="st partial">Sources built · analysis planned</span></div>
+    <h2>What Moria is asking, and where the answers should come from</h2>
+  </div>
+  <p>The owner adopted four <strong>outside-in questions</strong> (D-005). They start from the wider world and work
+  inwards, so the scan is not limited to what the IP system already talks about. Seven
+  <strong>system-specific questions</strong> from design v0.2 sit beneath them.</p>
+  <p><strong>Read this section as a plan.</strong> Every source named here is built and collecting. The detectors,
+  dossiers and review that would turn its data into answers are not built yet, so no question has an answer. The
+  mapping of sources to questions is this page's reading of the source cards (their rings and domains) and the
+  design; it is not an owner decision, and the first review rounds will test it.</p>
+
+  <figure>
+    <div class="tbl" style="margin-top:0">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>News volumes<br>(GDELT)</th>
+            <th>World news &amp; commentary</th>
+            <th>Foresight &amp; strategies</th>
+            <th>Research</th>
+            <th>IP rights data</th>
+            <th>ABS</th>
+            <th>OECD</th>
+            <th>Law, regulation &amp; standards</th>
+            <th>Parliament</th>
+            <th>IP Australia</th>
+            <th>Peer offices &amp; WIPO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="grp"><td colspan="12">Outside-in (adopted by the owner, D-005)</td></tr>
+          <tr><td><b>Q1</b>Wider-world shifts</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-s">○</td><td class="dot-s">○</td><td></td><td></td></tr>
+          <tr><td><b>Q2</b>Value of IP rights</td><td class="dot-s">○</td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-s">○</td><td></td><td class="dot-p">●</td><td class="dot-s">○</td></tr>
+          <tr><td><b>Q3</b>How the system works</td><td class="dot-p">●</td><td></td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td></tr>
+          <tr><td><b>Q4</b>IP Australia disrupted</td><td class="dot-s">○</td><td class="dot-s">○</td><td class="dot-s">○</td><td></td><td class="dot-p">●</td><td class="dot-s">○</td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td></tr>
+          <tr class="grp"><td colspan="12">System-specific (design v0.2, kept as sub-questions)</td></tr>
+          <tr><td><b>S1</b>AI and IP, 2026–2036</td><td class="dot-p">●</td><td class="dot-s">○</td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td></td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-s">○</td><td class="dot-s">○</td><td class="dot-p">●</td></tr>
+          <tr><td><b>S2</b>Law, courts, treaties</td><td class="dot-s">○</td><td></td><td></td><td></td><td class="dot-s">○</td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td></tr>
+          <tr><td><b>S3</b>Industries' use of IP</td><td class="dot-s">○</td><td></td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td></td><td></td><td class="dot-s">○</td><td class="dot-s">○</td></tr>
+          <tr><td><b>S4</b>Emerging technologies</td><td class="dot-p">●</td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td></td><td class="dot-p">●</td><td class="dot-s">○</td><td></td><td></td><td class="dot-s">○</td></tr>
+          <tr><td><b>S5</b>SMEs struggling</td><td class="dot-p">●</td><td></td><td></td><td></td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-s">○</td><td></td><td class="dot-s">○</td><td class="dot-p">●</td><td></td></tr>
+          <tr><td><b>S6</b>Who files here, and why</td><td class="dot-s">○</td><td class="dot-p">●</td><td class="dot-s">○</td><td></td><td class="dot-p">●</td><td class="dot-p">●</td><td class="dot-p">●</td><td></td><td></td><td></td><td class="dot-p">●</td></tr>
+          <tr><td><b>S7</b>Peer offices' capability</td><td></td><td></td><td></td><td></td><td class="dot-s">○</td><td></td><td class="dot-s">○</td><td class="dot-s">○</td><td></td><td class="dot-s">○</td><td class="dot-p">●</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figcaption><strong>Where each question expects its evidence.</strong> ● a main source of evidence; ○ supporting
+    evidence. The columns group the 43 sources: <em>world news &amp; commentary</em> is UN News, The Conversation,
+    the Lowy Interpreter, ASPI's Strategist and the European Commission; <em>research</em> is OpenAlex counts and arXiv;
+    <em>IP rights data</em> is IP RAPID, patent counts by CPC class and WIPO's statistics; <em>law, regulation &amp;
+    standards</em> is the Federal Register of Legislation, the legal corpus, the US Federal Register, the EPO's Boards of
+    Appeal and Standards Australia. The full list is in <a href="#sources">the sources</a>.</figcaption>
+  </figure>
+
+  <h3>The four outside-in questions</h3>
+
+  <article class="q" id="q1">
+    <div class="q-head"><span class="q-id">Q1</span><div class="q-text">Which shifts in the wider world could most change why, how or whether Australians create, protect and use ideas over the next decade?</div></div>
+    <dl>
+      <dt>Covers</dt><dd>Demographic, climate and energy, geopolitical, economic, social and technological change. Domains D0, D2, D3, D5.</dd>
+      <dt>Pathways</dt><dd>Mostly P1 Demand, P6 Outcomes and P2 Value, often at order 2 or 3 (through one or more intermediate changes).</dd>
+      <dt>Evidence we expect</dt><dd>
+        <ul>
+          <li><strong>What is already expected:</strong> the foresight syntheses and national strategies, distilled into the 24-trend known-trends baseline.</li>
+          <li><strong>What is moving:</strong> GDELT news volumes for 14 broad themes (84 phrases: ageing, energy transition, sanctions, deepfakes, housing, and so on), worldwide and in <code>.au</code> domains.</li>
+          <li><strong>Hard series:</strong> ABS headline series (population, labour, prices, national accounts, 839 series); the OECD Data API (leading indicators, the Economic Outlook, FDI restrictiveness, environmental policy stringency).</li>
+          <li><strong>Research:</strong> OpenAlex work counts over the whole topic taxonomy, world against Australia; arXiv's cs.CY and econ.GN listings.</li>
+          <li><strong>Breadth feeds:</strong> UN News, The Conversation, the Lowy Interpreter, ASPI's Strategist, the European Commission, the OECD's publications and data releases. Supporting: every Commonwealth law registered (no IP filter) and STIP Compass's policy instruments.</li>
+        </ul></dd>
+      <dt>How it gets answered</dt><dd>Trends and accelerations over every series and topic, for the world and for Australia, so that <strong>divergence</strong> shows (Australia lagging a global surge). <strong>Cross-ring convergence:</strong> a concept rising in wider-world sources that then appears in core sources is a strong early-warning candidate. Each candidate is matched to the known trends and recorded as <code>novel</code> or <code>reinforces</code>.</dd>
+      <dt>What it feeds</dt><dd>PESTLE drivers; the possible and plausible zones of the Futures Cone; the novelty count, which is the sprint's success test.</dd>
+      <dt>Known gaps</dt><dd>No non-English sources. The WEF <em>Global Risks Report</em> and the List of Critical Technologies have not been read.</dd>
+    </dl>
+  </article>
+
+  <article class="q" id="q2">
+    <div class="q-head"><span class="q-id">Q2</span><div class="q-text">What could make IP rights matter much more, or much less, to Australian businesses and creators?</div></div>
+    <dl>
+      <dt>Covers</dt><dd>Substitutes for rights: speed, secrecy, open models, and control of data or platforms. Domains D2, D3, D4.</dd>
+      <dt>Pathways</dt><dd>P2 Value and P1 Demand.</dd>
+      <dt>Evidence we expect</dt><dd>
+        <ul>
+          <li><strong>Behaviour in the register:</strong> IP RAPID (about 93 million rows): applications, renewals as a proxy for value, assignments, self-filing, lapses before acceptance.</li>
+          <li><strong>Patenting against research:</strong> patent families by CPC subclass (world, and with an Australian member) beside OpenAlex research counts in the matching fields. A field that grows in papers but not in patents is a candidate for a shift in value, to be tested rather than assumed.</li>
+          <li><strong>Firms and trade:</strong> the OECD's measures of firms' use of patents, designs and trade marks, IP charges in services trade, and R&amp;D and IP-income tax support; the ABS's trade in IP services by country; BERD (business R&amp;D) and CABEE (business entries and exits).</li>
+          <li><strong>Australian context:</strong> the Productivity Commission's <em>Innovation for the 98%</em>; IP Australia's <em>Australian IP Report 2026</em>; WIPO's bulk statistics.</li>
+          <li><strong>Talk:</strong> GDELT volumes for the territory terms on licensing, valuation and IP-backed finance (T2, T3); arXiv on open models.</li>
+        </ul></dd>
+      <dt>How it gets answered</dt><dd>IP RAPID metrics (demand, timeliness, outcomes) set against research and business series; world against Australia by technology class; trends in renewals and assignments.</dd>
+      <dt>What it feeds</dt><dd>Opportunities and threats in SWOT; evidence for territories T2 and T3.</dd>
+      <dt>Known gaps</dt><dd>How businesses feel about IP (domain D4, customers) is thinly covered by public data; its best evidence is internal.</dd>
+    </dl>
+  </article>
+
+  <article class="q" id="q3">
+    <div class="q-head"><span class="q-id">Q3</span><div class="q-text">What could change how an IP system works at all: how rights are examined, granted, enforced or trusted?</div></div>
+    <dl>
+      <dt>Covers</dt><dd>Law, practice, enforcement, legitimacy. Domains D1, D5, D6.</dd>
+      <dt>Pathways</dt><dd>P3 Function and P4 Legitimacy.</dd>
+      <dt>Evidence we expect</dt><dd>
+        <ul>
+          <li><strong>Law:</strong> the Federal Register of Legislation (daily); the Open Australian Legal Corpus (104,201 documents: Commonwealth legislation and Federal and High Court judgments); the US Federal Register's USPTO and Copyright Office rules; the EPO's Boards of Appeal.</li>
+          <li><strong>Treaties and offices:</strong> WIPO's treaty notifications (accessions, ratifications, entry into force for 26 treaties); news from WIPO and seven peer offices (eight feeds); IP Australia's own site, including examination-practice changes.</li>
+          <li><strong>Parliament:</strong> APH's five committee feeds (new inquiries, reports, hearings).</li>
+          <li><strong>Enforcement and trust:</strong> GDELT volumes for the IP-system theme and T1's terms (counterfeiting, piracy, scams, takedowns); OECD.AI's blog and the Hiroshima AI Process transparency reports.</li>
+          <li><strong>Function:</strong> IP RAPID's timeliness, oppositions and outcomes; arXiv's cs.DL and cs.AI listings (for example, machine-generated prior art).</li>
+        </ul></dd>
+      <dt>How it gets answered</dt><dd>New terms and new combinations across the legal, policy and research families; <strong>cross-family spread</strong> (a concept seen first in research, then in consultations, then in law); timeliness trends from IP RAPID.</dd>
+      <dt>What it feeds</dt><dd>Legal and technological drivers; strengths and weaknesses in SWOT (timeliness, outcomes).</dd>
+      <dt>Known gaps</dt><dd><span class="st gap">Gap</span> The Federal Court, the High Court and AustLII refuse cloud addresses, so judgments after 10 March 2025 and IP Australia's hearing decisions are missing. Hansard and Estimates are blocked. EUIPO and JPO news refuse cloud addresses.</dd>
+    </dl>
+  </article>
+
+  <article class="q" id="q4">
+    <div class="q-head"><span class="q-id">Q4</span><div class="q-text">What could disrupt IP Australia as an organisation: its fee-based funding, workforce, technology, security or mandate?</div></div>
+    <dl>
+      <dt>Covers</dt><dd>The agency itself. Domain D6, institutional capability.</dd>
+      <dt>Pathways</dt><dd>P5 The organisation.</dd>
+      <dt>Evidence we expect</dt><dd>
+        <ul>
+          <li><strong>The agency's own words:</strong> the Corporate Plan 2026–27, the Annual Report 2024–25, the cost recovery statement, the AI transparency statement, the Minister's statement of expectations and the statement of intent; IP Australia's site.</li>
+          <li><strong>The fee base:</strong> filing volumes from IP RAPID, by right type and origin.</li>
+          <li><strong>Peers:</strong> peer offices' strategies (UKIPO, USPTO, CIPO in text; EPO, EUIPO, JPO and KIPO as metadata) and their news.</li>
+          <li><strong>Pressure from outside:</strong> APH's committees; legislation; GDELT themes on cyber attacks, government AI, public sector reform and skills shortages; ASPI on cyber and espionage; Standards Australia; ABS labour series.</li>
+        </ul></dd>
+      <dt>How it gets answered</dt><dd>Baseline forecasts of filing volumes as a proxy for fee income; comparison with peer offices; signals tagged D6.</dd>
+      <dt>What it feeds</dt><dd>Strengths and weaknesses in SWOT; the robustness of options across scenarios.</dd>
+      <dt>Known gaps</dt><dd>Internal data is out of scope; Senate Estimates transcripts are blocked.</dd>
+    </dl>
+  </article>
+
+  <h3>The seven system-specific questions</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>Question</th><th>Main evidence</th><th>Main detectors</th><th>Gaps</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">S1</td><td>How could AI change the demand for, and administration of, IP rights in Australia, 2026–2036?</td><td>OpenAlex AI topics; patent families in G06N; IP RAPID's AI share (a T5 indicator); the OECD's AI patents and firms' AI use; OECD.AI and HAIP reports; arXiv cs.AI; USPTO notices; peer offices; GDELT AI terms</td><td>Trends, acceleration, world/AU divergence, cross-family spread</td><td>—</td></tr>
+        <tr><td class="mono">S2</td><td>Which changes in IP law, courts, treaties and examination practice could most alter how rights are obtained or enforced by 2030?</td><td>Legislation; the legal corpus; EPO Boards of Appeal; WIPO treaty notifications; the US Federal Register; APH; IP Australia's site</td><td>New terms, new combinations, cross-family spread</td><td><span class="st gap">Gap</span> courts after March 2025</td></tr>
+        <tr><td class="mono">S3</td><td>Which industries and business models are changing their use of IP rights, and in which direction?</td><td>IP RAPID by field and class; CPC counts; WIPO statistics; the OECD's firm-level IP use; BERD by industry; ABS industry series</td><td>Trends and change points per class; association rules on IPC pairs and Nice-class sets</td><td>—</td></tr>
+        <tr><td class="mono">S4</td><td>Which emerging technologies are creating new IP assets, new infringement risks or new examination demands?</td><td>OpenAlex; CPC counts; arXiv; the OECD's patents in selected technologies; STIP Compass; Standards Australia; GDELT technology theme; the Science and Research Priorities</td><td><code>new_term</code>, <code>new_combination</code>, <code>cross_family</code>, <code>low_base_surge</code></td><td>Critical Technologies list unread</td></tr>
+        <tr><td class="mono">S5</td><td>Where do businesses, especially SMEs, show signs of struggling to obtain, protect or enforce IP?</td><td>IP RAPID (self-filed share, lapses before acceptance, first-time applicants); the Patents Accessibility Review; the PC's report; GDELT terms on scams and counterfeits; CABEE; APH</td><td>Low-base surges; trends in T1 and T2 indicators</td><td>Low coverage on public data (design §2.3)</td></tr>
+        <tr><td class="mono">S6</td><td>How are trade policy, technology competition and foreign offices changing who files in Australia, and why?</td><td>IP RAPID (origin; route: direct, PCT or Madrid); WIPO statistics by office and origin; CPC counts with an AU member; ABS IP trade by country; the OECD's FDI restrictiveness and IP charges; treaty accessions; Lowy, ASPI, the European Commission</td><td>Divergence, change points, cross-ring convergence</td><td>—</td></tr>
+        <tr><td class="mono">S7</td><td>What capabilities and service models are peer IP offices investing in?</td><td>Peer offices' strategies; eight peer-office news feeds; WIPO press; USPTO notices</td><td>New terms and clusters in peer-office text</td><td><span class="st gap">Gap</span> EUIPO, JPO news; KIPO report unreadable</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="asbuilt">
+    <h4>Built, and not yet built</h4>
+    <ul>
+      <li><span class="st built">Built</span><span>Every source named in this section collects on schedule; the questions and territories are confirmed.</span></li>
+      <li><span class="st sprint">Days 3–5</span><span>Normalising, embedding, the detectors and the dossiers that would turn this evidence into candidate answers.</span></li>
+      <li><span class="st after">After</span><span>The answers themselves: validated signals per question, after the owner's first review rounds.</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="rings">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">03</span> Three rings <span class="st built">Built</span></div>
+    <h2>Read the whole world, not only the IP system</h2>
+  </div>
+  <p>Sources fall into three rings of influence. Nothing is filtered by IP keywords at collection: most of the world
+  never says "intellectual property", yet much of what will move the IP system starts outside it. Each ring is tied
+  to <em>impact domains</em>, the places where change lands.</p>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 900 560" role="img" aria-label="Three concentric rings. The core ring, the IP system, holds 33 sources such as IP RAPID, IP Australia, legislation and peer offices. The adjacent ring, innovation and its context, holds 29 sources such as OpenAlex, ABS, the OECD and patent counts. The wider world ring holds 15 sources such as foresight syntheses, UN News and the Lowy Interpreter. 27 sources sit in more than one ring.">
+        <circle cx="280" cy="280" r="265" class="f-wide"/>
+        <circle cx="280" cy="280" r="190" class="f-adj"/>
+        <circle cx="280" cy="280" r="110" class="f-core"/>
+        <!-- wider world -->
+        <text x="280" y="44" text-anchor="middle" class="t-cap tc-wide">WIDER WORLD</text>
+        <text x="280" y="62" text-anchor="middle" class="t-s">demographics · climate · security · values</text>
+        <text x="122" y="113" text-anchor="middle" class="t-i">UN News</text>
+        <text x="122" y="129" text-anchor="middle" class="t-i">Lowy</text>
+        <text x="438" y="113" text-anchor="middle" class="t-i">OECD</text>
+        <text x="438" y="129" text-anchor="middle" class="t-i">feeds ×2</text>
+        <text x="124" y="441" text-anchor="middle" class="t-i">foresight</text>
+        <text x="124" y="457" text-anchor="middle" class="t-i">syntheses</text>
+        <text x="434" y="441" text-anchor="middle" class="t-i">The Conversation</text>
+        <text x="420" y="457" text-anchor="middle" class="t-i">EC press</text>
+        <!-- adjacent -->
+        <text x="280" y="120" text-anchor="middle" class="t-cap tc-adj">ADJACENT</text>
+        <text x="280" y="137" text-anchor="middle" class="t-s">economy · technology · international</text>
+        <text x="133" y="250" text-anchor="middle" class="t-i">OpenAlex</text>
+        <text x="133" y="266" text-anchor="middle" class="t-i">arXiv</text>
+        <text x="133" y="282" text-anchor="middle" class="t-i">ABS ×2</text>
+        <text x="133" y="298" text-anchor="middle" class="t-i">CPC patents</text>
+        <text x="133" y="314" text-anchor="middle" class="t-i">ASPI</text>
+        <text x="426" y="242" text-anchor="middle" class="t-i">OECD data</text>
+        <text x="426" y="258" text-anchor="middle" class="t-i">STIP</text>
+        <text x="426" y="274" text-anchor="middle" class="t-i">Compass</text>
+        <text x="426" y="290" text-anchor="middle" class="t-i">OECD.AI ×2</text>
+        <text x="426" y="306" text-anchor="middle" class="t-i">Standards</text>
+        <text x="426" y="322" text-anchor="middle" class="t-i">Australia</text>
+        <!-- core -->
+        <text x="280" y="198" text-anchor="middle" class="t-cap tc-core">CORE</text>
+        <text x="280" y="214" text-anchor="middle" class="t-s">the IP system</text>
+        <text x="280" y="238" text-anchor="middle" class="t-i">IP RAPID · IP Australia ×2</text>
+        <text x="280" y="256" text-anchor="middle" class="t-i">legal corpus · legislation</text>
+        <text x="280" y="274" text-anchor="middle" class="t-i">WIPO ×3 · US Federal Register</text>
+        <text x="280" y="292" text-anchor="middle" class="t-i">peer offices: 8 feeds</text>
+        <text x="280" y="310" text-anchor="middle" class="t-i">APH committees ×5</text>
+        <text x="280" y="328" text-anchor="middle" class="t-i">strategies · territory docs</text>
+        <text x="280" y="346" text-anchor="middle" class="t-i">GDELT news</text>
+        <!-- panel -->
+        <rect x="600" y="30" width="290" height="124" rx="4" class="f-core"/>
+        <text x="616" y="54" class="t-cap tc-core">CORE · THE IP SYSTEM</text>
+        <text x="616" y="80" class="t-big">33 sources</text>
+        <text x="616" y="104" class="t-s">D1 IP system · D4 customers ·</text>
+        <text x="616" y="120" class="t-s">D6 institutional capability: law,</text>
+        <text x="616" y="136" class="t-s">practice and administration</text>
+        <rect x="600" y="170" width="290" height="124" rx="4" class="f-adj"/>
+        <text x="616" y="194" class="t-cap tc-adj">ADJACENT · INNOVATION, CONTEXT</text>
+        <text x="616" y="220" class="t-big">29 sources</text>
+        <text x="616" y="244" class="t-s">D2 economy · D3 technology ·</text>
+        <text x="616" y="260" class="t-s">D5 geopolitics and international:</text>
+        <text x="616" y="276" class="t-s">trade, technology competition</text>
+        <rect x="600" y="310" width="290" height="124" rx="4" class="f-wide"/>
+        <text x="616" y="334" class="t-cap tc-wide">WIDER WORLD</text>
+        <text x="616" y="360" class="t-big">15 sources</text>
+        <text x="616" y="384" class="t-s">D0: demographics, climate, security,</text>
+        <text x="616" y="400" class="t-s">the economy, work, values,</text>
+        <text x="616" y="416" class="t-s">information, governance, cities</text>
+        <text x="600" y="468" class="t-s">27 of 43 sources sit in more than one ring;</text>
+        <text x="600" y="484" class="t-s">7 in all three: GDELT, legislation, the</text>
+        <text x="600" y="500" class="t-s">foresight syntheses, the Commission,</text>
+        <text x="600" y="516" class="t-s">two OECD sources and STIP Compass.</text>
+        <text x="600" y="532" class="t-s">Each is drawn in the first ring on its card.</text>
+      </svg>
+    </div>
+    <figcaption><strong>The three rings, with the sources that sit in each.</strong> The counts on the right include
+    every ring a source belongs to, so they add up to more than 43. Before the widening of 13 October (D-020), 25 of
+    29 sources sat in the core and only 5 in the wider world; the OECD and a breadth pack of eight feeds were added to
+    correct that.</figcaption>
+  </figure>
+
+  <h3>Keeping breadth useful</h3>
+  <p>Breadth without discipline becomes noise. Five controls keep it useful (design §2.5):</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Control</th><th>Rule</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Wide and shallow, then narrow and deep</td><td>Whole-taxonomy counts come first because they are cheap. Dossiers are built only for ranked candidates, and people review only the top of the queue.</td><td><span class="st partial">Counts built</span></td></tr>
+        <tr><td>Pathway gate</td><td>Applied to signals, never to items. A candidate with no nameable pathway is parked, not deleted, and revisited if it grows.</td><td><span class="st sprint">Day 5</span></td></tr>
+        <tr><td>Ring quotas</td><td>The review queue is 35% core, 35% adjacent, 30% wider world; third-order pathways at most 20%. The owner sets the final values after the first round.</td><td><span class="st sprint">Day 5</span></td></tr>
+        <tr><td>Known-trends baseline</td><td>24 trends (19 confirmed, 5 proposed). A match is a tag, never a reason to reject: reinforcement of a known trend still counts (D-014).</td><td><span class="st partial">Baseline built; matching day 3</span></td></tr>
+        <tr><td>Saturation rule</td><td>Stop adding sources to a ring once its last two additions yield no new validated driver in a cycle; add to the ring that is still yielding.</td><td><span class="st after">After</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="pathways">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">04</span> Pathways <span class="st sprint">Suggestions day 5</span> <span class="st after">Confirmation after</span></div>
+    <h2>Every signal must name its route to the IP system</h2>
+  </div>
+  <p>A signal is in scope if someone can name a pathway from it to the IP system, and say how many steps it takes. The
+  pathway is what turns "something is changing in the world" into "this matters to IP Australia".</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Pathway</th><th>What changes</th><th>A wider-world example (design §2.2)</th></tr></thead>
+      <tbody>
+        <tr><td class="nw"><strong>P1</strong> Demand</td><td>How many rights are sought, of what kinds, and by whom</td><td>An ageing population shifts R&amp;D towards health and aged-care technologies</td></tr>
+        <tr><td class="nw"><strong>P2</strong> Value</td><td>How much IP rights matter against substitutes: speed, secrecy, open models, platform or data control</td><td>Open-weight AI makes software patents less decisive</td></tr>
+        <tr><td class="nw"><strong>P3</strong> Function</td><td>How rights are examined, granted, administered and enforced</td><td>Floods of machine-generated prior art</td></tr>
+        <tr><td class="nw"><strong>P4</strong> Legitimacy</td><td>Public trust in, and the perceived fairness of, the IP system</td><td>Access-to-medicines or creator-income debates</td></tr>
+        <tr><td class="nw"><strong>P5</strong> The organisation</td><td>IP Australia's fees, workforce, technology, security and mandate</td><td>Cyber threats to public registers; fee income falling with filings</td></tr>
+        <tr><td class="nw"><strong>P6</strong> Outcomes</td><td>Australia's ability to benefit from great ideas: commercialisation, productivity</td><td>A climate-driven industrial policy creates new export industries</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 960 300" role="img" aria-label="Pathway order. An order 1 signal, a court ruling on AI inventorship, acts directly on P3 Function. An order 2 signal, population ageing, acts through one change, R and D shifting to health and aged care, on P1 Demand. An order 3 signal, more extreme weather, acts through a named chain of climate-driven industrial policy and new export industries on P6 Outcomes. A change with no nameable pathway is parked, not deleted.">
+        <defs>
+          <marker id="pw-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <!-- IP system block -->
+        <rect x="720" y="8" width="232" height="282" rx="4" class="f-core"/>
+        <text x="836" y="32" text-anchor="middle" class="t-cap tc-core">AUSTRALIA'S IP SYSTEM</text>
+        <line x1="732" y1="45" x2="940" y2="45" class="ln-m"/>
+        <text x="740" y="69" class="t-b">P1</text><text x="770" y="69">Demand</text>
+        <line x1="732" y1="85" x2="940" y2="85" class="ln-m"/>
+        <text x="740" y="109" class="t-b">P2</text><text x="770" y="109">Value</text>
+        <line x1="732" y1="125" x2="940" y2="125" class="ln-m"/>
+        <text x="740" y="149" class="t-b">P3</text><text x="770" y="149">Function</text>
+        <line x1="732" y1="165" x2="940" y2="165" class="ln-m"/>
+        <text x="740" y="189" class="t-b">P4</text><text x="770" y="189">Legitimacy</text>
+        <line x1="732" y1="205" x2="940" y2="205" class="ln-m"/>
+        <text x="740" y="229" class="t-b">P5</text><text x="770" y="229">The organisation</text>
+        <line x1="732" y1="245" x2="940" y2="245" class="ln-m"/>
+        <text x="740" y="269" class="t-b">P6</text><text x="770" y="269">Outcomes</text>
+        <!-- order 2 -->
+        <text x="250" y="34" class="t-cap tc-wide">ORDER 2 · ONE INTERMEDIATE CHANGE</text>
+        <rect x="250" y="43" width="190" height="44" rx="4" class="f-wide"/>
+        <text x="345" y="70" text-anchor="middle" class="t-i">Population ageing</text>
+        <line x1="440" y1="65" x2="488" y2="65" class="ln" marker-end="url(#pw-ah)"/>
+        <rect x="490" y="43" width="190" height="44" rx="4" class="box"/>
+        <text x="585" y="62" text-anchor="middle" class="t-i">R&amp;D shifts to health</text>
+        <text x="585" y="78" text-anchor="middle" class="t-i">and aged care</text>
+        <line x1="680" y1="65" x2="718" y2="65" class="ln" marker-end="url(#pw-ah)"/>
+        <!-- order 1 -->
+        <text x="490" y="124" class="t-cap tc-core">ORDER 1 · DIRECT</text>
+        <rect x="490" y="133" width="190" height="44" rx="4" class="f-core"/>
+        <text x="585" y="152" text-anchor="middle" class="t-i">A court ruling on</text>
+        <text x="585" y="168" text-anchor="middle" class="t-i">AI inventorship</text>
+        <line x1="680" y1="155" x2="718" y2="148" class="ln" marker-end="url(#pw-ah)"/>
+        <!-- parked -->
+        <text x="10" y="124" class="t-cap" style="fill:var(--muted)">NO PATHWAY</text>
+        <rect x="10" y="133" width="190" height="44" rx="4" class="box-d"/>
+        <text x="105" y="152" text-anchor="middle" class="t-i">Parked, not deleted;</text>
+        <text x="105" y="168" text-anchor="middle" class="t-i">revisited if it grows</text>
+        <!-- order 3 -->
+        <text x="10" y="214" class="t-cap tc-wide">ORDER 3 · MUST NAME ITS CHAIN · AT MOST 20% OF THE QUEUE</text>
+        <rect x="10" y="223" width="190" height="44" rx="4" class="f-wide"/>
+        <text x="105" y="250" text-anchor="middle" class="t-i">More extreme weather</text>
+        <line x1="200" y1="245" x2="248" y2="245" class="ln" marker-end="url(#pw-ah)"/>
+        <rect x="250" y="223" width="190" height="44" rx="4" class="box"/>
+        <text x="345" y="242" text-anchor="middle" class="t-i">Climate-driven</text>
+        <text x="345" y="258" text-anchor="middle" class="t-i">industrial policy</text>
+        <line x1="440" y1="245" x2="488" y2="245" class="ln" marker-end="url(#pw-ah)"/>
+        <rect x="490" y="223" width="190" height="44" rx="4" class="box"/>
+        <text x="585" y="242" text-anchor="middle" class="t-i">New export</text>
+        <text x="585" y="258" text-anchor="middle" class="t-i">industries</text>
+        <line x1="680" y1="245" x2="718" y2="263" class="ln" marker-end="url(#pw-ah)"/>
+      </svg>
+    </div>
+    <figcaption><strong>Pathway order is the number of steps to the IP system.</strong> Order 1 acts directly; order 2
+    acts through one intermediate change; order 3 acts through a chain, which must be named, and is capped at 20% of
+    the review queue. The examples are illustrative, built from the design's own; they are not findings. A free
+    decision model (Jev-Style 0.8B) will <em>suggest</em> pathways; a person confirms every one.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="territories">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">05</span> Growth Territories <span class="st partial">Terms built · tagging planned</span></div>
+    <h2>The owner's five territories, turned into search terms and measures</h2>
+  </div>
+  <p>The owner supplied five Growth Territories (D-006). Each has a public description, search terms in all three
+  rings (core terms in IP language; adjacent terms for the same need without IP jargon; wider-world terms for forces
+  that could move the territory), and indicators to compute from IP RAPID. The owner's own context for each territory
+  is private: it lives in the bucket and is never committed to this public repo.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th></th><th>Territory and aim</th><th>Main pathways</th><th class="nw">Terms (core / adj. / wider)</th><th>IP RAPID indicators, for example</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">T1</td><td><strong>Protect Australian IP.</strong> Strengthen the protection and enforcement of IP.</td><td class="nw">P3, P2, P4</td><td class="nw">18 / 14 / 7</td><td>Oppositions by right type; non-use removals; Madrid filings designating Australia, by origin</td></tr>
+        <tr><td class="mono">T2</td><td><strong>Empower others.</strong> Equip stakeholders with more ways to use the IP system.</td><td class="nw">P1, P2, P6</td><td class="nw">13 / 12 / 6</td><td>First-time applicants; self-filed share; lapses before acceptance; provisionals converted</td></tr>
+        <tr><td class="mono">T3</td><td><strong>Amplify Australian IP.</strong> Meaningfully extend the utility and value of IP.</td><td class="nw">P2, P6, P1</td><td class="nw">12 / 12 / 5</td><td>Assignments; renewal rates; filings in priority sectors; universities' filings</td></tr>
+        <tr><td class="mono">T4</td><td><strong>Cultivate our ecosystem.</strong> Work in new ways with ecosystem actors.</td><td class="nw">P5, P1, P3</td><td class="nw">8 / 10 / 5</td><td>Attorney-filed share; agent firms entering and their concentration</td></tr>
+        <tr><td class="mono">T5</td><td><strong>Revisit our purpose.</strong> Reconsider our raison d'être in a changing world.</td><td class="nw">P4, P2, P5, P6</td><td class="nw">14 / 9 / 7</td><td>AI patent filings (G06N); green patents; plant breeder's rights; certification marks</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Five uses of a territory</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Use</th><th>What happens</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Collection</td><td>Territory terms add query groups to the news scan, beside the broad themes, never instead of them. 239 distinct terms, with synonyms the way news writes them; the terms check found 79 never matched in 13 sampled days, and the owner kept them all for now (D-014).</td><td><span class="st built">Built</span></td></tr>
+        <tr><td>Tagging</td><td>Every item gets a similarity score to each territory's description (embeddings); people confirm at validation.</td><td><span class="st sprint">Day 3</span></td></tr>
+        <tr><td>Coverage</td><td>Each cycle reports signals per territory, and territories with none (possible blind spots).</td><td><span class="st after">After</span></td></tr>
+        <tr><td>Novelty</td><td>A validated signal outside every territory <em>and</em> outside the known-trends baseline is the strongest evidence that the scan is broad enough.</td><td><span class="st after">After</span></td></tr>
+        <tr><td>What changed since 2022</td><td>Each territory's 2022 "why now" statement makes claims that 2022–2026 data can test. The first territory output is a short note per territory. The public documents the context cites are collected (<code>territory_evidence</code>).</td><td><span class="st partial">Documents built</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="process">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">06</span> The process, end to end</div>
+    <h2>Twelve stages, from a public page to a decision</h2>
+  </div>
+  <p>Each stage is one module and one command, writes atomically, and leaves a manifest. Machines do the counting
+  and the ranking; people do the judging. The colour bar on each stage shows how much of it exists today.</p>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 970 336" role="img" aria-label="The pipeline in twelve stages. Built: 1 collect and 2 store. Sprint day 3: 3 normalise and 4 features. Day 4: 5 detect and 6 artefact check. Day 5: 7 dossier, 8 pathway suggestions and 10 register export. After the sprint: 9 people review, 11 lenses, 12 decisions.">
+        <defs>
+          <marker id="pp-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <text x="5" y="16" class="t-cap" style="fill:var(--muted)">EVIDENCE LAYER · MACHINE</text>
+        <!-- row 1 -->
+        <rect x="5" y="28" width="140" height="92" rx="4" class="box"/><rect x="5" y="28" width="140" height="6" class="s-built"/>
+        <text x="17" y="56" class="t-b">1 Collect</text><text x="17" y="76" class="t-s">43 sources: daily,</text><text x="17" y="91" class="t-s">weekly, monthly, once</text><text x="17" y="111" class="t-cap tc-ok">BUILT</text>
+        <line x1="145" y1="74" x2="167" y2="74" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="169" y="28" width="140" height="92" rx="4" class="box"/><rect x="169" y="28" width="140" height="6" class="s-built"/>
+        <text x="181" y="56" class="t-b">2 Store</text><text x="181" y="76" class="t-s">raw bundles, the lake,</text><text x="181" y="91" class="t-s">manifests, monitors</text><text x="181" y="111" class="t-cap tc-ok">BUILT</text>
+        <line x1="309" y1="74" x2="331" y2="74" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="333" y="28" width="140" height="92" rx="4" class="box"/><rect x="333" y="28" width="140" height="6" class="s-sprint"/>
+        <text x="345" y="56" class="t-b">3 Normalise</text><text x="345" y="76" class="t-s">de-duplicate; event</text><text x="345" y="91" class="t-s">and observable dates</text><text x="345" y="111" class="t-cap tc-sprint">DAY 3</text>
+        <line x1="473" y1="74" x2="495" y2="74" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="497" y="28" width="140" height="92" rx="4" class="box"/><rect x="497" y="28" width="140" height="6" class="s-sprint"/>
+        <text x="509" y="56" class="t-b">4 Features</text><text x="509" y="76" class="t-s">embeddings, BM25,</text><text x="509" y="91" class="t-s">keyphrases, tags</text><text x="509" y="111" class="t-cap tc-sprint">DAY 3</text>
+        <line x1="637" y1="74" x2="659" y2="74" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="661" y="28" width="140" height="92" rx="4" class="box"/><rect x="661" y="28" width="140" height="6" class="s-sprint"/>
+        <text x="673" y="56" class="t-b">5 Detect</text><text x="673" y="76" class="t-s">trends, anomalies,</text><text x="673" y="91" class="t-s">weak signals</text><text x="673" y="111" class="t-cap tc-sprint">DAY 4</text>
+        <line x1="801" y1="74" x2="823" y2="74" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="825" y="28" width="140" height="92" rx="4" class="box"/><rect x="825" y="28" width="140" height="6" class="s-sprint"/>
+        <text x="837" y="56" class="t-b">6 Check</text><text x="837" y="76" class="t-s">artefact flags on</text><text x="837" y="91" class="t-s">every candidate</text><text x="837" y="111" class="t-cap tc-sprint">DAY 4</text>
+        <!-- connector -->
+        <path d="M895,120 V150 H75 V180" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="430" y="140" width="110" height="20" style="fill:var(--surface)"/>
+        <text x="485" y="155" text-anchor="middle" class="t-s">candidates</text>
+        <!-- row 2 -->
+        <rect x="5" y="182" width="140" height="92" rx="4" class="box"/><rect x="5" y="182" width="140" height="6" class="s-sprint"/>
+        <text x="17" y="210" class="t-b">7 Dossier</text><text x="17" y="230" class="t-s">evidence, analogues,</text><text x="17" y="245" class="t-s">counter-evidence</text><text x="17" y="265" class="t-cap tc-sprint">DAY 5</text>
+        <line x1="145" y1="228" x2="167" y2="228" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="169" y="182" width="140" height="92" rx="4" class="box"/><rect x="169" y="182" width="140" height="6" class="s-sprint"/>
+        <text x="181" y="210" class="t-b">8 Suggest</text><text x="181" y="230" class="t-s">pathways, by a free</text><text x="181" y="245" class="t-s">model; labelled</text><text x="181" y="265" class="t-cap tc-sprint">DAY 5</text>
+        <line x1="309" y1="228" x2="331" y2="228" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="333" y="182" width="140" height="92" rx="4" class="f-core"/><rect x="333" y="182" width="140" height="6" class="s-after"/>
+        <text x="345" y="210" class="t-b">9 Review</text><text x="345" y="230" class="t-s">a person validates</text><text x="345" y="245" class="t-s">or rejects</text><text x="345" y="265" class="t-cap tc-after">AFTER SPRINT</text>
+        <line x1="473" y1="228" x2="495" y2="228" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="497" y="182" width="140" height="92" rx="4" class="box"/><rect x="497" y="182" width="140" height="6" class="s-sprint"/>
+        <text x="509" y="210" class="t-b">10 Register</text><text x="509" y="230" class="t-s">append-only events,</text><text x="509" y="245" class="t-s">two views</text><text x="509" y="265" class="t-cap tc-sprint">DAY 5 (EXPORT)</text>
+        <line x1="637" y1="228" x2="659" y2="228" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="661" y="182" width="140" height="92" rx="4" class="f-core"/><rect x="661" y="182" width="140" height="6" class="s-after"/>
+        <text x="673" y="210" class="t-b">11 Lenses</text><text x="673" y="230" class="t-s">PESTLE, SWOT/TOWS,</text><text x="673" y="245" class="t-s">cone, scenarios</text><text x="673" y="265" class="t-cap tc-after">AFTER SPRINT</text>
+        <line x1="801" y1="228" x2="823" y2="228" class="ln" marker-end="url(#pp-ah)"/>
+        <rect x="825" y="182" width="140" height="92" rx="4" class="f-core"/><rect x="825" y="182" width="140" height="6" class="s-after"/>
+        <text x="837" y="210" class="t-b">12 Decide</text><text x="837" y="230" class="t-s">monitor, investigate,</text><text x="837" y="245" class="t-s">invest, decline</text><text x="837" y="265" class="t-cap tc-after">AFTER SPRINT</text>
+        <!-- layer brackets -->
+        <path d="M5,292 V298 H145 V292" class="ln-m"/><text x="75" y="316" text-anchor="middle" class="t-cap" style="fill:var(--muted)">EVIDENCE</text>
+        <path d="M169,292 V298 H801 V292" class="ln-m"/><text x="485" y="316" text-anchor="middle" class="t-cap" style="fill:var(--muted)">INTERPRETATION · PEOPLE DECIDE WHAT IT MEANS</text>
+        <path d="M825,292 V298 H965 V292" class="ln-m"/><text x="895" y="316" text-anchor="middle" class="t-cap" style="fill:var(--muted)">DECISION</text>
+      </svg>
+    </div>
+    <figcaption><strong>The pipeline, coloured by what exists.</strong> Green bars are built; amber is the next three
+    sprint days; teal waits for the owner's labels and review. Shaded stages are done by people. Evidence,
+    interpretation and decision are separate layers: a label that says what an item <em>is about</em> belongs to the
+    evidence; a label that judges what it <em>means</em> belongs to interpretation and is attributed to a person, or to
+    a model with its version.</figcaption>
+  </figure>
+
+  <h3>When things run</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Cadence</th><th>Jobs</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="nw">Daily, 02:23 UTC</td><td><code>collect-daily</code>: 28 daily sources, for the previous UTC day. A failed source writes its manifest and the run carries on, then exits 2.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td class="nw">Weekly, Mon 03:41 UTC</td><td><code>collect-weekly</code>: OpenAlex, ABS (both), IP RAPID, WIPO treaty notifications, the OECD's statistics and HAIP reports, STIP Compass.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td class="nw">Monthly, by hand</td><td>Patent families by CPC subclass on BigQuery (about 17 GB a run, under 2% of the free 1 TiB).</td><td><span class="st built">Built</span></td></tr>
+        <tr><td class="nw">Once, or per release</td><td>Documents (foresight, territories, IP Australia, peer offices); bulk files (the legal corpus, WIPO statistics).</td><td><span class="st built">Built</span></td></tr>
+        <tr><td class="nw">Weekly, mining</td><td>Embeddings and tags for new items, detectors, artefact checks, dossiers, pathway suggestions, the early-warning digest.</td><td><span class="st sprint">Days 3–5</span></td></tr>
+        <tr><td class="nw">Each cycle (quarterly)</td><td>The strategic view, the lenses, an interpretation session (the owner, for now; a workshop once others join).</td><td><span class="st after">After</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>The method: CRISP-DM, with a gate for people</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Phase</th><th>What Moria does</th><th>Gate</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>1 Business understanding</td><td>Questions, territories, rings, pathways, the codebook, the known-trends baseline, the hindsight set</td><td>Owner approves</td><td><span class="st partial">Questions, territories, 19 trends confirmed</span></td></tr>
+        <tr><td>2 Data understanding</td><td>Source cards, a census of each source, ingestion monitors</td><td>—</td><td><span class="st built">Built</span></td></tr>
+        <tr><td>3 Data preparation</td><td>Collect, sweep, normalise, de-duplicate, features</td><td>—</td><td><span class="st partial">Collect built; rest day 3</span></td></tr>
+        <tr><td>4 Modelling</td><td>The analytical layers and detectors</td><td>Measured choices go to the owner</td><td><span class="st sprint">Day 4</span></td></tr>
+        <tr><td>5a Evaluation of methods</td><td>Component yardsticks: taggers, clusters, trends, forecasts</td><td>—</td><td><span class="st after">After</span></td></tr>
+        <tr><td>5b Validation of signals</td><td>Artefact checks, dossiers, pathway mapping, review</td><td>People validate or reject</td><td><span class="st sprint">Checks, dossiers: days 4–5</span></td></tr>
+        <tr><td>6 Deployment</td><td>The two views, the lenses, the decision log, tracking</td><td>Decision-makers decide</td><td><span class="st after">After</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="storage">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">07</span> Stored, and not stored <span class="st built">Built</span></div>
+    <h2>What Moria keeps, what it deliberately doesn't, and how the second still does research work</h2>
+  </div>
+  <p>Moria reads far more than it keeps. Some text it is not allowed to keep (a publisher's article, a report that
+  reserves its rights); some it chooses not to keep (people's names). The rules are in the code, not just in the
+  design: each source card states what may be stored, and the collectors enforce it. Everything kept is in a
+  <strong>private</strong> bucket; the repo is public and holds only code, configuration and aggregate counts.</p>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 960 480" role="img" aria-label="Four places data can end up. At the source, never fetched: full news articles, blocked sites, sources in other languages. In memory only, read then dropped: GDELT quotations, names, summaries of titles-only feeds, text of rights-reserved documents, IP RAPID individuals' names. The private bucket keeps raw bundles, titles and links, permitted text, counts, the lake and manifests. The public repo holds code, configuration and counts only.">
+        <defs>
+          <marker id="sz-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <!-- A -->
+        <rect x="0" y="0" width="960" height="76" rx="4" class="box"/><rect x="0" y="0" width="8" height="76" class="s-muted"/>
+        <text x="24" y="32" class="t-b">At the source</text><text x="24" y="52" class="t-s">never fetched, or not obtainable</text>
+        <text x="220" y="32" class="t-i">Full news articles: GDELT has read them, Moria never visits them · WEF's Global Risks Report (403)</text>
+        <text x="220" y="54" class="t-i">Courts and sites that refuse cloud addresses · Hansard and Estimates · sources in other languages</text>
+        <line x1="120" y1="76" x2="120" y2="118" class="ln" marker-end="url(#sz-ah)"/>
+        <text x="136" y="102" class="t-s">GDELT's GKG rows, feed items, web pages, PDFs, owner uploads, bulk files</text>
+        <!-- B -->
+        <rect x="0" y="120" width="960" height="96" rx="4" class="box"/><rect x="0" y="120" width="8" height="96" class="s-gap"/>
+        <text x="24" y="152" class="t-b">In memory only</text><text x="24" y="172" class="t-s">read during collection,</text><text x="24" y="188" class="t-s">then dropped</text>
+        <text x="220" y="150" class="t-i">GDELT quotations · person names and page authors · the summaries in 8 titles-only feeds</text>
+        <text x="220" y="172" class="t-i">IPOS page text · the original HTML of every page · the text of documents that reserve their rights</text>
+        <text x="220" y="194" class="t-i">Licence-check page scans · IP RAPID individuals' names and postcodes · the IP RAPID zip · arXiv authors</text>
+        <line x1="120" y1="216" x2="120" y2="258" class="ln" marker-end="url(#sz-ah)"/>
+        <text x="136" y="242" class="t-s">what survives: counts, term matches, titles, links, dates, hashes, licence verdicts, permitted text</text>
+        <!-- C -->
+        <rect x="0" y="260" width="960" height="96" rx="4" class="f-core"/><rect x="0" y="260" width="8" height="96" class="s-core"/>
+        <text x="24" y="292" class="t-b">Private bucket</text><text x="24" y="312" class="t-s">Cloudflare R2, bucket</text><text x="24" y="328" class="t-s">"moria": kept</text>
+        <text x="220" y="290" class="t-i">Raw bundles, immutable · titles, links and dates · text where the licence allows · counts and observations</text>
+        <text x="220" y="312" class="t-i">The lake: IP RAPID, the legal corpus, WIPO statistics, STIP Compass · hashes, sizes, licence verdicts</text>
+        <text x="220" y="334" class="t-i">Manifests, monitors · owner uploads · the territory context · later: features, dossiers, labels, register</text>
+        <line x1="120" y1="356" x2="120" y2="398" class="ln" marker-end="url(#sz-ah)"/>
+        <text x="136" y="382" class="t-s">aggregates only: counts by source, type and year; never evidence, text or samples</text>
+        <!-- D -->
+        <rect x="0" y="400" width="960" height="76" rx="4" class="box"/><rect x="0" y="400" width="8" height="76" class="s-built"/>
+        <text x="24" y="432" class="t-b">Public repo</text><text x="24" y="452" class="t-s">GitHub: anyone can read it</text>
+        <text x="220" y="432" class="t-i">Code, tests and workflows · config: source cards, territory terms, themes, the known-trends baseline</text>
+        <text x="220" y="454" class="t-i">Design and decisions · census and terms-check reports (counts only) · job logs (counts and keys) · this page</text>
+      </svg>
+    </div>
+    <figcaption><strong>Four places data can end up, and what moves between them.</strong> Each arrow is a filter:
+    only what is named on it passes down. Secrets (API keys) appear in none of the four: they live in GitHub Actions
+    secrets and the build environment, and <code>moria env-check</code> reports their presence, never their values.</figcaption>
+  </figure>
+
+  <h3>How kept the sources are</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Level</th><th>Sources</th><th>Why this level</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Full text</strong></td><td>The legal corpus (in the lake); IP Australia's site and the USPTO's news (extracted text); STIP Compass (every column); documents that state an open licence: the JRC Megatrends booklet, the Intergenerational Report, the Science and Research Priorities, the Net Zero Plan, the two Productivity Commission reports, the Patents Accessibility Review, the <em>Australian IP Report 2026</em>, five IP Australia publications, the UKIPO's plan, the USPTO's strategy, CIPO's strategy</td><td>Open licences (CC BY, the Open Government Licence, the EU reuse notice, public domain) or the source's own site licence</td></tr>
+        <tr><td><strong>Summaries or abstracts</strong></td><td>APH's five committee feeds; WIPO, UKIPO, IPONZ and CIPO news; the OECD's publications and data releases; arXiv (no author names); the US Federal Register; the European Commission and ASPI (opening lines and tags)</td><td>Licences that allow it, some non-commercial only (Moria is non-commercial research, D-017)</td></tr>
+        <tr><td><strong>Titles, links and dates</strong></td><td>GDELT news (plus GDELT's own metadata: themes, organisations, countries, tone); EPO news and Boards of Appeal; MOIP; UN News; The Conversation; the Lowy Interpreter; Standards Australia; OECD.AI's blog; IPOS (plus the page's hash); legislation (titles and metadata); WIPO treaty notifications; the HAIP reports (organisation, country, period)</td><td>News is never stored as text (Moria's rule); terms unclear or rights reserved</td></tr>
+        <tr><td><strong>Numbers only</strong></td><td>OpenAlex counts; patent counts by CPC class; ABS headline series and data cubes; the OECD Data API; WIPO's bulk statistics; IP RAPID (registry records, individuals hashed)</td><td>Counts and statistics are the evidence; each weekly run is a vintage</td></tr>
+        <tr><td><strong>Metadata only</strong></td><td>CSIRO's <em>Our Future World</em>; the 2026 National Defence Strategy and Integrated Investment Program; the AIC's two crime-cost reports; the JPO Status Report; the KIPO Annual Report (no text layer); the EPO's and EUIPO's plans; the Minister's statement of expectations</td><td>The document reserves its rights or states no licence: title, publisher, link, SHA-256, size, page count and the licence statements found</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>What is never kept, and how it is still used</h3>
+  <p>Not keeping something does not mean not using it. The table follows each kind of unkept material from where Moria
+  meets it to the research job it still does.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Not kept</th><th>Where Moria meets it</th><th>Kept in its place</th><th>How the research still uses it</th><th>Status of that use</th></tr></thead>
+      <tbody>
+        <tr><td><strong>News article text</strong></td><td>Never fetched. GDELT has already read the article and publishes a row about it.</td><td>Title, URL, domain, GDELT's themes, organisations, countries and tone; which terms matched, in which field</td><td>Daily volumes per query group (worldwide, <code>.au</code>, and "about" the group) feed the trend and surge detectors. Titles are embedded and clustered with everything else. A dossier lists the title and link, and the reviewer reads the article at its publisher.</td><td><span class="st partial">Volumes built; detectors day 4</span></td></tr>
+        <tr><td><strong>GDELT quotations</strong></td><td>In the GKG row, read in memory</td><td>The match itself: term, field ("quotations"), and a flag that the article quotes someone</td><td>Quotations widen recall: a term said by someone in the article counts, although the quote is never stored. It shows up in the volumes.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td><strong>Person names, page authors</strong></td><td>GDELT rows; arXiv listings</td><td>Organisations (GDELT); titles and abstracts (arXiv)</td><td>Nothing about individuals is needed: analysis stays at organisation, sector and country level, and no output profiles a person.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td><strong>Summaries of titles-only feeds</strong></td><td>EPO (two feeds), MOIP, UN News, The Conversation, the Lowy Interpreter, Standards Australia, OECD.AI's blog: present in the feed, dropped at collection</td><td>Title, link, date</td><td>Titles are embedded, clustered and counted per source over time; a new-term or cross-family signal can fire on titles alone. The link takes the reviewer to the original.</td><td><span class="st sprint">Day 3–4</span></td></tr>
+        <tr><td><strong>Text of rights-reserved documents</strong></td><td>CSIRO, the Defence strategy and investment program, the AIC reports, the JPO report, WEF (not obtained). The build session read the ones it could reach.</td><td>Title, publisher, link, SHA-256, size, pages, licence statements and a verdict. An owner's upload stays in the private inbox until its licence is settled.</td><td>Read once, distilled: the known-trends baseline paraphrases their trends and cites them by item name (KT21 and KT23 draw on the Defence documents). Every candidate is then tagged <code>novel</code> or <code>reinforces</code> against that baseline, so the documents shape every signal without a word of their text in the bucket.</td><td><span class="st partial">Baseline built; matching day 3</span></td></tr>
+        <tr><td><strong>The licence-check scan</strong></td><td>The first six and last four pages of every document, searched in memory</td><td>The licence statements found (names only) and a verdict: open licence, rights reserved, none found</td><td>Decides whether text may be stored; on record in each run's manifest and in the census report.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td><strong>Page HTML; IPOS page text</strong></td><td>Every web page fetched (IP Australia, USPTO, IPOS)</td><td>Extracted text (where allowed), plus the original's SHA-256 and size</td><td>Fingerprints prove which version was read and show when a page changes, which is itself an event (a changed practice note, a new consultation), even where the text cannot be kept.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td><strong>IP RAPID individuals' names and postcodes</strong></td><td>The weekly zip from data.gov.au, inside the conversion query, before anything is written</td><td>A SHA-256 hash of the normalised name; IP Australia's party id. Organisations keep their names.</td><td>Filings can still be counted per party (first-time applicants, self-filers, the T2 indicators) without naming anyone.</td><td><span class="st partial">Lake built; metrics day 3</span></td></tr>
+        <tr><td><strong>The IP RAPID zip</strong></td><td>Downloaded weekly, converted, discarded</td><td>Its SHA-256 and size in the release manifest; typed Parquet tables (a base and weekly deltas)</td><td>Every figure can be traced to the exact weekly release it came from.</td><td><span class="st built">Built</span></td></tr>
+        <tr><td><strong>The HAIP reports' text</strong></td><td>Organisations' own responses on OECD.AI</td><td>Organisation, country, reporting period, date, link</td><td>Who reports, from where, and when: a count of AI-governance uptake by country and period.</td><td><span class="st sprint">Day 4</span></td></tr>
+        <tr><td><strong>Abstracts and patent text</strong></td><td>Not collected from OpenAlex or BigQuery</td><td>Counts per topic or class per period, world and Australia</td><td>Whole-taxonomy trends and divergence. The design allows capped samples of abstracts for flagged topics later.</td><td><span class="st future">Samples: later</span></td></tr>
+        <tr><td><strong>Terms-check hit samples</strong></td><td>Kept, but only in the bucket</td><td>The public report shows counts per term</td><td>A person reads the samples before any term is narrowed or dropped.</td><td><span class="st built">Built</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Five ways the unkept still does work</h3>
+  <div class="mech">
+    <div><h4>Counted at the door</h4><p>Matching happens while the text is in memory. Only the counts and the match record leave the collector.</p></div>
+    <div><h4>Pointed to, not copied</h4><p>A title and a link let a reviewer read the original at its home, when a dossier needs it.</p></div>
+    <div><h4>Fingerprinted</h4><p>A SHA-256 and a size prove what was read, and reveal when it changes.</p></div>
+    <div><h4>Read once, distilled</h4><p>Rights-reserved syntheses become paraphrased known trends, cited by item name, that tag every candidate.</p></div>
+    <div><h4>Pseudonymised</h4><p>Hashed names keep counting possible without identifying anyone.</p></div>
+  </div>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 970 232" role="img" aria-label="One news article's journey. GDELT's row about the article, with title, URL, quotations and names, goes through the matcher in memory. The kept record holds title, URL, the matched term and field, themes, organisations, countries and tone; quotations, person names and authors are dropped. Records become daily volumes, which detectors read on day 4, and a dossier on day 5 gives the reviewer the title and link to read at the publisher.">
+        <defs>
+          <marker id="gj-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <rect x="5" y="20" width="140" height="124" rx="4" class="box"/><rect x="5" y="20" width="140" height="6" class="s-built"/>
+        <text x="17" y="48" class="t-b">GDELT's row</text><text x="17" y="70" class="t-s">title · URL</text><text x="17" y="86" class="t-s">quotations</text><text x="17" y="102" class="t-s">names · themes</text><text x="17" y="118" class="t-s">organisations · tone</text>
+        <line x1="145" y1="82" x2="167" y2="82" class="ln" marker-end="url(#gj-ah)"/>
+        <rect x="169" y="20" width="140" height="124" rx="4" class="box"/><rect x="169" y="20" width="140" height="6" class="s-built"/>
+        <text x="181" y="48" class="t-b">Matcher</text><text x="181" y="70" class="t-s">in memory</text><text x="181" y="86" class="t-s">239 terms + synonyms</text><text x="181" y="102" class="t-s">title, URL, quotes,</text><text x="181" y="118" class="t-s">names</text>
+        <line x1="309" y1="82" x2="331" y2="82" class="ln" marker-end="url(#gj-ah)"/>
+        <rect x="333" y="20" width="140" height="124" rx="4" class="f-core"/><rect x="333" y="20" width="140" height="6" class="s-built"/>
+        <text x="345" y="48" class="t-b">Kept record</text><text x="345" y="70" class="t-s">title · URL</text><text x="345" y="86" class="t-s">term + field matched</text><text x="345" y="102" class="t-s">themes · organisations</text><text x="345" y="118" class="t-s">countries · tone</text>
+        <text x="345" y="166" class="t-s tc-gap">dropped: quotations,</text><text x="345" y="182" class="t-s tc-gap">person names, authors</text>
+        <line x1="473" y1="82" x2="495" y2="82" class="ln" marker-end="url(#gj-ah)"/>
+        <rect x="497" y="20" width="140" height="124" rx="4" class="box"/><rect x="497" y="20" width="140" height="6" class="s-built"/>
+        <text x="509" y="48" class="t-b">Daily volumes</text><text x="509" y="70" class="t-s">per query group</text><text x="509" y="86" class="t-s">world and .au</text><text x="509" y="102" class="t-s">"about" vs names-only</text><text x="509" y="118" class="t-s">against all documents</text>
+        <line x1="637" y1="82" x2="659" y2="82" class="ln" marker-end="url(#gj-ah)"/>
+        <rect x="661" y="20" width="140" height="124" rx="4" class="box"/><rect x="661" y="20" width="140" height="6" class="s-sprint"/>
+        <text x="673" y="48" class="t-b">Detectors</text><text x="673" y="70" class="t-s">trend · low-base surge</text><text x="673" y="86" class="t-s">cross-ring convergence</text><text x="673" y="102" class="t-s">as shares of volume</text><text x="673" y="130" class="t-cap tc-sprint">DAY 4</text>
+        <line x1="801" y1="82" x2="823" y2="82" class="ln" marker-end="url(#gj-ah)"/>
+        <rect x="825" y="20" width="140" height="124" rx="4" class="box"/><rect x="825" y="20" width="140" height="6" class="s-sprint"/>
+        <text x="837" y="48" class="t-b">Dossier</text><text x="837" y="70" class="t-s">title + link</text><text x="837" y="86" class="t-s">the reviewer reads</text><text x="837" y="102" class="t-s">it at the publisher</text><text x="837" y="130" class="t-cap tc-sprint">DAY 5</text>
+        <text x="5" y="222" class="t-s">The article's text never enters Moria; the match, the count and the link do.</text>
+      </svg>
+    </div>
+    <figcaption><strong>One news article's journey.</strong> The first four steps run every day now; the detectors and
+    the dossier are sprint days 4 and 5. "About" counts (a term in the title or URL) are the cleaner series, because a
+    match only inside GDELT's named entities is often incidental (D-012).</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="sources">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">08</span> The sources <span class="st built">43 built</span></div>
+    <h2>Forty-three sources, each with a card</h2>
+  </div>
+  <p>Each source has a card in <a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/config/sources"><code>config/sources/</code></a>
+  that states its rings, domains, family, cadence, publication lag, coverage, known biases, licence, what may be
+  stored, and its expected volume. By family: policy 25, statistics 5, legal 4, news 3, research 2, patent 2, IP
+  Australia's own 2. By cadence: 28 daily, 8 weekly, 1 monthly, 6 once.</p>
+
+  <div class="filters" role="group" aria-label="Filter sources by ring">
+    <span>Show</span>
+    <button type="button" id="f-all" data-f="all" aria-pressed="true">All</button>
+    <button type="button" id="f-c" data-f="c" aria-pressed="false">Core</button>
+    <button type="button" id="f-a" data-f="a" aria-pressed="false">Adjacent</button>
+    <button type="button" id="f-w" data-f="w" aria-pressed="false">Wider world</button>
+  </div>
+  <div class="tbl">
+    <table id="src-table">
+      <thead><tr><th>Source</th><th>Rings</th><th>Family</th><th>Cadence</th><th>Kept (private bucket)</th></tr></thead>
+      <tbody>
+        <tr data-r="c a w"><td><strong>GDELT news</strong> <span class="mono">gdelt_news</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>News</td><td>Daily</td><td>Matching documents' titles, URLs, GDELT metadata and term matches; daily volumes for 47 query groups</td></tr>
+        <tr data-r="c a w"><td><strong>Federal Register of Legislation</strong> <span class="mono">legislation_frl</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Legal</td><td>Daily</td><td>Titles and metadata of every Commonwealth version registered; no IP filter</td></tr>
+        <tr data-r="c"><td><strong>IP Australia's website</strong> <span class="mono">ipaustralia_site</span></td><td><span class="rings"><span class="rg c">C</span></span></td><td>IP Australia</td><td>Daily</td><td>Extracted text of changed pages; the HTML as hash and size. A full snapshot was taken once (<code>--backfill</code>)</td></tr>
+        <tr data-r="c"><td><strong>IP Australia's publications</strong> <span class="mono">ipaustralia_publications</span></td><td><span class="rings"><span class="rg c">C</span></span></td><td>IP Australia</td><td>Yearly</td><td>Text of five PDFs; the Minister's statement as metadata (no licence stated)</td></tr>
+        <tr data-r="c"><td><strong>IP RAPID</strong> <span class="mono">ip_rapid</span></td><td><span class="rings"><span class="rg c">C</span></span></td><td>Patent</td><td>Weekly</td><td>Six registry tables, about 93M rows, as Parquet in the lake; individuals' names hashed, postcodes dropped</td></tr>
+        <tr data-r="c a"><td><strong>Open Australian Legal Corpus</strong> <span class="mono">oalc</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Legal</td><td>Per release</td><td>104,201 documents in the lake: Commonwealth legislation, Federal and High Court judgments (to March 2025)</td></tr>
+        <tr data-r="c a"><td><strong>Territory evidence</strong> <span class="mono">territory_evidence</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Policy</td><td>Once</td><td>Text: the PC's two reports, the IP Report 2026, the Patents Accessibility Review. Metadata: the AIC reports. One upload awaited</td></tr>
+        <tr data-r="c a"><td><strong>WIPO press releases</strong> <span class="mono">wipo_press</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Policy</td><td>Daily</td><td>Titles, links, summaries</td></tr>
+        <tr data-r="c a"><td><strong>WIPO treaty notifications</strong> <span class="mono">wipo_treaty_notifications</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Policy</td><td>Weekly</td><td>Titles, numbers, dates, links for 26 treaties (from WIPO Lex)</td></tr>
+        <tr data-r="c a"><td><strong>WIPO bulk statistics</strong> <span class="mono">wipo_ipstats</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Statistics</td><td>Per rebuild</td><td>Patents, trade marks and designs by office and origin, 2000–2022, in the lake; never republished</td></tr>
+        <tr data-r="c"><td><strong>Peer-office news ×8</strong> <span class="mono">ukipo, epo, epo_boa, iponz, cipo, uspto, ipos, moip</span></td><td><span class="rings"><span class="rg c">C</span></span></td><td>Policy, legal</td><td>Daily</td><td>UKIPO, IPONZ, CIPO: summaries. USPTO: page text. EPO ×2, MOIP: titles only. IPOS: titles and page hash</td></tr>
+        <tr data-r="c"><td><strong>Peer offices' strategies</strong> <span class="mono">peer_office_strategies</span></td><td><span class="rings"><span class="rg c">C</span></span></td><td>Policy</td><td>Yearly</td><td>Text: UKIPO, USPTO, CIPO. Metadata: EPO ×2, EUIPO, JPO, KIPO</td></tr>
+        <tr data-r="c a"><td><strong>APH committee feeds ×5</strong> <span class="mono">aph_*</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Policy</td><td>Daily</td><td>Senate new inquiries, reports and hearings; House and joint inquiries: titles, links, dates, summaries</td></tr>
+        <tr data-r="c"><td><strong>US Federal Register (IP)</strong> <span class="mono">us_federal_register_ip</span></td><td><span class="rings"><span class="rg c">C</span></span></td><td>Legal</td><td>Daily</td><td>USPTO and Copyright Office documents: titles, abstracts (public domain)</td></tr>
+        <tr data-r="a w"><td><strong>OpenAlex counts</strong> <span class="mono">openalex_counts</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Research</td><td>Weekly</td><td>Works by topic at four taxonomy levels, world and Australian, yearly from 2010 and monthly for 36 months</td></tr>
+        <tr data-r="a w"><td><strong>arXiv: AI and society</strong> <span class="mono">arxiv_ai_society</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Research</td><td>Daily</td><td>cs.AI, cs.CY, cs.DL, econ.GN: titles and abstracts (CC0); no author names</td></tr>
+        <tr data-r="a"><td><strong>Patent counts by CPC class</strong> <span class="mono">patent_cpc_counts</span></td><td><span class="rings"><span class="rg a">A</span></span></td><td>Patent</td><td>Monthly</td><td>Patent families by CPC subclass and priority year, world and with an AU member (BigQuery, capped)</td></tr>
+        <tr data-r="a w"><td><strong>ABS headline series</strong> <span class="mono">abs_headline</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Statistics</td><td>Weekly</td><td>839 series from eleven queries, kept as vintages</td></tr>
+        <tr data-r="a"><td><strong>ABS data cubes</strong> <span class="mono">abs_datacubes</span></td><td><span class="rings"><span class="rg a">A</span></span></td><td>Statistics</td><td>Weekly</td><td>CABEE (business entries and exits) and BERD (business R&amp;D) tables, as published</td></tr>
+        <tr data-r="a w c"><td><strong>OECD Data API</strong> <span class="mono">oecd_headline</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Statistics</td><td>Weekly</td><td>13 queries: MSTI, AI patents, firms' IP and AI use, IP tax support, FDI, leading indicators and more; 17,712 series on the first run</td></tr>
+        <tr data-r="a c w"><td><strong>STIP Compass</strong> <span class="mono">stip_compass</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Policy</td><td>Weekly check</td><td>The whole database in the lake: 12,806 policy instruments from 68 countries and the EU, text included</td></tr>
+        <tr data-r="w a c"><td><strong>OECD publications</strong> <span class="mono">oecd_publications</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Policy</td><td>Daily</td><td>Titles, links, abstracts, content types, policy areas</td></tr>
+        <tr data-r="w a"><td><strong>OECD data releases</strong> <span class="mono">oecd_data_releases</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Statistics</td><td>Daily</td><td>Titles, links, abstracts, content types, policy areas</td></tr>
+        <tr data-r="a c"><td><strong>OECD.AI blog and HAIP reports</strong> <span class="mono">oecd_ai_blog, oecd_ai_haip_reports</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Policy</td><td>Daily; weekly</td><td>Blog titles; reports' organisation, country, period, date, link (never their text)</td></tr>
+        <tr data-r="a w"><td><strong>ASPI's Strategist</strong> <span class="mono">aspi_strategist</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Policy</td><td>Daily</td><td>Titles, links, opening lines, topic tags</td></tr>
+        <tr data-r="a c"><td><strong>Standards Australia news</strong> <span class="mono">standards_australia_news</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span></span></td><td>Policy</td><td>Daily</td><td>Titles, links, dates</td></tr>
+        <tr data-r="w a c"><td><strong>Foresight syntheses</strong> <span class="mono">foresight_syntheses</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Policy</td><td>Once</td><td>Text: JRC, Intergenerational Report, Science and Research Priorities, Net Zero Plan. Metadata: CSIRO, Defence ×2, WEF. Awaited: Critical Technologies, OECD STI Outlook</td></tr>
+        <tr data-r="w a c"><td><strong>European Commission press corner</strong> <span class="mono">ec_presscorner</span></td><td><span class="rings"><span class="rg c">C</span><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Policy</td><td>Daily</td><td>Titles, links, opening lines, policy areas</td></tr>
+        <tr data-r="w"><td><strong>UN News</strong> <span class="mono">un_news</span></td><td><span class="rings"><span class="rg w">W</span></span></td><td>News</td><td>Daily</td><td>Titles, links, dates</td></tr>
+        <tr data-r="w a"><td><strong>The Conversation (AU)</strong> <span class="mono">conversation_au</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>News</td><td>Daily</td><td>Titles, links, dates</td></tr>
+        <tr data-r="w a"><td><strong>Lowy Interpreter</strong> <span class="mono">lowy_interpreter</span></td><td><span class="rings"><span class="rg a">A</span><span class="rg w">W</span></span></td><td>Policy</td><td>Daily</td><td>Titles, links, dates</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="small muted">Rows that group several cards (peer-office news, APH, OECD.AI) count each card: the 31 rows hold all 43 sources.</p>
+
+  <h3>Gaps <span class="st gap">Gap</span></h3>
+  <p>Wanted, but refused to the build session and to a GitHub runner. Moria reports a block as a gap; it never works
+  around one (D-011).</p>
+  <ul>
+    <li><strong>Courts:</strong> the Federal Court, the High Court and AustLII (with IP Australia's hearing decisions). The legal corpus covers the two courts only to 10 March 2025.</li>
+    <li><strong>Parliament beyond the committee feeds:</strong> ParlInfo, Hansard and Estimates transcripts (a web firewall challenge).</li>
+    <li><strong>Peer offices:</strong> EUIPO and JPO news.</li>
+    <li><strong>Australian government sites:</strong> industry.gov.au, cyber.gov.au, the TGA, eSafety, the ARC, the Chief Scientist; the ACCC and the IEA answer 403. Their documents come as owner uploads (<a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/wishlist.md">the wishlist</a>).</li>
+    <li><strong>Still wanted from the wishlist:</strong> the List of Critical Technologies, the OECD <em>STI Outlook 2025</em>, the Government's response to the Patents Accessibility Review, WEF's two top-10 risk lists, and the EPO's terms.</li>
+    <li><strong>Languages:</strong> non-English sources are absent.</li>
+  </ul>
+
+  <h3>Tier 2: the backlog <span class="st future">Future state</span></h3>
+  <p>Added only when the saturation rule shows a ring needs more evidence (<a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/sources-backlog.md">sources backlog</a>):
+  AusTender contract notices; more patent offices (the USPTO's Open Data Portal, the EPO's Open Patent Services); arXiv
+  in bulk; ETSI's standard-essential patent declarations; foreign regulation (Regulations.gov, EUR-Lex); the IMF, the
+  World Bank and UN Comtrade; Copernicus climate anomalies; Media Cloud; Bluesky (counts per term only); Hacker News
+  and GitHub; Wikipedia page views as a stand-in for search trends.</p>
+</section>
+
+<!-- ============================================================ 9 -->
+<section id="mining">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">09</span> From items to signals <span class="st sprint">Days 3–5</span></div>
+    <h2>How candidates will be found, checked and ranked</h2>
+  </div>
+  <p>None of this section is built. It is the design (§8) that sprint days 3 to 5 implement. The plain-language
+  version, with a worked example, is <a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/mining-explained.md">mining explained</a>.</p>
+
+  <h3>Day 3: from raw bundles to features</h3>
+  <ul>
+    <li><strong>Normalise</strong> every source into the lake's tables (documents, observations), with two dates on every item: <code>event_at</code>, when it happened, and <code>observable_at</code>, when the public could see it. All point-in-time logic uses <code>observable_at</code>.</li>
+    <li><strong>De-duplicate:</strong> a syndicated story counts once (canonical URL, then near-identical text within 30 days).</li>
+    <li><strong>Features:</strong> embeddings (<code>bge-small-en-v1.5</code>, free, on CPU), keyphrases, a BM25 search index for analysts, and descriptive tags (ring, domain, PESTLE origin, territory similarity), first zero-shot, later trained on the owner's labels.</li>
+    <li><strong>IP RAPID metrics</strong> (<code>moria ipr metrics</code>): demand, timeliness, outcomes, and the territory indicators.</li>
+  </ul>
+
+  <h3>Day 4: seven analytical layers, four of them priorities</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Layer</th><th>Methods</th><th>What it discovers</th><th>In the sprint</th></tr></thead>
+      <tbody>
+        <tr><td>Descriptive</td><td>Counts, rates per source volume, distributions</td><td>What is happening?</td><td>Yes, the base</td></tr>
+        <tr><td><strong>Temporal</strong></td><td>Theil–Sen slopes with intervals; acceleration; change points (PELT, CUSUM); Mann–Kendall with Holm adjustment</td><td>What is changing unusually quickly?</td><td>Priority</td></tr>
+        <tr><td>Text mining</td><td>TF-IDF, BM25 search, keyphrases, new-term detection, NMF topics as a cross-check</td><td>What subjects are appearing?</td><td>Partly</td></tr>
+        <tr><td><strong>Semantic</strong></td><td>Embeddings; MiniBatchKMeans and HDBSCAN clusters; nearest neighbours</td><td>Which items discuss similar ideas, even in unfamiliar words?</td><td>Priority</td></tr>
+        <tr><td><strong>Anomaly</strong></td><td>Exact Poisson rate tests from low baselines; IsolationForest and LOF novelty</td><td>What is unusual against history?</td><td>Priority</td></tr>
+        <tr><td><strong>Relationship</strong></td><td>Co-occurrence across families and over time; association rules on IPC pairs and Nice-class sets; cross-family convergence</td><td>What is becoming connected?</td><td>Priority</td></tr>
+        <tr><td>Predictive</td><td>Seasonal-naive and ETS baselines with intervals and backtests</td><td>What may happen next, and how sure are we?</td><td>Baselines only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Signal types and their detectors</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Type</th><th>Definition</th><th>Detector</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Trend</strong></td><td>A measurable, sustained change in a rate or share</td><td>The slope's interval excludes zero in at least 2 of 3 windows (12, 24, 36 months), within the source's stable history</td></tr>
+        <tr><td><strong>Acceleration</strong></td><td>A trend whose growth is itself increasing</td><td>The recent half's slope exceeds the earlier half's, or a change point to a steeper slope</td></tr>
+        <tr><td><strong>Anomaly</strong></td><td>An observation far from its baseline</td><td>Outside the 99% band, or a change in level. It triggers investigation; it is not yet a signal</td></tr>
+        <tr><td><strong>Weak signal</strong></td><td>An early, sparse, possibly meaningful indication</td><td>Any of five indicators (below), with at least 3 items from at least 2 sources</td></tr>
+        <tr><td><strong>Wild card</strong></td><td>Low probability, high impact</td><td>Not detected: proposed from validated weak signals and curated by analysts</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The five weak-signal indicators: <code>new_term</code> (a keyphrase first seen in a credible family);
+  <code>new_combination</code> (previously separate clusters, keyphrases or classes start to co-occur);
+  <code>cross_family</code> (a concept appears in three or more families, or rings, where it had been in one);
+  <code>low_base_surge</code> (a rate ratio against a low baseline, at least 5 items); <code>novel_items</code> (items
+  far from every cluster, grouped into micro-clusters so analysts see themes, not single items).</p>
+
+  <h3>Artefact checks: false alarms caught before review</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Check</th><th>Catches</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>Coverage</td><td>A source publishing more of everything</td><td>Counts are shares of the source's total; flag if the total moved more than ±25%</td></tr>
+        <tr><td>Ingestion</td><td>A failed or doubled collection</td><td>Ingestion-monitor incidents hold signals in the affected windows</td></tr>
+        <tr><td>Duplication</td><td>One story syndicated 200 times</td><td>Collapse by duplicate group before counting</td></tr>
+        <tr><td>News cycle</td><td>Attention without substance</td><td>News only, decays within about 2 weeks, no primary source</td></tr>
+        <tr><td>Source break</td><td>A change of method, or Moria's own start date</td><td>Windows crossing a break are excluded from trend claims</td></tr>
+        <tr><td>Label drift</td><td>A change in the tagger, not the world</td><td>One tagger version across any window</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>A failed check is shown to the analyst; it never hides the candidate. Ingestion monitor entries are already written
+  on every collection <span class="st built">Built</span>; turning them into incidents is day 4.</p>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 960 372" role="img" aria-label="The review funnel. Every item collected from 43 sources; candidates where a detector fired; artefact-checked and ranked within ring quotas; triage of up to 40 at 1 to 2 minutes each by a person; deep review of 8 to 10 at 15 to 20 minutes each; validated signals go to the lenses. The queue's ring quotas are 35 percent core, 35 percent adjacent and 30 percent wider world, with third-order pathways at most 20 percent.">
+        <rect x="0" y="0" width="940" height="36" rx="3" class="box-2"/>
+        <text x="14" y="23" class="t-i">Every item collected, from 43 sources</text><text x="926" y="23" text-anchor="end" class="t-s">machine</text>
+        <rect x="0" y="46" width="760" height="36" rx="3" class="box-2"/>
+        <text x="14" y="69" class="t-i">Candidates: a detector fired (trend, acceleration, anomaly, weak-signal indicator)</text><text x="772" y="69" class="t-s">machine</text>
+        <rect x="0" y="92" width="600" height="36" rx="3" class="box-2"/>
+        <text x="14" y="115" class="t-i">Artefact-checked; ranked per view, inside the ring quotas</text><text x="612" y="115" class="t-s">machine</text>
+        <rect x="0" y="138" width="440" height="36" rx="3" class="f-core"/>
+        <text x="14" y="161" class="t-i">Triage: up to 40 · 1–2 minutes each · keep, park, reject</text><text x="452" y="161" class="t-s">person</text>
+        <rect x="0" y="184" width="330" height="36" rx="3" class="f-core"/>
+        <text x="14" y="207" class="t-i">Deep review: the 8–10 kept · 15–20 min each</text><text x="342" y="207" class="t-s">person</text>
+        <rect x="0" y="230" width="220" height="36" rx="3" class="f-core"/>
+        <text x="14" y="253" class="t-i t-b" style="font-size:13px">Validated → the lenses</text><text x="232" y="253" class="t-s">person</text>
+        <text x="0" y="298" class="t-cap" style="fill:var(--muted)">THE QUEUE'S RING QUOTAS</text>
+        <rect x="0" y="308" width="329" height="30" class="f-core"/>
+        <rect x="329" y="308" width="329" height="30" class="f-adj"/>
+        <rect x="658" y="308" width="282" height="30" class="f-wide"/>
+        <text x="12" y="328" class="t-i">core 35%</text>
+        <text x="341" y="328" class="t-i">adjacent 35%</text>
+        <text x="670" y="328" class="t-i">wider world 30%</text>
+        <text x="0" y="362" class="t-s">Third-order pathways are at most 20% of the queue. The owner sets the final values after the first round.</text>
+      </svg>
+    </div>
+    <figcaption><strong>From everything collected to a few validated signals.</strong> Machines narrow the field; a
+    person makes every call that matters. One review round takes the owner about 3 to 4 hours. The quotas keep the IP
+    system from crowding out the wider world, and the reverse.</figcaption>
+  </figure>
+
+  <h3>Day 5: dossiers, pathways and the first queue</h3>
+  <p>Explanations start from the evidence, never from a score. Each candidate's <strong>dossier</strong> holds the
+  detectors' numbers with their windows and run ids; the top items, de-duplicated, with links and both dates; the
+  nearest historical analogues and what became of them; an alternative-explanations checklist (coverage, ingestion,
+  news cycle, duplication, source break, a fee change or a law's start date, the known-trends baseline); and
+  counter-evidence found by search. A free decision model (Jev-Style 0.8B) suggests pathways, labelled as a machine's
+  suggestion. Day 5 ends with <strong>the first ranked queue of about 40 dossiers</strong>, ready for the owner.</p>
+</section>
+
+<!-- ============================================================ 10 -->
+<section id="lenses">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">10</span> Validation and the lenses <span class="st after">After the sprint</span></div>
+    <h2>People decide what is real; the frameworks read only what they validated</h2>
+  </div>
+
+  <h3>What counts as a meaningful signal</h3>
+  <p>All four must hold: it survives the artefact checks; it appears in at least one credible family beyond news, or
+  in news with a primary source; it has a nameable pathway; and its Australian relevance has been assessed.</p>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 960 262" role="img" aria-label="A signal's life. A candidate is investigated, then validated or rejected with a reason. A validated signal is tracked each cycle and ends as strengthened, weakened, disproved or mainstream. A candidate with no pathway is parked and comes back if it grows.">
+        <defs>
+          <marker id="lc-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <rect x="10" y="100" width="130" height="40" rx="4" class="box"/><text x="75" y="125" text-anchor="middle" class="t-b">candidate</text>
+        <line x1="140" y1="120" x2="188" y2="120" class="ln" marker-end="url(#lc-ah)"/>
+        <rect x="190" y="100" width="140" height="40" rx="4" class="box"/><text x="260" y="125" text-anchor="middle" class="t-b">investigating</text>
+        <line x1="330" y1="112" x2="388" y2="66" class="ln" marker-end="url(#lc-ah)"/>
+        <text x="350" y="86" text-anchor="end" class="t-s">4 tests hold</text>
+        <line x1="330" y1="128" x2="388" y2="174" class="ln" marker-end="url(#lc-ah)"/>
+        <text x="340" y="172" class="t-s">fails</text>
+        <rect x="390" y="40" width="130" height="40" rx="4" class="f-core"/><text x="455" y="65" text-anchor="middle" class="t-b">validated</text>
+        <text x="455" y="100" text-anchor="middle" class="t-s">tagged novel, or</text>
+        <text x="455" y="115" text-anchor="middle" class="t-s">reinforces a known trend</text>
+        <rect x="390" y="156" width="130" height="40" rx="4" class="box"/><text x="455" y="181" text-anchor="middle" class="t-b">rejected</text>
+        <text x="530" y="174" class="t-s">artefact · news cycle ·</text>
+        <text x="530" y="189" class="t-s">duplicate · insufficient evidence</text>
+        <line x1="520" y1="60" x2="578" y2="60" class="ln" marker-end="url(#lc-ah)"/>
+        <text x="549" y="52" text-anchor="middle" class="t-s">each cycle</text>
+        <rect x="580" y="40" width="120" height="40" rx="4" class="f-core"/><text x="640" y="65" text-anchor="middle" class="t-b">tracked</text>
+        <line x1="700" y1="54" x2="768" y2="22" class="ln" marker-end="url(#lc-ah)"/>
+        <line x1="700" y1="58" x2="768" y2="66" class="ln" marker-end="url(#lc-ah)"/>
+        <line x1="700" y1="64" x2="768" y2="110" class="ln" marker-end="url(#lc-ah)"/>
+        <line x1="700" y1="70" x2="768" y2="154" class="ln" marker-end="url(#lc-ah)"/>
+        <rect x="770" y="6" width="170" height="32" rx="4" class="box"/><text x="855" y="27" text-anchor="middle">strengthened</text>
+        <rect x="770" y="50" width="170" height="32" rx="4" class="box"/><text x="855" y="71" text-anchor="middle">weakened</text>
+        <rect x="770" y="94" width="170" height="32" rx="4" class="box"/><text x="855" y="115" text-anchor="middle">disproved</text>
+        <rect x="770" y="138" width="170" height="32" rx="4" class="box"/><text x="855" y="159" text-anchor="middle">mainstream</text>
+        <path d="M390,190 C 300,250 110,240 75,144" class="ln-d" marker-end="url(#lc-ah)"/>
+        <text x="190" y="256" text-anchor="middle" class="t-s">no pathway: parked, back if it grows</text>
+      </svg>
+    </div>
+    <figcaption><strong>A signal's life in the register.</strong> The register is an append-only event log, so every
+    signal keeps its history. "Already known" is not a rejection reason: a known trend is a tag, and evidence that it is
+    speeding up or reaching Australia's IP system still counts (D-014). The <strong>missed-signal register</strong>
+    records developments Moria missed, and why (a source gap, a detector gap, or a ranking cut-off).</figcaption>
+  </figure>
+
+  <h3>The owner's labels</h3>
+  <p>About 200 items, labelled by menu, not by writing (about 30 seconds each, 1.5 to 2 hours in all): what each item is
+  mainly about (PESTLE), its ring, its territories, and whether it is usable. About 150 are drawn across source types,
+  about 50 are those the tagger is least sure of, and about 10 are hidden repeats that measure the labeller's own
+  consistency. Half teach a simple classifier; half check how often each free tagger agrees.</p>
+
+  <h3>The lenses</h3>
+  <div class="cols">
+    <div>
+      <h4>PESTLE</h4>
+      <p>External drivers only. Validated external signals are grouped into drivers (analysts merge, split and name them)
+      and placed by a PESTLE codebook tailored to IP. Analysts' tags win over machine tags.</p>
+    </div>
+    <div>
+      <h4>SWOT and TOWS</h4>
+      <p>Strengths and weaknesses are internal, from IP RAPID metrics against peer offices (demand, timeliness,
+      outcomes, capability). Opportunities and threats come from the drivers. TOWS pairs them into options that people
+      propose and choose.</p>
+    </div>
+    <div>
+      <h4>Scenarios and robustness</h4>
+      <p>Drivers scored on impact and uncertainty; the two least-correlated critical uncertainties become the axes; 2 or
+      3 scenarios are written by people. Every option is rated against every scenario: <strong>no-regret</strong>,
+      <strong>hedge</strong> or <strong>bet</strong>.</p>
+    </div>
+  </div>
+
+  <figure>
+    <div class="fig-wrap">
+      <svg class="dg" viewBox="0 0 960 412" role="img" aria-label="The Futures Cone from 2026 to 2036. The projected line is the median of baseline forecasts. The probable zone is the 50 percent interval of the backtested forecast. The plausible zone holds scenarios and the 80 and 95 percent bands. The possible zone holds validated weak signals and curated wild cards. The preferable future is leadership's choice; Moria supports backcasting towards it.">
+        <polygon points="60,190 640,30 640,350" class="f-wide"/>
+        <polygon points="60,190 640,70 640,310" class="f-adj"/>
+        <polygon points="60,190 640,125 640,255" class="f-core"/>
+        <line x1="60" y1="190" x2="640" y2="184" class="proj"/>
+        <ellipse cx="520" cy="284" rx="48" ry="18" class="box-d"/>
+        <text x="54" y="194" text-anchor="end" class="t-s">now</text>
+        <line x1="640" y1="50" x2="656" y2="50" class="lead"/>
+        <text x="662" y="48" class="t-b">Possible</text><text x="662" y="64" class="t-s">validated weak signals, curated wild cards</text>
+        <line x1="640" y1="98" x2="656" y2="98" class="lead"/>
+        <text x="662" y="96" class="t-b">Plausible</text><text x="662" y="112" class="t-s">scenarios; the 80% and 95% bands</text>
+        <line x1="640" y1="150" x2="656" y2="150" class="lead"/>
+        <text x="662" y="148" class="t-b">Probable</text><text x="662" y="164" class="t-s">50% interval of the backtested forecast</text>
+        <line x1="640" y1="184" x2="656" y2="192" class="lead"/>
+        <text x="662" y="196" class="t-b">Projected</text><text x="662" y="212" class="t-s">median of the baseline forecasts</text>
+        <line x1="568" y1="284" x2="656" y2="284" class="lead"/>
+        <text x="662" y="282" class="t-b">Preferable</text><text x="662" y="298" class="t-s">leadership's choice; Moria supports</text><text x="662" y="313" class="t-s">backcasting: gaps, drivers, signposts</text>
+        <line x1="60" y1="368" x2="640" y2="368" class="ln"/>
+        <line x1="60" y1="364" x2="60" y2="372" class="ln"/><line x1="176" y1="364" x2="176" y2="372" class="ln"/>
+        <line x1="350" y1="364" x2="350" y2="372" class="ln"/><line x1="640" y1="364" x2="640" y2="372" class="ln"/>
+        <text x="60" y="387" text-anchor="middle" class="t-s">2026</text><text x="176" y="387" text-anchor="middle" class="t-s">2028</text>
+        <text x="350" y="387" text-anchor="middle" class="t-s">2031</text><text x="640" y="387" text-anchor="middle" class="t-s">2036</text>
+        <text x="118" y="405" text-anchor="middle" class="t-cap" style="fill:var(--muted)">H1 · 0–2 YRS</text>
+        <text x="263" y="405" text-anchor="middle" class="t-cap" style="fill:var(--muted)">H2 · 2–5 YRS</text>
+        <text x="495" y="405" text-anchor="middle" class="t-cap" style="fill:var(--muted)">H3 · 5–10+ YRS</text>
+      </svg>
+    </div>
+    <figcaption><strong>The Futures Cone, and what fills each zone.</strong> Forecasts are baselines only at first, and
+    Moria computes no scenario probabilities. The preferable future is leadership's to choose; Moria shows the gap
+    between the projected path and the target, the drivers that help or hinder, and the signposts to watch.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ 11 -->
+<section id="evaluation">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">11</span> How we will know <span class="st after">After the sprint</span></div>
+    <h2>Pass rules, written before the first run</h2>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Measure</th><th>Definition</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Novelty</strong></td><td>Validated signals outside both the known-trends baseline and every Growth Territory</td><td><strong>The sprint's success test: at least 3</strong></td></tr>
+        <tr><td>Historical recovery</td><td>Share of hindsight-set developments raised as candidates, using only evidence observable at the time</td><td>≥ 50%</td></tr>
+        <tr><td>Lead time</td><td>Months from Moria's first flag to the development's mainstream point</td><td>Median ≥ 6 months</td></tr>
+        <tr><td>Precision</td><td>Share of reviewed candidates the analyst validates</td><td>≥ 30% of the top 40</td></tr>
+        <tr><td>Reinforcement</td><td>Validated signals that reinforce a known trend, and what each adds (pace, urgency, arrival in Australia or in the IP system)</td><td>Reported</td></tr>
+        <tr><td>Breadth</td><td>Validated signals per ring; share with order 2 or 3 pathways</td><td>Reported: no wider-world signals means too narrow</td></tr>
+        <tr><td>Source diversity</td><td>Share of validated signals spanning at least 2 families, and not dependent on news</td><td>Reported</td></tr>
+        <tr><td>Decision usefulness</td><td>Signals that changed an assumption, prompted an investigation or informed a decision</td><td>Tracked across cycles</td></tr>
+        <tr><td>Misses</td><td>Developments Moria did not flag, each classified</td><td>Every miss classified</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3>Rules against hindsight flattering the results</h3>
+  <ol>
+    <li><strong>Observable dates only:</strong> a hindsight run reads evidence by <code>observable_at</code>, never <code>event_at</code>.</li>
+    <li><strong>Fit at the date:</strong> vocabularies, clusters, baselines and taggers are fitted only on evidence observable by then.</li>
+    <li><strong>Pretrained models know the future:</strong> every hindsight run is reported twice, term-only (no pretrained model) and full; the gap is the contamination allowance.</li>
+    <li><strong>Non-events count:</strong> the hindsight set is chosen blind to Moria's output and includes developments that did not happen, so false alarms are counted. Candidates: COVID-19 marks and patents (2020), virtual-goods marks (2021–22), generative-AI filings (2022–24).</li>
+  </ol>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="progress">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">12</span> Built, and next</div>
+    <h2>Where the build stands on 13 October 2026</h2>
+  </div>
+  <ol class="tl">
+    <li class="done"><span class="when">9 Oct</span><span class="rail"></span><div class="what"><h4>Design v0.3 <span class="st built">Done</span></h4><p>Broad by design, free first, a one-week machinery sprint. The owner approves the direction and the four outside-in questions (D-004, D-005).</p></div></li>
+    <li class="done"><span class="when">10 Oct</span><span class="rail"></span><div class="what"><h4>Day 1 <span class="st built">Done</span></h4><p>The package, config, the store (R2), manifests, the polite HTTP client, five daily collectors, the environment check, the workflows; the memory probe on a real runner (D-006 to D-008).</p></div></li>
+    <li class="done"><span class="when">12 Oct</span><span class="rail"></span><div class="what"><h4>Day 2 <span class="st built">Done</span></h4><p>Peer offices; OpenAlex, ABS and IP RAPID weekly; GDELT from bulk files; the foresight syntheses and a 19-trend baseline the owner confirmed; the terms check; census reports (D-009 to D-015).</p></div></li>
+    <li class="done"><span class="when">12–13 Oct</span><span class="rail"></span><div class="what"><h4>Tier 1 cleanup <span class="st built">Done</span></h4><p>APH's committee feeds, the legal corpus, IP Australia's full snapshot and PDFs, MOIP, WIPO's treaties and statistics, CABEE and BERD; BigQuery switched on (D-016 to D-019).</p></div></li>
+    <li class="done"><span class="when">13 Oct</span><span class="rail"></span><div class="what"><h4>The widening <span class="st built">Done</span></h4><p>Six OECD sources (STIP Compass first) and a breadth pack of eight feeds; the owner's eleven uploads read; five known trends proposed, KT20 to KT24 (D-020). 43 sources.</p></div></li>
+    <li class="next"><span class="when">Next</span><span class="rail"></span><div class="what"><h4>Day 3 <span class="st sprint">When the owner asks</span></h4><p>Normalise, de-duplicate, both dates; embeddings, keyphrases, BM25, zero-shot tags; IP RAPID metrics; the decision model's speed on a free GPU.</p></div></li>
+    <li class="next"><span class="when">Day 4</span><span class="rail"></span><div class="what"><h4>Detectors <span class="st sprint">Planned</span></h4><p>Rates, trends, accelerations and change points over the whole taxonomies; world/Australia divergence; anomalies; the five weak-signal indicators; cross-ring convergence; artefact checks tested with seeded artefacts.</p></div></li>
+    <li class="next"><span class="when">Day 5</span><span class="rail"></span><div class="what"><h4>Dossiers and the first queue <span class="st sprint">Planned</span></h4><p>Dossiers, pathway suggestions, ring quotas and ranking, the register's spreadsheet export and import, the early-warning digest, a term-only hindsight smoke run. Done when about 40 ranked dossiers are ready for review.</p></div></li>
+    <li class="next"><span class="when">Days 6–7</span><span class="rail"></span><div class="what"><h4>Buffer <span class="st sprint">Planned</span></h4><p>Fixes, a methodology note, handover.</p></div></li>
+    <li class="later"><span class="when">Owner's pace</span><span class="rail"></span><div class="what"><h4>Labels, review, lenses <span class="st after">After the sprint</span></h4><p>About 200 labels; the first review round (triage, then deep review); the lenses in an interpretation session.</p></div></li>
+    <li class="later"><span class="when">Quarterly</span><span class="rail"></span><div class="what"><h4>Cycles <span class="st after">After the sprint</span></h4><p>The strategic view, the lenses and an interpretation session each quarter; the weekly digest between them.</p></div></li>
+    <li class="fut"><span class="when">Later</span><span class="rail"></span><div class="what"><h4>The future state <span class="st future">Not to build yet</span></h4><p>An IPAVentures lens, a question-answering agent, a dashboard (see <a href="#endstate">the end state</a>).</p></div></li>
+  </ol>
+
+  <h3>Where this page describes more than exists</h3>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Described on this page</th><th>Status</th><th>Where it is, or will be</th></tr></thead>
+      <tbody>
+        <tr><td>Collection from 43 sources, raw bundles, manifests, monitor entries</td><td><span class="st built">Built</span></td><td><code>src/moria/collectors/</code>, <code>stages.py</code>, the workflows</td></tr>
+        <tr><td>The lake: IP RAPID (hashed), the legal corpus, WIPO statistics, STIP Compass</td><td><span class="st built">Built</span></td><td><code>ipr.py</code>, <code>corpus.py</code>, <code>bulk.py</code>, <code>delimited.py</code></td></tr>
+        <tr><td>Licence check, owner uploads, the wishlist</td><td><span class="st built">Built</span></td><td><code>collectors/documents.py</code>, <code>docs/wishlist.md</code></td></tr>
+        <tr><td>Territory terms and themes in the news counts; the terms check</td><td><span class="st built">Built</span></td><td><code>collectors/gkg.py</code>, <code>terms.py</code>, <code>reports/terms-check.md</code></td></tr>
+        <tr><td>Known-trends baseline (19 confirmed, 5 proposed)</td><td><span class="st built">Built</span></td><td><code>config/baseline.yaml</code>; matching candidates to it is day 3</td></tr>
+        <tr><td>Census reports per source</td><td><span class="st built">Built</span></td><td><code>census.py</code>, <code>reports/census/</code></td></tr>
+        <tr><td>The security sweep of collected text (hidden content, instructions aimed at AI, secrets, personal data)</td><td><span class="st sprint">Planned</span></td><td>Design §7, §12; not yet given a sprint day</td></tr>
+        <tr><td>Normalised tables, de-duplication, embeddings, BM25, tags, IP RAPID metrics</td><td><span class="st sprint">Day 3</span></td><td>Design §7, §13</td></tr>
+        <tr><td>Detectors, artefact checks, ingestion incidents</td><td><span class="st sprint">Day 4</span></td><td>Design §8</td></tr>
+        <tr><td>Dossiers, pathway suggestions, ranked queue, register export, digest</td><td><span class="st sprint">Day 5</span></td><td>Design §8.4, §6.3</td></tr>
+        <tr><td>Labels and the tagger comparison; review rounds; the missed-signal register</td><td><span class="st after">After</span></td><td>Design §11, §6.3; <code>docs/mining-explained.md</code></td></tr>
+        <tr><td>PESTLE, SWOT/TOWS, the Futures Cone, scenarios, robustness, decision log</td><td><span class="st after">After</span></td><td>Design §10; written by people</td></tr>
+        <tr><td>Forecasts beyond baselines; generative drafting; the rest of Tier 2; a dashboard; agents</td><td><span class="st future">Not to build yet</span></td><td><code>CLAUDE.md</code>; design §4.6</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 13 -->
+<section id="endstate">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">13</span> The end state</div>
+    <h2>What Moria does once it is finished</h2>
+  </div>
+  <p>When the sprint and the owner's first rounds are done, Moria runs on two clocks.</p>
+  <div class="cols">
+    <div>
+      <h4>Every week <span class="st sprint">Days 3–5</span></h4>
+      <ul class="small">
+        <li>Collectors run daily and weekly, as now.</li>
+        <li>New items are normalised, embedded and tagged.</li>
+        <li>Detectors run over every series, topic and class; artefact checks flag false alarms.</li>
+        <li>Dossiers are built for the ranked candidates.</li>
+        <li><strong>The early-warning digest</strong> goes to IPAVentures: weak signals, low-base surges and novel items, marked validated or not, with the signposts that would trigger or abandon each option.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Every quarter <span class="st after">After the sprint</span></h4>
+      <ul class="small">
+        <li>A review round: triage up to 40, deep review of 8 to 10.</li>
+        <li><strong>The strategic view</strong> for agency strategy: validated trends, accelerations and drivers.</li>
+        <li>The lenses: PESTLE drivers, SWOT/TOWS options, the Futures Cone and 2 or 3 scenarios, options rated for robustness.</li>
+        <li>Decisions logged (monitor, investigate, experiment, invest, decline), each linked through its interpretations to its evidence, with an owner and a review date.</li>
+        <li>Coverage per ring and per territory, novelty and reinforcement counts, and the misses.</li>
+      </ul>
+    </div>
+    <div>
+      <h4>What it hands over</h4>
+      <ul class="small">
+        <li>The signal register, with its full history</li>
+        <li>The early-warning digest and the strategic view</li>
+        <li>A lens pack per scan (register, PESTLE, SWOT, cone, robustness, a report)</li>
+        <li>The decision log</li>
+        <li>The missed-signal register</li>
+        <li>Every number traceable to a manifest, a run and a source</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Beyond the end state <span class="st future">Future state</span></h3>
+  <p>Context only. These are named so that today's outputs are shaped for them; none is to be built yet.</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Item</th><th>What it would add</th><th>What it waits on</th></tr></thead>
+      <tbody>
+        <tr><td>An IPAVentures lens</td><td>A view specific to IPAVentures' portfolio and experiments</td><td>Internal data, usable only in an approved environment</td></tr>
+        <tr><td>A question-answering agent</td><td>Questions asked of the evidence in plain language, answered with citations</td><td>The evidence layer and register built and validated</td></tr>
+        <tr><td>A dashboard</td><td>The two views and the lenses, browsable</td><td>Stable outputs (structured JSON first)</td></tr>
+        <tr><td>Tier 2 sources</td><td>AusTender, more patent offices, foreign regulation, IMF, World Bank, Comtrade, Copernicus, social and search signals</td><td>The saturation rule showing a ring needs more</td></tr>
+        <tr><td>M1 Matilda-Jev on a rented GPU</td><td>Stronger pathway, stance and impact decisions; teacher labels for the free taggers</td><td>The free models falling short on the owner's labels; a quote; the owner's approval and a security exception</td></tr>
+        <tr><td>M2 Generative drafting</td><td>Draft driver statements and scenario narratives, under a deterministic check</td><td>The owner's approval ($5 to $20 a cycle)</td></tr>
+        <tr><td>M3, M4 Paid compute</td><td>Colab Pro or Kaggle upgrades; an always-on VM</td><td>A measured need; the owner's approval</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>What Moria will not do, at any stage:</strong> use non-public data outside an approved environment, decide
+  individual applications, replace human judgement on values, or choose the preferable future. Machine
+  interpretations are always labelled as such, and they stay suggestions whatever their measured accuracy.</p>
+</section>
+
+<!-- ============================================================ 14 -->
+<section id="rules">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">14</span> Rules that always hold <span class="st built">Built</span></div>
+    <h2>The working principles, enforced in code</h2>
+  </div>
+  <div class="cols">
+    <div>
+      <h4>Deterministic first</h4>
+      <p>No model calls in collection. Free local models later, for features. Generative models off by default.</p>
+    </div>
+    <div>
+      <h4>Fail loudly</h4>
+      <p>A failed collection still writes its manifest and exits 2 with a one-line cause naming the source.</p>
+    </div>
+    <div>
+      <h4>Audit trail</h4>
+      <p>One manifest per run: status, outputs with SHA-256, counts, warnings, the config hash, the git commit, package versions. Raw bundles are immutable.</p>
+    </div>
+    <div>
+      <h4>The repo is public</h4>
+      <p>Evidence, dossiers and labels live only in the private bucket. Jobs log counts and keys, never content. The territory context is never committed.</p>
+    </div>
+    <div>
+      <h4>Licences first</h4>
+      <p>A source whose terms don't clearly allow storing its text keeps titles, links and dates. News is never stored as text. robots.txt is honoured; every host has a minimum interval.</p>
+    </div>
+    <div>
+      <h4>Untrusted data</h4>
+      <p>Everything from a source, a model or a tool is data, never instructions. Third-party model code is read, pinned and hashed before it runs.</p>
+    </div>
+    <div>
+      <h4>Free, guarded</h4>
+      <p>Nothing in the machinery spends money. OpenAlex checks its free credits first; every BigQuery query is capped. Paid items need the owner's approval, one by one.</p>
+    </div>
+    <div>
+      <h4>Decisions on record</h4>
+      <p>The decision log is append-only, and a recommendation is kept distinct from the owner's adoption of it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 15 -->
+<section id="repo">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">15</span> Repository map</div>
+    <h2>Where to find things</h2>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Path</th><th>What it is</th></tr></thead>
+      <tbody>
+        <tr class="grp"><td colspan="2">Read first</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/README.md"><code>README.md</code></a></td><td>The short introduction and the commands</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/CLAUDE.md"><code>CLAUDE.md</code></a></td><td>The rulebook for build sessions: scope, rules, commands, the sources table</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/design.md"><code>docs/design.md</code></a></td><td>The system design, v0.3: the source of most of this page</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/decisions.md"><code>docs/decisions.md</code></a></td><td>The decision log, D-001 to D-020 (append-only)</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/mining-explained.md"><code>docs/mining-explained.md</code></a></td><td>How the mining works, in plain terms, with a worked example and what labelling looks like</td></tr>
+        <tr class="grp"><td colspan="2">Status and plans</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/handover-day2.md"><code>docs/handover-day2.md</code></a></td><td>Where the build stands and the open items</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/sources-backlog.md"><code>docs/sources-backlog.md</code></a></td><td>The steps every new source goes through; the Tier 1 cleanup; the Tier 2 backlog</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/wishlist.md"><code>docs/wishlist.md</code></a></td><td>Documents for the owner to upload, with the licence check</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/docs/setup.md"><code>docs/setup.md</code></a></td><td>Accounts and keys: what goes where</td></tr>
+        <tr class="grp"><td colspan="2">Configuration</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/config/sources"><code>config/sources/</code></a></td><td>The 43 source cards</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/config/territories.yaml"><code>config/territories.yaml</code></a></td><td>The five Growth Territories: descriptions, search terms, synonyms, pathways, IP RAPID indicators</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/config/themes.yaml"><code>config/themes.yaml</code></a></td><td>The broad wider-world themes and the IP-system theme</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/config/baseline.yaml"><code>config/baseline.yaml</code></a></td><td>The known-trends baseline, with its citations</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/config/moria.yaml"><code>config/moria.yaml</code></a></td><td>Store, HTTP politeness (per-host intervals) and the names of secrets</td></tr>
+        <tr class="grp"><td colspan="2">Code and outputs</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/src/moria"><code>src/moria/</code></a></td><td>The package: store, records, manifests, HTTP client, collectors, bulk stages, terms check, census, CLI</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/.github/workflows"><code>.github/workflows/</code></a></td><td><code>ci</code>, <code>collect-daily</code>, <code>collect-weekly</code>, <code>collect-source</code>, <code>terms-check</code>, <code>probe</code></td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/reports"><code>reports/</code></a></td><td>The terms check and a census per source: aggregates only</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/tests"><code>tests/</code></a></td><td>Fixture-only tests: no network, no secrets, no model downloads</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/tree/main/scripts"><code>scripts/</code></a></td><td>Memory and model probes; the embedding and clustering demo</td></tr>
+        <tr class="grp"><td colspan="2">Background</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/sop-agent-construction-v2.md"><code>sop-agent-construction-v2.md</code></a></td><td>The owner's SOP, which governs how the repo is built</td></tr>
+        <tr><td><a href="https://github.com/Thomas-Amann-IPAustralia/Moria/blob/main/Access-architecture-and-reusable-adapters.md"><code>Access-architecture-and-reusable-adapters.md</code></a></td><td>The catalogue of horizon-scanning sources, adapters and the provenance model</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============================================================ 16 -->
+<section id="glossary">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="num">16</span> Glossary</div>
+    <h2>Terms used in the repo</h2>
+  </div>
+  <dl class="gloss">
+    <dt>Ring</dt><dd>Core (the IP system), adjacent (innovation and its context) or wider world. A source can sit in several.</dd>
+    <dt>Domain (D0–D6)</dt><dd>Where change lands: D0 wider world, D1 IP system, D2 economy, D3 technology, D4 customers, D5 geopolitics and international, D6 institutional capability. PESTLE says where change comes from; every signal is placed on both.</dd>
+    <dt>Pathway (P1–P6) and order</dt><dd>The route from a signal to the IP system, and its number of steps (1 direct, 2 through one change, 3 through a named chain).</dd>
+    <dt>Growth Territory (T1–T5)</dt><dd>One of the owner's five areas of strategic interest; used for search terms, tagging, coverage and novelty.</dd>
+    <dt>Known trend</dt><dd>An entry in the known-trends baseline (KT01–KT24). A candidate matching one is tagged <code>reinforces</code>, never rejected for it; one matching none is <code>novel</code>.</dd>
+    <dt>Candidate, signal</dt><dd>A candidate is what a detector raises; a signal is a candidate a person has validated.</dd>
+    <dt>Artefact</dt><dd>A false alarm caused by how data was collected or published rather than by change in the world.</dd>
+    <dt>Dossier</dt><dd>A candidate's evidence pack: numbers, top items, analogues, alternative explanations, counter-evidence.</dd>
+    <dt>Register</dt><dd>The append-only log of signals and their status, interpretations and pathways.</dd>
+    <dt><code>event_at</code>, <code>observable_at</code></dt><dd>When something happened, and when the public could first see it. Point-in-time logic uses <code>observable_at</code>.</dd>
+    <dt><code>evidence_id</code></dt><dd>The SHA-256 of an item's provider, record id and content hash: an unchanged item keeps its id.</dd>
+    <dt>Raw bundle</dt><dd>One run's collected records, compressed, immutable, at <code>raw/&lt;source&gt;/&lt;yyyy&gt;/&lt;mm&gt;/&lt;dd&gt;/&lt;run_id&gt;.jsonl.zst</code>.</dd>
+    <dt>Lake</dt><dd>Typed Parquet tables in the bucket for bulk sources, one release at a time, each with a release manifest written last.</dd>
+    <dt>Manifest</dt><dd>The audit record of one run: status, outputs and their hashes, counts, warnings, config hash, commit.</dd>
+    <dt>Census</dt><dd>A profile of a source's latest collection, aggregates only, committed under <code>reports/census/</code>.</dd>
+    <dt>Vintage</dt><dd>One weekly snapshot of a statistical series, kept so revisions are visible.</dd>
+    <dt><code>about_documents</code></dt><dd>News documents with a term in the title or URL: the cleaner news series, since names-only matches are often incidental.</dd>
+    <dt>Saturation rule</dt><dd>Stop adding sources to a ring once its last two additions yielded no new validated driver.</dd>
+    <dt>Paid menu (M1–M4)</dt><dd>Optional paid items, each off until the owner approves it for a stated purpose and quantity.</dd>
+  </dl>
+</section>
+
+<footer>
+  Written on 13 October 2026 from design v0.3, the decision log to D-020, the source cards and the code. Where this page
+  and those documents disagree, they win; this page should be updated with each decision that changes the scope,
+  the sources or the build status. Moria works on public data only, and nothing on this page is a finding.
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll('.filters button');
+  var rows = document.querySelectorAll('#src-table tbody tr');
+  function apply(f) {
+    for (var i = 0; i < rows.length; i++) {
+      var r = (rows[i].getAttribute('data-r') || '').split(' ');
+      rows[i].hidden = !(f === 'all' || r.indexOf(f) !== -1);
+    }
+    for (var j = 0; j < buttons.length; j++) {
+      buttons[j].setAttribute('aria-pressed', buttons[j].getAttribute('data-f') === f ? 'true' : 'false');
+    }
+  }
+  for (var k = 0; k < buttons.length; k++) {
+    buttons[k].addEventListener('click', function () { apply(this.getAttribute('data-f')); });
+  }
+  var details = document.getElementById('toc-details');
+  if (details && window.matchMedia) {
+    var mq = window.matchMedia('(max-width: 960px)');
+    var sync = function () { details.open = !mq.matches; };
+    sync();
+    if (mq.addEventListener) mq.addEventListener('change', sync);
+  }
+})();
+</script>
+</body>
+</html>
