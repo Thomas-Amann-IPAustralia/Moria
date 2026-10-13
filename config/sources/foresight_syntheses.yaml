@@ -58,7 +58,8 @@ params:
       url: https://www.industry.gov.au/sites/default/files/2024-08/australias-national-science-and-research-priorities-2024.pdf
       licence: "CC BY 4.0 (according to search results; to confirm on the document)"
       store_text: if_open_licence
-      note: Refused from the build session; an owner upload is read from the inbox (D-014); URL from search results
+      upload: australias-national-science-and-research-priorities-2024.pdf
+      note: Refused from the build session; the owner's upload of 2026-10-13 (D-020); URL from search results
     - id: critical_technologies_list
       title: "List of Critical Technologies in the National Interest"
       publisher: Department of Industry, Science and Resources
@@ -73,15 +74,26 @@ params:
       url: https://www.dcceew.gov.au/sites/default/files/documents/net-zero-report.pdf
       licence: "CC BY 4.0 (according to search results; to confirm on the document)"
       store_text: if_open_licence
-      note: Refused from the build session; an owner upload is read from the inbox (D-014); URL from search results; minor corrections published 2025-11-25 and 2026-03-17
+      upload: net-zero-report.pdf
+      note: Refused from the build session; the owner's upload of 2026-10-13 (D-020); URL from search results; minor corrections published 2025-11-25 and 2026-03-17
     - id: national_defence_strategy_2026
-      title: "2026 National Defence Strategy and 2026 Integrated Investment Program"
+      title: "2026 National Defence Strategy"
       publisher: Department of Defence
       published: "2026-04-16"
       url: https://www.defence.gov.au/about/strategic-planning/2026-national-defence-strategy-2026-integrated-investment-program
-      licence: "to confirm (the site refused the build session)"
+      licence: "to confirm (the site refused the build session); checked on the document"
       store_text: if_open_licence
-      note: Supersedes the 2024 strategy named in the design. Refused from the build session; the landing page
+      upload: 2026-NDS-final.pdf
+      note: Supersedes the 2024 strategy named in the design. Refused from the build session; the owner's upload of 2026-10-13 (D-020)
+    - id: integrated_investment_program_2026
+      title: "2026 Integrated Investment Program"
+      publisher: Department of Defence
+      published: "2026-04-16"
+      url: https://www.defence.gov.au/about/strategic-planning/2026-national-defence-strategy-2026-integrated-investment-program
+      licence: "to confirm (the site refused the build session); checked on the document"
+      store_text: if_open_licence
+      upload: 2026-IIP-B5-FINAL-WEB.pdf
+      note: Published with the 2026 National Defence Strategy; where Defence will spend on capability. The owner's upload of 2026-10-13 (D-020)
     - id: wef_global_risks_report_2026
       title: "Global Risks Report 2026"
       publisher: World Economic Forum

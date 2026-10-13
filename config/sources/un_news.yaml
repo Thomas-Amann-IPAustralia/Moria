@@ -1,0 +1,26 @@
+id: un_news
+name: UN News (all topics)
+adapter: feed
+rings: [wider_world]
+domains: [D0, D5]
+family: news
+cadence: daily
+publication_lag: same day
+coverage: >-
+  The United Nations' own news service, every topic: conflict and humanitarian crises, climate, health, development,
+  human rights, migration, the UN's bodies and treaties. About six stories a day. Titles, links and dates only.
+history_start: "the feed holds the newest 30 stories (about five days)"
+stable_since: null
+breaks: []
+known_biases:
+  - The UN system's agenda and framing; English edition only
+revision_policy: none
+licence: >-
+  UN website terms (read 2026-10-13): materials may be downloaded and copied for personal, non-commercial use, without
+  any right to redistribute or create derivative works. Titles, links and dates only (Moria's news rule)
+snapshot_rights: titles, links and dates only
+expected_volume: {min_per_run: 0, max_per_run: 30}
+params:
+  url: https://news.un.org/feed/subscribe/en/news/all/rss.xml
+  lookback_days: 3
+  keep_summary: false

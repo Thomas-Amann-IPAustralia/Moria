@@ -1,0 +1,42 @@
+id: stip_compass
+name: EC-OECD STIP Compass (national science, technology and innovation policy initiatives)
+adapter: delimited_csv
+rings: [adjacent, core, wider_world]
+domains: [D1, D2, D3, D5]
+family: policy
+cadence: weekly
+publication_lag: "countries answer the biennial EC-OECD STI policy survey; the file is rebuilt after each round and as answers are updated"
+coverage: >-
+  The whole STIP Compass database: about 8,800 policy initiatives and 12,700 instruments from 68 countries and the EU
+  (Australia: about 200), as answered to the 2025 survey: each initiative's name, description, objectives,
+  background, responsible body, start and end years, budget range, 56 policy themes (from IP rights in public research
+  and research security to net-zero transitions and critical technologies), target groups, and each instrument's
+  type and design. Read from the file the download page links; the pages themselves sit behind a Cloudflare
+  challenge that refuses Moria (D-020), but the file does not.
+history_start: "initiatives started from the 1980s on; the survey's current edition is 2025 (earlier editions are folded in)"
+stable_since: "2025 (the 2025 survey's themes; the 2024 consultation cut many instrument facets)"
+breaks:
+  - "Each survey round can add, merge or retire themes and instrument facets; the column list is in each release manifest"
+known_biases:
+  - Self-reported by governments; coverage and detail vary by country (Portugal, Turkey and Poland report the most)
+  - A policy is listed when a country reports it, not when it starts; the start year is the policy's own
+revision_policy: the file is replaced as countries update their answers; each changed file is a new release
+licence: >-
+  EC-OECD STIP Compass. OECD data are CC BY 4.0 under the OECD's open-access policy of July 2024 (read through search
+  results; the portal says its data are freely accessible and reusable under the FAIR principles). The owner approved
+  storing the text (D-020). Cite "EC-OECD STIP Compass"
+snapshot_rights: every column stored, text included (D-020)
+expected_volume: {min_per_run: 10000, max_per_run: 20000}
+params:
+  url: https://stip.oecd.org/assets/downloads/STIP_Survey.csv
+  table: instruments
+  delimiter: "|"
+  quoting: none
+  label_row: true
+  max_bytes: 150000000
+  text_columns: [ShortDescription, Objectives1, Objectives2, Objectives3, Objectives4, Objectives5, Objectives6, Background, InstrumentDescription]
+  store_text: true
+  census:
+    id_column: InitiativeID
+    group_columns: [CountryCode, SurveyYear, StartDateYear, YearlyBudgetRange, InstrumentTypeLabel]
+    flag_prefix: TH

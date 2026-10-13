@@ -1,0 +1,24 @@
+id: us_federal_register_ip
+name: US Federal Register, USPTO and Copyright Office documents
+adapter: feed
+rings: [core]
+domains: [D1, D5]
+family: legal
+cadence: daily
+publication_lag: same day (the Federal Register's publication date)
+coverage: >-
+  Rules, proposed rules and notices of the USPTO and the US Copyright Office in the Federal Register: fee changes,
+  examination and procedure rules, requests for comment (on AI and copyright, for example) and information
+  collections, with each document's abstract. A few a week.
+history_start: "the feed holds the newest documents of the two agencies"
+stable_since: null
+breaks: []
+known_biases:
+  - The United States only; notices of information collections are routine and frequent
+revision_policy: corrections are published as new documents
+licence: "US federal government works, in the public domain; abstracts stored, citing the Federal Register"
+snapshot_rights: titles, links, dates and abstracts stored
+expected_volume: {min_per_run: 0, max_per_run: 20}
+params:
+  url: https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=patent-and-trademark-office&conditions%5Bagencies%5D%5B%5D=copyright-office-library-of-congress&order=newest
+  lookback_days: 7

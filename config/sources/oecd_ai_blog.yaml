@@ -1,0 +1,27 @@
+id: oecd_ai_blog
+name: OECD.AI blog (The AI Wonk)
+adapter: feed
+rings: [adjacent, core]
+domains: [D3, D5, D6]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  Posts on OECD.AI's blog: AI policy, governance, compute, incidents, the Hiroshima AI Process and national AI
+  strategies, by OECD staff and invited experts. Titles, links and dates only.
+history_start: "the feed holds the newest 10 posts"
+stable_since: null
+breaks: []
+known_biases:
+  - Posts are signed by their authors and say they don't necessarily represent the OECD
+  - A few posts a month; English only
+revision_policy: none
+licence: >-
+  OECD.AI's footer reads "© OECD. All rights reserved" (read 2026-10-13), and posts are by named authors: titles,
+  links and dates only
+snapshot_rights: titles, links and dates only
+expected_volume: {min_per_run: 0, max_per_run: 10}
+params:
+  url: https://wp.oecd.ai/feed/
+  lookback_days: 7
+  keep_summary: false

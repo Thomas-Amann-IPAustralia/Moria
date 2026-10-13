@@ -168,3 +168,54 @@ def test_licence_statements_name_the_licence_and_never_quote_the_text():
     pages = ["Licensed under CC BY 4.0"] + ["filler"] * 20 + ["All rights reserved"]
     assert licence_statements(pages) == ["CC BY 4.0", "all rights reserved"]  # first and last pages only
     assert licence_statements(["filler"] * 7 + ["CC BY 4.0"] + ["filler"] * 7) == []
+
+
+def tiny_docx(paragraphs: list[str]) -> bytes:
+    """A minimal Word file: only word/document.xml matters to the reader."""
+    import io
+    import zipfile
+
+    w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    body = "".join(f"<w:p><w:r><w:t>{p[:5]}</w:t></w:r><w:r><w:t>{p[5:]}</w:t></w:r></w:p>" for p in paragraphs)
+    field = '<w:p><w:r><w:instrText>TOC \\o "1-1"</w:instrText></w:r></w:p>'
+    xml = f'<?xml version="1.0"?><w:document xmlns:w="{w}"><w:body>{field}{body}</w:body></w:document>'
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("[Content_Types].xml", "<Types/>")
+        zf.writestr("word/document.xml", xml)
+    return buf.getvalue()
+
+
+def test_an_upload_under_its_own_name_and_a_word_file_are_read(http_cfg, store):
+    store.put("inbox/documents/Owner's Report.docx", tiny_docx(["Placeholder title", "Licensed under CC BY 4.0"]))
+    store.put("inbox/documents/scan.pdf", tiny_pdf("No part may be reproduced by any process"))
+    word = dict(doc("word_doc", "https://site.test/word", "if_open_licence"), upload="Owner's Report.docx")
+    reserved = dict(doc("reserved_pdf", "https://site.test/scan", True), upload="scan.pdf")
+    missing = dict(doc("missing", "https://site.test/open.pdf", False), upload="not there.pdf")
+    r = run_collection(docs_card([word, reserved, missing]), store, make_client(http_cfg, handler), Window.for_day(DAY))
+    assert r.status == "passed", r.error
+    recs = {x.payload["id"]: x.payload for x in decode_bundle(store.get(r.bundle_key))}
+    w = recs["word_doc"]
+    assert (w["format"], w["obtained"], w["inbox_key"]) == (
+        "docx",
+        "owner_upload",
+        "inbox/documents/Owner's Report.docx",
+    )
+    assert w["page_texts"] == ["Placeholder title Licensed under CC BY 4.0"]  # field codes are not text
+    assert w["licence_statements"] == ["CC BY 4.0"] and w["text_stored"] is True
+    p = recs["reserved_pdf"]
+    assert p["licence_check"] == "rights_reserved" and p["text_stored"] is False and "page_texts" not in p
+    assert recs["missing"]["obtained"] == "fetched"  # the named upload isn't there, so the URL is read
+    assert any("'not there.pdf' is not in inbox/documents/" in w for w in r.warnings)
+
+
+def test_licence_check_reads_the_reserved_and_permissive_wordings_of_government_publishers():
+    from moria.collectors.documents import licence_statements, licence_verdict
+
+    aic = ("no part of this publication may in any form or by any means (electronic, mechanical, photocopying) be "
+           "reproduced, stored in a retrieval system")  # fmt: skip
+    canada = ("the information in this publication may be reproduced, in part or in whole and by any means, without "
+              "charge or further permission from the Department")  # fmt: skip
+    assert licence_verdict(licence_statements([aic])) == "rights_reserved"
+    assert licence_statements([canada]) == ["reproduction permitted without charge"]
+    assert licence_verdict(licence_statements([canada])) == "open_licence"

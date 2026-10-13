@@ -1,0 +1,25 @@
+id: standards_australia_news
+name: Standards Australia news
+adapter: feed
+rings: [adjacent, core]
+domains: [D3, D6]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  Standards Australia's news: new and revised standards, consultations, its work in international standards bodies
+  (ISO, IEC) on AI, cyber, hydrogen, critical minerals and the like. Standards and patents meet in standard-essential
+  patents. About two items a week. Titles, links and dates only.
+history_start: "the feed holds the newest 100 items (about a year)"
+stable_since: null
+breaks: []
+known_biases:
+  - Its own announcements; standards bodies abroad (ETSI's patent declarations, for one) are not covered
+revision_policy: none
+licence: "Standards Australia's site states no open licence (not found, 2026-10-13): titles, links and dates only"
+snapshot_rights: titles, links and dates only
+expected_volume: {min_per_run: 0, max_per_run: 10}
+params:
+  url: https://www.standards.org.au/news/rss.xml
+  lookback_days: 7
+  keep_summary: false

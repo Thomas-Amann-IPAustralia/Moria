@@ -1,0 +1,28 @@
+id: ec_presscorner
+name: European Commission press corner (press releases, speeches, statements)
+adapter: feed
+rings: [wider_world, adjacent, core]
+domains: [D0, D2, D3, D5]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  Everything the European Commission's press service publishes in English: press releases, statements, speeches,
+  daily news and Q&As across every policy area, each with its opening lines and policy-area code. About seven a day.
+  The EU's moves on AI, data, pharmaceuticals, standard-essential patents, design and geographical indications, and
+  trade reach Australian businesses and IP Australia's peers.
+history_start: "pageSize=50 reaches about a week back"
+stable_since: null
+breaks: []
+known_biases:
+  - The Commission's own announcements; member states and the Parliament are not covered
+revision_policy: none
+licence: >-
+  European Commission reuse policy (Decision 2011/833/EU): reuse is authorised provided the source is acknowledged;
+  opening lines and policy areas stored
+snapshot_rights: titles, links, dates, opening lines and policy areas stored
+expected_volume: {min_per_run: 0, max_per_run: 50}
+params:
+  url: https://ec.europa.eu/commission/presscorner/api/rss?language=en&pageSize=50
+  lookback_days: 3
+  keep_categories: true

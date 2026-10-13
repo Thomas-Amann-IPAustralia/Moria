@@ -1,0 +1,28 @@
+id: arxiv_ai_society
+name: arXiv new listings in AI, computers and society, digital libraries, and general economics
+adapter: feed
+rings: [adjacent, wider_world]
+domains: [D3, D2]
+family: research
+cadence: daily
+publication_lag: "same day as the announcement (arXiv announces Sunday to Thursday evenings, US Eastern time)"
+coverage: >-
+  The day's announcements in cs.AI (artificial intelligence), cs.CY (computers and society: AI policy, law and
+  ethics), cs.DL (digital libraries, including scholarly and patent analytics) and econ.GN (general economics), with
+  each paper's abstract: new papers, cross-lists and replacements (the abstract says which). Preprints come months
+  before journals and OpenAlex's counts. Authors' names are not stored.
+history_start: "the feed holds only the latest announcement; a missed day is not recoverable from the feed"
+stable_since: null
+breaks: []
+known_biases:
+  - Preprints, not peer reviewed; computer science and economics only
+  - Replacements repeat earlier papers (the abstract starts with the announcement type)
+revision_policy: a replaced paper is announced again with its new version
+licence: >-
+  arXiv metadata, abstracts included, are CC0 1.0 (the Terms of Use for arXiv APIs, read 2026-10-13); at most one
+  request every three seconds
+snapshot_rights: titles, links, dates and abstracts stored; no author names
+expected_volume: {min_per_run: 0, max_per_run: 2500}
+params:
+  url: https://rss.arxiv.org/rss/cs.AI+cs.CY+cs.DL+econ.GN
+  lookback_days: 3

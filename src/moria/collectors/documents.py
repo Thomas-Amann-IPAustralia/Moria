@@ -6,8 +6,10 @@ count (CLAUDE.md: a source whose licence is unclear is not stored as text). A do
 warning, so one blocked site doesn't lose the others; the run fails only when every document fails.
 
 Owner uploads (D-014): some sites refuse cloud addresses, so the owner downloads those documents and puts them in the
-private bucket at `inbox/documents/<document id>.pdf` (or `.html`). A document with an upload is read from it instead
-of its URL; the record says so.
+private bucket at `inbox/documents/<document id>.pdf` (or `.html` or `.docx`), or under the file's own name, which the
+document's entry then gives as `upload` (D-020). A document with an upload is read from it instead of its URL; the
+record says so. A Word file's paragraphs are read from its XML (no macros, fields or embedded objects run) and
+grouped into pages of about 4,000 characters, since Word has no fixed pages.
 
 The licence check: every document's first and last pages are searched, in memory, for licence statements (Creative
 Commons, the Open Government Licence, "all rights reserved", no reproduction, public domain). The statements found
@@ -32,9 +34,12 @@ from ..records import RawRecord, make_envelope, sha256_hex
 from .base import CollectContext, CollectError
 from .sitemap import extract_page
 
-PARSER_VERSION = "documents-v2"
+PARSER_VERSION = "documents-v3"
 INBOX = "inbox/documents/"
 LICENCE_PAGES = (6, 4)  # the first and last pages searched for licence statements
+UPLOAD_TYPES = ("pdf", "html", "htm", "docx")
+DOCX_PAGE_CHARS = 4000
+DOCX_MAX_XML_BYTES = 80_000_000  # word/document.xml, uncompressed
 
 log = logging.getLogger("moria.collect.documents")
 
@@ -49,6 +54,7 @@ class DocumentSpec(Strict):
     # true, false, or if_open_licence: store the text only when the document itself states an open licence (for a
     # licence known so far only from search results or a site's general terms)
     store_text: bool | Literal["if_open_licence"]
+    upload: str | None = None  # the upload's file name in inbox/documents/, when it isn't "<id>.<extension>"
     note: str = ""
 
 
@@ -77,12 +83,27 @@ _STATEMENTS = {
     ),
     "all rights reserved": re.compile(r"\ball\s+rights\s+reserved\b", re.IGNORECASE),
     "no reproduction without permission": re.compile(
-        r"(?:may\s+not|must\s+not|cannot)\s+be\s+(?:reproduced|copied)|no\s+part\s+of\s+this\s+"
-        r"(?:publication|document|report|work)\s+may\s+be\s+(?:reproduced|copied)",
+        r"(?:may\s+not|must\s+not|cannot)\s+be\s+(?:reproduced|copied)"
+        r"|no\s+part\s+(?:of\s+this\s+(?:publication|document|report|work)\s+)?may\s+"
+        r"(?:in\s+any\s+form\s+or\s+by\s+any\s+means[^.]{0,160}?)?be\s+(?:reproduced|copied)",
+        re.IGNORECASE,
+    ),
+    # the Government of Canada's notice: reproduction allowed without charge or further permission, crediting the
+    # source and not as an official version (commercial reproduction needs permission; Moria's use is
+    # non-commercial research, D-017)
+    "reproduction permitted without charge": re.compile(
+        r"may\s+be\s+reproduced,?\s+in\s+part\s+or\s+in\s+whole\s+and\s+by\s+any\s+means,?\s+without\s+"
+        r"charge\s+or\s+further\s+permission",
         re.IGNORECASE,
     ),
 }
-OPEN = ("CC BY", "Open Government Licence", "public domain", "reuse authorised with acknowledgement")
+OPEN = (
+    "CC BY",
+    "Open Government Licence",
+    "public domain",
+    "reuse authorised with acknowledgement",
+    "reproduction permitted without charge",
+)
 RESERVED = ("all rights reserved", "no reproduction without permission")
 
 
@@ -123,6 +144,35 @@ def licence_verdict(statements: list[str]) -> str:
     return "none_found"
 
 
+def docx_pages(data: bytes, max_pages: int) -> list[str]:
+    """A Word file's body text: each paragraph's runs joined (field codes and deleted text left out), paragraphs
+    grouped into pages of about DOCX_PAGE_CHARS characters."""
+    import zipfile
+
+    from defusedxml import ElementTree
+
+    w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        info = zf.getinfo("word/document.xml")
+        if info.file_size > DOCX_MAX_XML_BYTES:
+            raise CollectError(f"documents: the Word body is {info.file_size} bytes uncompressed, above the cap")
+        root = ElementTree.fromstring(zf.read(info))
+    pages, current = [], []
+    for para in root.iter(f"{w}p"):
+        text = " ".join("".join(t.text or "" for t in para.iter(f"{w}t")).split())
+        if not text:
+            continue
+        current.append(text)
+        if sum(len(x) for x in current) >= DOCX_PAGE_CHARS:
+            pages.append(" ".join(current))
+            current = []
+    if current:
+        pages.append(" ".join(current))
+    if len(pages) > max_pages:
+        raise CollectError(f"documents: {len(pages)} pages, above the cap of {max_pages}")
+    return pages
+
+
 def pdf_pages(data: bytes, max_pages: int) -> list[str]:
     from pypdf import PdfReader  # imported here: only this adapter needs it
 
@@ -146,16 +196,25 @@ class DocumentsCollector:
     def _count(self, name: str) -> None:
         self.counts[name] = self.counts.get(name, 0) + 1
 
-    def _uploads(self, ctx: CollectContext) -> dict[str, str]:
-        """document id -> its upload's key in the inbox"""
+    def _uploads(self, ctx: CollectContext, docs: list[DocumentSpec]) -> dict[str, str]:
+        """document id -> its upload's key in the inbox: the entry's `upload` name, else <id>.<extension>"""
         if ctx.store is None:
             return {}
-        out: dict[str, str] = {}
+        by_name: dict[str, str] = {}
+        by_stem: dict[str, str] = {}
         for key in ctx.store.list(INBOX):
             name = key[len(INBOX) :]
             stem, _, ext = name.rpartition(".")
-            if "/" not in name and ext.lower() in ("pdf", "html", "htm"):
-                out[stem] = key
+            if "/" not in name and ext.lower() in UPLOAD_TYPES:
+                by_name[name] = key
+                by_stem[stem] = key
+        out: dict[str, str] = {}
+        for doc in docs:
+            key = by_name.get(doc.upload) if doc.upload else by_stem.get(doc.id)
+            if doc.upload and key is None:
+                ctx.warnings.append(f"documents: {doc.id}: its upload {doc.upload!r} is not in {INBOX}")
+            if key:
+                out[doc.id] = key
         return out
 
     def _record(self, doc: DocumentSpec, payload: dict) -> RawRecord:
@@ -182,7 +241,7 @@ class DocumentsCollector:
 
     def collect(self, ctx: CollectContext) -> list[RawRecord]:
         docs = self.params.documents[: ctx.limit] if ctx.limit else self.params.documents
-        uploads = self._uploads(ctx)
+        uploads = self._uploads(ctx, docs)
         records, failed = [], 0
         for i, doc in enumerate(docs, start=1):
             inbox_key = uploads.get(doc.id)
@@ -203,9 +262,12 @@ class DocumentsCollector:
                 ctx.warnings.append(f"documents: {doc.id} is {len(data)} bytes, above the cap")
                 continue
             is_pdf = data[:5] == b"%PDF-"
+            is_docx = data[:4] == b"PK\x03\x04" and bool(inbox_key) and inbox_key.lower().endswith(".docx")
             try:
                 if is_pdf:
                     pages = pdf_pages(data, self.params.max_pages)
+                elif is_docx:
+                    pages = docx_pages(data, self.params.max_pages)
                 else:
                     pages = [extract_page(data.decode("utf-8", errors="replace"))["text"]]
             except Exception as e:  # a malformed or hostile file: skip it, loudly
@@ -246,7 +308,7 @@ class DocumentsCollector:
                 "final_url": final_url,
                 "obtained": "owner_upload" if inbox_key else "fetched",
                 "inbox_key": inbox_key,
-                "format": "pdf" if is_pdf else "html",
+                "format": "pdf" if is_pdf else "docx" if is_docx else "html",
                 "sha256": sha256_hex(data),
                 "bytes": len(data),
                 "pages": len(pages),

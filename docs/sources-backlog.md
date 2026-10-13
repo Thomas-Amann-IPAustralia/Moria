@@ -1,7 +1,7 @@
 # Sources backlog: the Tier 1 cleanup before day 3, and what waits
 
-*Started 2026-10-12; the cleanup was built on 2026-10-12 and 13 (D-018, §2). The owner's decisions are D-016 and
-D-017. Checks marked "today" were run from a Claude Code session's
+*Started 2026-10-12; the cleanup was built on 2026-10-12 and 13 (D-018, §2), and sources were widened on 2026-10-13
+(D-020, §2a). The owner's decisions are D-016, D-017 and D-020. Checks marked "today" were run from a Claude Code session's
 cloud address with Moria's own user agent; a GitHub Actions runner may get different answers. Licence readings are
 Claude's, not legal advice.*
 
@@ -278,12 +278,40 @@ Court):*
 3. Run `collect-source` with `patent_cpc_counts` (a dry run). Claude reports the byte estimate.
 4. You decide whether to switch `dry_run` off (D-011). Every real query is capped by `maximumBytesBilled`.
 
+## 2a. The widening (D-020, 2026-10-13)
+
+The owner asked for the OECD's sources (STIP Compass above all) and a stronger footing before day 3, and chose "OECD +
+a breadth pack" when the session showed 25 of 29 sources in the core ring and 5 in the wider world.
+
+| Group | Cards | Adapter | Text kept | Notes |
+|---|---|---|---|---|
+| OECD feeds | `oecd_publications`, `oecd_data_releases` | `feed` (`keep_categories`) | abstracts (CC BY 4.0, owner's approval) | `api.oecd.org` search feeds, `pageSize=50`; `www.oecd.org` itself is behind a Cloudflare challenge |
+| OECD.AI | `oecd_ai_blog`, `oecd_ai_haip_reports` | `feed`, new `json_list` | none | OECD.AI reserves its rights; the HAIP reports are organisations' own words |
+| OECD Data API | `oecd_headline` | new `oecd_sdmx` | observations | 13 queries, at most 18 a run, 6 s apart (the OECD's hourly limit) |
+| STIP Compass | `stip_compass` | new `delimited_csv` (lake) | every column (owner's approval) | the database file answers; the portal's pages are behind the challenge |
+| Breadth pack, wider world | `un_news`, `conversation_au`, `lowy_interpreter`, `ec_presscorner` | `feed` | titles only; the Commission's opening lines | see each card's licence |
+| Breadth pack, adjacent and core | `aspi_strategist`, `arxiv_ai_society`, `standards_australia_news`, `us_federal_register_ip` | `feed` | opening lines (ASPI), abstracts (arXiv, CC0; no author names), titles (Standards Australia), abstracts (Federal Register) | |
+
+**Checked and not added (D-020):** WTO news (robots.txt disallows it); the ACCC and the IEA (403 from the session and
+a runner); cyber.gov.au and the TGA (time out from both); eSafety, the ARC, the Chief Scientist (time out) and the
+AIHW (403) from the session; WHO's and the US Copyright Office's feeds (stopped); GOV.UK's DSIT feed (stale); the
+OAIC's feed (undated); the Productivity Commission and Treasury (no feed found); the RBA (RSS 1.0, which the feed
+adapter doesn't read). The industry.gov.au, cyber.gov.au, TGA, eSafety, ARC and Chief Scientist sites all refuse or
+hang on cloud addresses; an owner upload is the route for their documents.
+
+**Uploads (D-020):** a document entry may name its upload in `inbox/documents/` (`upload`), and Word files are read.
+Ten of the owner's eleven files are evidence; the OECD Data API documentation was read to build `oecd_headline`.
+
 ## 3. Day 3 implications of the cleanup
 
 - **Normalisation** gains feed items from APH (dates in RSS format) and legal documents from the corpus (dates as
   above).
 - **Embeddings** take only the corpus slice in T2, step 6.
 - **BM25** can index the corpus's titles and citations cheaply; its full text only for the slice.
+- **New record shapes (D-020):** feed categories (the OECD's content types and policy areas, the Commission's policy
+  areas, ASPI's tags); JSON-list items (HAIP reports); OECD series, some with words for values (`ip_tax_regimes`);
+  STIP Compass's lake table (a row per instrument, 521 text columns, labels in the release manifest); arXiv items whose
+  abstract starts with the announcement type (new, cross, replace).
 - **New record shapes (D-018):** list-page items (`moip_news`, `wipo_treaty_notifications`: a date, no text);
   spreadsheet tables (`abs_datacubes`: headings, sections and labelled rows, to pivot into series with vintages);
   lake parts (`oalc`, `wipo_ipstats`) read straight from Parquet; undated feed items (APH hearings) observable from
@@ -366,10 +394,10 @@ Catalogue line numbers refer to `Access-architecture-and-reusable-adapters.md`.
 |---|---|---|---|---|---|
 | C1 | AusTender | OCDS data API (catalogue 571–576) | none known; to confirm | new `ocds` | Contract notices by category over time, including IP Australia's own; licence to confirm |
 | C2 | More patent offices | USPTO Open Data Portal, including PatentsView and office actions (499–504); EPO Open Patent Services (505) | USPTO: API key (to confirm); EPO: free registration, fair-use quota | new `patent_api` | Overlaps the BigQuery counts; take legal status, office-level detail and office actions |
-| C3 | arXiv | OAI-PMH daily metadata (424, 783) | none | new `oai_pmh` | Metadata only; article text has its own licences (425) |
+| C3 | arXiv | OAI-PMH daily metadata (424, 783) | none | new `oai_pmh` | Metadata only; article text has its own licences (425). **Partly built (D-020):** the daily RSS listings of four categories (`arxiv_ai_society`) |
 | C4 | Standards bodies | Not in the catalogue. Candidates: ETSI's IPR (standard-essential patent) declarations, the IETF Datatracker API, Standards Australia news | — | `feed` or new | ETSI's declarations are the most IP-specific; terms to check |
-| C5 | Foreign regulation | US Federal Register API (no key); Regulations.gov, Congress.gov and GovInfo (api.data.gov key); EUR-Lex/Cellar (SPARQL); UK legislation (626–639) | api.data.gov key, free | `feed`; new `sparql` | Filter to IP, AI, data and trade; titles and metadata first |
-| C6 | OECD, IMF | SDMX (536–537) | none (OECD throttles) | `abs_sdmx` may extend | Headline series chosen as for ABS; keep vintages |
+| C5 | Foreign regulation | US Federal Register API (no key); Regulations.gov, Congress.gov and GovInfo (api.data.gov key); EUR-Lex/Cellar (SPARQL); UK legislation (626–639) | api.data.gov key, free | `feed`; new `sparql` | Filter to IP, AI, data and trade; titles and metadata first. **Partly built (D-020):** the Federal Register's USPTO and Copyright Office documents (`us_federal_register_ip`), and the European Commission's press corner (`ec_presscorner`) |
+| C6 | OECD, IMF | SDMX (536–537) | none (OECD throttles) | `abs_sdmx` may extend | Headline series chosen as for ABS; keep vintages. **OECD built (D-020):** `oecd_headline` (new `oecd_sdmx`), with the OECD's feeds, OECD.AI and STIP Compass; the IMF waits |
 | C7 | World Bank, UN Comtrade | World Bank REST (524); Comtrade API (542) | Comtrade: free registration, daily limits | new small adapters | Keep vintages |
 | C8 | Copernicus | Climate Data Store API (676–683) | account, key, per-dataset licence acceptance | new `cds` | Store monthly anomalies for Australia and the world only |
 | C9 | Media Cloud | API (762) | account, key | new | Titles, URLs and metadata only (Moria's news rule) |

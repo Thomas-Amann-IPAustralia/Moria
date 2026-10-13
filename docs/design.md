@@ -505,6 +505,10 @@ Each source has a card in `config/sources/<id>.yaml`, written on day 1 and check
 - **Parliament:** APH's committee feeds are read (D-018); ParlInfo, Hansard and Estimates transcripts are blocked
   from cloud addresses.
 - **Peer offices:** EUIPO and JPO refuse cloud addresses (D-018).
+- **Australian government sites:** industry.gov.au, cyber.gov.au, the TGA, eSafety, the ARC and the Chief Scientist
+  refuse or hang on cloud addresses, and the ACCC answers 403 (D-020); their documents come as owner uploads.
+- **The OECD's website and STIP Compass's pages** sit behind a Cloudflare challenge; the OECD's feeds, its Data API
+  and STIP Compass's database file answer (D-020).
 - **Non-English sources** are absent.
 
 ### 5.4 Tier 2
@@ -512,7 +516,8 @@ Each source has a card in `config/sources/<id>.yaml`, written on day 1 and check
 From the Access architecture catalogue: procurement (AusTender), more patent offices, arXiv, standards bodies, foreign
 regulation, OECD/IMF/World Bank/UN Comtrade, environment (Copernicus), early-signal feeds (Media Cloud, Bluesky
 Jetstream, Hacker News, GitHub), search trends, and courts with permission. Each addition follows the saturation rule
-(§2.5).
+(§2.5). The owner brought the OECD forward, with a breadth pack of eight free feeds for the wider world and adjacent
+rings, before day 3 (D-020).
 
 ---
 

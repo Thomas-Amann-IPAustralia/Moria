@@ -1,0 +1,27 @@
+id: oecd_data_releases
+name: OECD data releases (statistical releases, indicators, datasets and tools)
+adapter: feed
+rings: [wider_world, adjacent]
+domains: [D0, D2, D3, D5]
+family: statistics
+cadence: daily
+publication_lag: same day
+coverage: >-
+  The OECD's English data announcements from its search feed: statistical releases (GDP, inflation, employment,
+  trade and the like), new or updated indicators, datasets and tools, each with an abstract and its policy areas.
+  The figures themselves come from the OECD Data API (oecd_headline); this feed says when something moved.
+history_start: "the feed holds the newest items only; pageSize=50 reaches about two months back"
+stable_since: null
+breaks: []
+known_biases:
+  - OECD members and selected partners; English only
+revision_policy: none
+licence: >-
+  OECD Terms and Conditions: OECD data and written content from 1 July 2024 are CC BY 4.0 (read through search
+  results); the owner approved storing the abstracts (D-020). Attribute the OECD
+snapshot_rights: titles, links, abstracts, content types and policy areas stored
+expected_volume: {min_per_run: 0, max_per_run: 50}
+params:
+  url: https://api.oecd.org/webcms/search/rss?siteName=oecd&interfaceLanguage=en&path=%2Fcontent%2Foecd%2Fen&hiddenFacets=oecd-search-config-pillars%3Adata&facets=oecd-content-types%3Adata%2Fstatistical-release&facets=oecd-languages%3Aen&facets=oecd-content-types%3Adata%2Findicator&facets=oecd-content-types%3Adata%2Fdatasets&facets=oecd-content-types%3Adata%2Ftools&pageSize=50
+  lookback_days: 7
+  keep_categories: true

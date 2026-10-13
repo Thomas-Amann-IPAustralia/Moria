@@ -1,0 +1,30 @@
+id: oecd_publications
+name: OECD publications (reports, working papers, policy papers and briefs, case studies)
+adapter: feed
+rings: [wider_world, adjacent, core]
+domains: [D0, D2, D3, D5]
+family: policy
+cadence: daily
+publication_lag: same day (items are often dated a day or two ahead, on their release date)
+coverage: >-
+  The OECD's English publications across every policy area, from its search feed: reports, working papers, policy
+  papers, policy briefs and case studies, each with a short abstract, its content type and policy areas. This one feed
+  covers the owner's two publication feeds and the briefs page (D-020), which www.oecd.org itself refuses to cloud
+  addresses. 50 items a request (about three weeks).
+history_start: "the feed holds the newest items only; pageSize=50 reaches about three weeks back"
+stable_since: null
+breaks: []
+known_biases:
+  - The OECD's members' agenda; English only
+  - Release dates can sit a day or two in the future; an item is kept by the run whose window holds its date
+revision_policy: none
+licence: >-
+  OECD Terms and Conditions: OECD written content published from 1 July 2024, and OECD data, are CC BY 4.0 (the
+  OECD's open-access announcement of July 2024, read through search results; www.oecd.org refuses cloud addresses).
+  The owner approved storing the abstracts (D-020). Attribute the OECD
+snapshot_rights: titles, links, abstracts, content types and policy areas stored
+expected_volume: {min_per_run: 0, max_per_run: 60}
+params:
+  url: https://api.oecd.org/webcms/search/rss?siteName=oecd&interfaceLanguage=en&hiddenFacets=oecd-search-config-pillars%3Apublications&facets=oecd-content-types%3Apublications%2Fpolicy-briefs&facets=oecd-content-types%3Apublications%2Fworking-papers&facets=oecd-content-types%3Apublications%2Fpolicy-papers&facets=oecd-content-types%3Apublications%2Freports&facets=oecd-content-types%3Apublications%2Fcase-studies&facets=oecd-languages%3Aen&pageSize=50
+  lookback_days: 7
+  keep_categories: true

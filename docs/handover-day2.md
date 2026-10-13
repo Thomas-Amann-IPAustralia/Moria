@@ -1,12 +1,26 @@
 # Handover: the machinery sprint after day 2
 
-For the next Claude Code session. Read `CLAUDE.md` first, then this note, D-011 to D-019 in `docs/decisions.md`,
-and `docs/sources-backlog.md`. The Tier 1 cleanup is built (D-018); build day 3 when the owner asks. Nothing in the
-machinery spends money.
+For the next Claude Code session. Read `CLAUDE.md` first, then this note, D-011 to D-020 in `docs/decisions.md`,
+and `docs/sources-backlog.md`. The Tier 1 cleanup (D-018) and the widening of sources (D-020) are built; build day 3
+when the owner asks. Nothing in the machinery spends money.
 
 **Status (2026-10-13):** day 2 is done (D-011 to D-013), the owner's answers are in (D-014, D-015, D-017), and the
 Tier 1 cleanup is built (D-018, branch `claude/youthful-hypatia-27egln`). Day 1's handover
 (`docs/handover-day1.md`) is superseded by this note.
+
+## The widening of sources (D-020, branch `claude/keen-dijkstra-od5g3s`)
+- **The OECD** (the owner's request): `oecd_publications` and `oecd_data_releases` (daily feeds with abstracts and
+  categories), `oecd_ai_blog` (daily, titles), `oecd_ai_haip_reports` (weekly, the new `json_list` adapter),
+  `oecd_headline` (weekly, the new `oecd_sdmx` adapter: 13 queries, at most 18 a run) and `stip_compass` (weekly
+  check, the new `delimited_csv` bulk stage: the whole STIP Compass database in the lake).
+- **A breadth pack** (the owner's choice): eight daily feeds, `un_news`, `conversation_au`, `lowy_interpreter`,
+  `ec_presscorner`, `aspi_strategist`, `arxiv_ai_society`, `standards_australia_news`, `us_federal_register_ip`.
+  Many gov.au sites, the WTO, the ACCC and the IEA could not be used (D-020 lists why).
+- **The owner's uploads:** read through `upload` names in the document cards; Word files are read. Text stored for
+  the Science and Research Priorities, the Net Zero Plan, the Patents Accessibility Review and CIPO's strategy; the
+  Defence and AIC documents reserve their rights; the JPO report states no licence; the KIPO report has no text.
+- **The baseline:** KT20 to KT24 and twelve citations are `proposed`, waiting on the owner (`moria baseline`).
+- **Sources:** 43 (core 33, adjacent 29, wider world 15; a source can sit in several rings).
 
 ## The Tier 1 cleanup (D-018)
 - **Daily, six more sources:** APH's five committee feeds (summaries kept, D-017) and `moip_news` (Korea's Ministry
@@ -73,6 +87,8 @@ Tier 1 cleanup is built (D-018, branch `claude/youthful-hypatia-27egln`). Day 1'
    one-line change to `collect-daily.yml` in a pull request should register it again.
 
 ## For the owner
+0. **D-020:** confirm or edit the five proposed trends (KT20 to KT24) and twelve proposed citations; object if D-017
+   shouldn't cover CIPO's reproduction notice.
 1. Merge this branch, or ask for a pull request.
 2. The wishlist (`docs/wishlist.md`): uploads before day 3 (D-019), WEF's two top-10 lists, and the EPO's and
    Canada.ca's terms.
@@ -85,4 +101,7 @@ Tier 1 cleanup is built (D-018, branch `claude/youthful-hypatia-27egln`). Day 1'
 - Logs print counts and keys, never content. Reports in the repo are aggregates only; hit samples stay in the bucket.
 - The OpenAlex key's daily budget is shared by every run that day: the weekly run estimates about 2,900 credits
   (it used 2,424) and won't start unless 1,000 would be left after it.
-- Next free decision number: D-020.
+- `sdmx.oecd.org` allows as few as 20 data downloads an hour per address: run `oecd_headline` once an hour at most,
+  and check structures with structure queries (`/dataflow/...`, `/availableconstraint/...`), which are not data
+  downloads.
+- Next free decision number: D-021.

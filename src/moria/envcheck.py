@@ -80,6 +80,7 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
         checks.append(Check("api:bigquery", "skipped", "no GCP project or credentials (docs/setup.md)"))
 
     probes: dict[str, tuple[str, dict | None]] = {}
+    heads: dict[str, str] = {}  # large files: a HEAD request, not a download
     for card in cards.values():
         if card.adapter == "gdelt_gkg":
             base = card.params.get("base_url", "https://data.gdeltproject.org/gdeltv2")
@@ -105,10 +106,25 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
             base = card.params.get("base_url", "https://data.api.abs.gov.au/rest")
             flow = card.params["queries"][0]["dataflow"].split(",")
             probes[f"source:{card.id}"] = (f"{base}/dataflow/ABS/{flow[1] if len(flow) > 1 else flow[0]}", None)
+        elif card.adapter == "oecd_sdmx" and card.params.get("queries"):
+            # a structure query (cached by the OECD's CDN), so the check spends none of the hourly data downloads
+            base = card.params.get("base_url", "https://sdmx.oecd.org/public/rest")
+            agency, flow, version = card.params["queries"][0]["dataflow"].split(",")
+            probes[f"source:{card.id}"] = (f"{base}/dataflow/{agency}/{flow}/{version or 'latest'}", None)
+        elif card.adapter == "json_list":
+            probes[f"source:{card.id}"] = (card.params["url"], None)
+        elif card.adapter == "delimited_csv":
+            heads[f"source:{card.id}"] = card.params["url"]
     for name, (url, params) in sorted(probes.items()):
         try:
             resp = client.get(url, params=params, retries=1)
             checks.append(Check(name, "ok", f"HTTP {resp.status_code}"))
+        except FetchError as e:
+            checks.append(Check(name, "failed", str(e)))
+    for name, url in sorted(heads.items()):
+        try:
+            resp = client.request("HEAD", url, retries=1)
+            checks.append(Check(name, "ok", f"HTTP {resp.status_code} (HEAD)"))
         except FetchError as e:
             checks.append(Check(name, "failed", str(e)))
     return checks

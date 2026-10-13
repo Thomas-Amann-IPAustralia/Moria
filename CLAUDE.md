@@ -6,7 +6,8 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Days 1 and 2 and the Tier 1 cleanup are built.**
+**Current scope: the one-week machinery sprint (design §13). Days 1 and 2, the Tier 1 cleanup and the widening of
+sources (D-020) are built.**
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
 - **Built (day 2, D-011 to D-013):** six peer-office sources (daily); OpenAlex whole-taxonomy counts, the ABS headline
@@ -24,10 +25,16 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   statistics; the ABS's CABEE and BERD spreadsheets; `moria discover` for checking a source's addresses from a runner.
   **Gaps** (refused to the build session and to a runner): EUIPO and JPO news, the Federal Court, the High Court and
   AustLII (so IP Australia's hearing decisions). The owner is looking for feeds; day 3 does not wait on them (D-019).
+- **Built (the widening, D-020):** the OECD at the owner's request: its publication and data feeds, OECD.AI's blog and
+  HAIP transparency reports (new `json_list`), 13 OECD Data API queries (new `oecd_sdmx`), and the whole STIP Compass
+  database in the lake (new `delimited_csv`); a breadth pack of eight feeds the owner chose (UN News, The
+  Conversation, the Lowy Interpreter, the European Commission, ASPI's Strategist, arXiv, Standards Australia, the
+  Federal Register's USPTO and Copyright Office documents); the owner's eleven uploads read (named uploads, Word
+  files); five proposed known trends (KT20 to KT24), awaiting the owner. Sources: 43 (wider world 5 to 15).
 - **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), when the owner asks; then day 4 (detectors,
   artefact checks), day 5 (dossiers, register export). Pile of Law was checked and discarded (D-016).
-- **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
-  agents. Shape outputs for them only.
+- **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, the rest of Tier 2 (the OECD
+  and the breadth pack came forward, D-020), a dashboard, agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
   approval of that item.
 
@@ -83,13 +90,13 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 | Environment check | `moria env-check [--require store:r2,...]` | environment | nothing (prints the status) |
 | Collect one source | `moria collect <source> [--day D] [--limit N] [--backfill] [--store local\|r2]` | the source | `raw/<source>/<yyyy>/<mm>/<dd>/<run_id>.jsonl.zst`, a monitor entry, a manifest; bulk sources write the lake instead (below) |
 | Collect daily sources | `moria collect-daily [--day D] [--store r2]` | daily sources | the same, per source |
-| Collect weekly sources | `moria collect-weekly [--store r2]` | OpenAlex, ABS (both), IP RAPID, WIPO treaty notifications | the same; IP RAPID as below |
+| Collect weekly sources | `moria collect-weekly [--store r2]` | OpenAlex, ABS (both), IP RAPID, WIPO treaty notifications, the OECD's statistics and HAIP reports, STIP Compass | the same; IP RAPID and STIP Compass as below |
 | IP RAPID | `moria ipr refresh [--zip PATH] [--limit N] [--store r2]` | data.gov.au's weekly zip | `lake/ip_rapid/base=<release>/<table>.parquet` or `delta=<release>/…`, `raw/ip_rapid/<release>/manifest.json` |
-| Bulk sources (once per release) | `moria collect oalc`, `moria collect wipo_ipstats` | a pinned Hugging Face file; WIPO's ZIPs | `lake/<source>/release=<release>/<part>.parquet`, `raw/<source>/<release>/manifest.json` (written last) |
+| Bulk sources (once per release) | `moria collect oalc`, `moria collect wipo_ipstats`, `moria collect stip_compass` | a pinned Hugging Face file; WIPO's ZIPs; STIP Compass's file | `lake/<source>/release=<release>/<part>.parquet`, `raw/<source>/<release>/manifest.json` (written last) |
 | Discover | `moria discover URL… [--match RE]` | the addresses | nothing (prints status, type, item counts, feed links; never text) |
 | Terms check | `moria terms check [--end D] [--weeks 13] [--store r2]` | sampled GKG days | `reports/terms-check/<run_id>.json` (with hit samples); `reports/terms-check.md` in the repo (counts only) |
 | Census | `moria census <source> [--all-runs]` | the store | `reports/census/<source>.md` in the repo (aggregates only) |
-| Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` | config | nothing |
+| Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` (proposed trends marked) | config | nothing |
 
 Local runs default to `--store local`, which writes to `data/store/` (git-ignored). GitHub Actions passes
 `--store r2`. `--backfill` is a first snapshot: a feed's every item, a sitemap's every page, a list page's every
@@ -111,16 +118,18 @@ instead of the document's URL.
   `event_at`, `observable_at`, retrieved_at, the request hash, the tool identity, the content hash, the licence and
   the parser version.
 - **Point-in-time logic uses `observable_at`, never `event_at`.**
-- Counts and statistics (OpenAlex, ABS, BigQuery) are `observation` records; each weekly run is a vintage, and an
-  unchanged series keeps its evidence id.
+- Counts and statistics (OpenAlex, ABS, the OECD, BigQuery) are `observation` records; each weekly run is a vintage,
+  and an unchanged series keeps its evidence id. An OECD series is keyed by agency and flow, not version.
 - Bulk sources live in the lake as typed Parquet, one release at a time, each with a release manifest written last:
   the legal corpus (`lake/oalc/release=<v>/<part>.parquet`, a row per document with its licence and dates) and WIPO's
-  statistics (`lake/wipo_ipstats/release=<date>/`). A spreadsheet table (`abs_datacubes`) is one observation record,
-  kept as published.
+  statistics (`lake/wipo_ipstats/release=<date>/`), and STIP Compass (`lake/stip_compass/release=<date>/instruments.parquet`,
+  a row per policy instrument, every column as text, the column labels in the manifest). A spreadsheet table
+  (`abs_datacubes`) is one observation record, kept as published.
 - IP RAPID lives in the lake as typed Parquet: a base about quarterly and weekly deltas against it (`_change` is
   `added` or `removed`). The zip is not kept; its SHA-256 is in the release manifest.
 - `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
-  documents read. A signal records whether it is `novel` or `reinforces` a known trend.
+  documents read. Trends and citations Claude drafts are `status: proposed` until the owner confirms them (D-020).
+  A signal records whether it is `novel` or `reinforces` a known trend.
 
 ## Sources (config/sources/*.yaml; design §5)
 
@@ -129,7 +138,7 @@ instead of the document's URL.
 | `gdelt_news` | gdelt_gkg | GDELT's GKG bulk files: the day's 96 files (about 270 MB). English web documents are matched against 47 query groups (`config/territories.yaml`, `config/themes.yaml`, including the `ip_system` theme for the core ring) in title, URL, quotations and named entities, in Australian and US spelling, with a plural last word, and with each term's synonyms counted as the term (D-014); matches are kept, with daily volumes worldwide and for `.au` domains against every document. Each volume also counts documents about the group (title or URL) and names-only ones, which are often incidental: `about_documents` is the cleaner series (D-012). Quotations, person names and authors are never stored. The DOC API adapter (`gdelt`) stays, unused: GDELT throttles it from shared cloud addresses (D-009, D-010). |
 | `legislation_frl` | legislation | All Commonwealth versions registered in the window, plus new titles. No IP filter. |
 | `ipaustralia_site` | sitemap | Pages whose lastmod falls in the window plus a 2-day lookback, with a 50-page cap. The full first snapshot was a `--backfill` run (D-018). |
-| `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO and CIPO keep titles and links only until the owner confirms their terms (`docs/wishlist.md`). |
+| `wipo_press`, `ukipo_news`, `epo_news`, `epo_boards_of_appeal`, `iponz_news`, `cipo_news` | feed | Items dated in the window plus a 3-day lookback. EPO keeps titles and links only until the owner confirms its terms (`docs/wishlist.md`); CIPO keeps summaries (Canada's non-commercial notice and D-017, D-020). |
 | `aph_senate_new_inquiries`, `aph_senate_reports`, `aph_senate_hearings`, `aph_house_inquiries`, `aph_joint_inquiries` | feed | Daily. APH's committee feeds with their summaries (CC BY-NC-ND 4.0; non-commercial research, D-017). A 30-day lookback (items are dated by referral or tabling); items without a guid that share a link get the link plus a content hash as id; the hearings feed is undated, so each item is observable from first sight. The House and joint feeds were empty on 2026-10-12. |
 | `moip_news` | listpage | Daily. Korea's Ministry of Intellectual Property (formerly KIPO): the English news board's first page, read with a pattern. Titles, links and dates only: its footer reserves all rights. |
 | `wipo_treaty_notifications` | listpage | Weekly. Notifications of 26 WIPO-administered treaties from WIPO Lex (accessions, ratifications, entry into force), titles, numbers, dates and links. WIPO's own notification pages are disallowed by robots.txt. |
@@ -138,13 +147,21 @@ instead of the document's URL.
 | `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
 | `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
 | `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. Switched on by the owner (D-019): about 17.1 GB a run, under 2% of the free 1 TiB a month; every query capped at 200 GB. Run it with `collect-source` (the key is only in GitHub's secrets). |
-| `foresight_syntheses` | documents | Once. Nine documents; three fetched (CSIRO as metadata only); the other six wait on owner uploads (`docs/wishlist.md`), stored as text only where the document states an open licence. |
-| `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5) and IP Australia's *Australian IP Report 2026* read; the AIC's crime-cost reports and the Patents Accessibility Review wait on owner uploads. |
+| `foresight_syntheses` | documents | Once. Ten documents: three fetched (CSIRO as metadata only), four owner uploads (D-020: the Science and Research Priorities and the Net Zero Plan as text; the 2026 National Defence Strategy and Integrated Investment Program reserve their rights, metadata only); the Critical Technologies list, WEF and the OECD STI Outlook still wait (`docs/wishlist.md`). Text stored only where the document states an open licence. |
+| `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5), IP Australia's *Australian IP Report 2026* and the Patents Accessibility Review (an upload, Word, CC BY) as text; the AIC's crime-cost reports (uploads) reserve their rights; the Government's response to the review waits on an upload. |
 | `ipaustralia_publications` | documents | Once a year. IP Australia's PDFs that the sitemap misses: the corporate plan 2026-27, the annual report 2024-25, the AI transparency statement, the Minister's statement of expectations (metadata only: no licence stated) and the statement of intent, the cost recovery statement. The full site snapshot is `ipaustralia_site` with `--backfill`. |
 | `abs_datacubes` | xlsx | Weekly. The ABS's CABEE (business entries and exits) and BERD (business R&D) spreadsheets, found on their latest-release pages; each table one observation record, dated by the release date printed in the workbook. |
 | `oalc` | hf_corpus | Once (a new release is a new run). The Open Australian Legal Corpus 7.1.0 at a pinned dataset commit, hash-checked: Commonwealth legislation and the Federal and High Courts (104,201 documents) as Parquet in the lake, each document with its own licence; judgments observable from their date, legislation from its scrape. NSW Caselaw and state legislation left out (D-016). |
 | `wipo_ipstats` | zip_csv | Once (re-run when WIPO rebuilds the files; unchanged files are skipped). WIPO's bulk indicators: patents by technology field, trade marks and designs by class, by office and origin, 2000-2022, in the lake. Not to be republished (WIPO's terms). |
-| `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the USPTO's strategy page, the EPO's strategic plan and work plan and the EUIPO's plan (metadata only); the JPO's report and CIPO's strategy wait on owner uploads. |
+| `peer_office_strategies` | documents | Once a year. The UKIPO's corporate plan, the USPTO's strategy page, the EPO's strategic plan and work plan and the EUIPO's plan (metadata only); owner uploads (D-020): CIPO's strategy (text), the JPO Status Report (no licence stated, metadata only) and the KIPO Annual Report 2025 (no text layer). |
+| `oecd_publications`, `oecd_data_releases` | feed | Daily (D-020). The OECD's search feeds (`api.oecd.org`, `pageSize=50`): reports, working and policy papers, briefs and case studies; statistical releases, indicators, datasets and tools; abstracts, content types and policy areas (`keep_categories`). OECD text is CC BY 4.0, stored with the owner's approval. |
+| `oecd_ai_blog`, `oecd_ai_haip_reports` | feed, json_list | Daily; weekly. OECD.AI's blog (titles only) and the Hiroshima AI Process transparency reports from `api.oecd.ai` (organisation, country, period, date, link; never the reports' text). |
+| `oecd_headline` | oecd_sdmx | Weekly. 13 OECD Data API queries: MSTI, patents in AI and other technologies, firms' IP use, R&D and IP tax support, IP regimes (words), firms' AI use, IP charges in services trade, leading indicators, the Economic Outlook, FDI restrictiveness, business dynamics, environmental policy stringency. At most 18 queries a run and 6 s between requests (the OECD's rate limit). |
+| `stip_compass` | delimited_csv | Weekly check (304 or an unchanged hash does nothing). The whole EC-OECD STIP Compass database in the lake: about 8,800 STI policy initiatives and 12,700 instruments from 68 countries and the EU, with 56 themes; text stored (D-020). The portal's pages are behind a Cloudflare challenge; the file is not. |
+| `un_news`, `conversation_au`, `lowy_interpreter` | feed | Daily, the breadth pack (D-020), wider world: titles, links and dates only (UN terms; Moria's news rule; the Lowy Institute reserves its rights). |
+| `ec_presscorner`, `aspi_strategist` | feed | Daily. The European Commission's press releases and speeches (reuse authorised; opening lines and policy areas); ASPI's Strategist (CC BY-NC-ND; opening lines and tags). |
+| `arxiv_ai_society` | feed | Daily. arXiv's listings in cs.AI, cs.CY, cs.DL and econ.GN with abstracts (CC0); author names not stored; one request every 3 s. Empty on days without an announcement. |
+| `standards_australia_news`, `us_federal_register_ip` | feed | Daily. Standards Australia's news (titles only); the USPTO's and the Copyright Office's Federal Register documents (public domain; abstracts). |
 
 ## Model choice
 Free first (design §9):
