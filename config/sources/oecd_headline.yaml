@@ -1,0 +1,101 @@
+id: oecd_headline
+name: OECD headline series (science, technology, IP and innovation; the economy and policy settings)
+adapter: oecd_sdmx
+rings: [adjacent, wider_world, core]
+domains: [D0, D1, D2, D3, D5]
+family: statistics
+cadence: weekly
+publication_lag: "most series once or twice a year, a year or two after the reference year; leading indicators monthly"
+coverage: >-
+  Thirteen queries to the OECD Data API, for OECD members and partners (Australia among them): R&D, researchers,
+  patents and high-tech trade (MSTI); PCT and IP5 patents in AI, biotechnology and other selected technologies; how
+  firms protect what they make (innovation surveys); R&D tax incentives and IP-income tax support, and the IP tax
+  regimes themselves; firms' use of AI, cloud and big data; trade in charges for the use of IP and in computer and R&D
+  services; leading indicators; the Economic Outlook's projections; FDI restrictiveness; business entries, exits and
+  bankruptcies; environmental policy stringency. Each query keeps the whole history from its start period. At most
+  18 data queries a run (the OECD's rate limit).
+history_start: "1981 to 2010 depending on the query (each query's start period)"
+stable_since: null
+breaks:
+  - "A dataflow's new version may restructure it; each vintage records the version it came from"
+known_biases:
+  - OECD members and selected partners; small and developing economies are sparse
+  - Patents by priority date fill in for about three years after the priority year
+  - Figures are revised; each run is kept as a vintage
+  - The Economic Outlook mixes outturns and projections; its edition is in each series' dataflow version
+revision_policy: revised in place by the OECD; every run is kept, and a revised series gets a new evidence id
+licence: >-
+  OECD Terms and Conditions: OECD data are CC BY 4.0 under the OECD's open-access policy of July 2024 (read through
+  search results and the owner's upload of the OECD Data API documentation, D-020). Cite "OECD" and the dataset
+snapshot_rights: observations stored
+expected_volume: {min_per_run: 4000, max_per_run: 30000}
+params:
+  base_url: https://sdmx.oecd.org/public/rest
+  max_series_per_query: 10000
+  queries:
+    - id: msti
+      dataflow: "OECD.STI.STP,DSD_MSTI@DF_MSTI,"
+      key: .A....
+      start_period: "1981"
+      note: Main Science and Technology Indicators, every measure and country, yearly
+    - id: patents_selected_technologies
+      dataflow: "OECD.STI.PIE,DSD_PATENTS@DF_PATENTS_OECDSPECIFIC,"
+      key: 9P50_1+9P50_3.A.AP+PF..PRIORITY.._Z.INVENTOR._Z._Z.
+      start_period: "2000"
+      note: PCT applications and IP5 families by inventor country and priority date, in AI, biotech, nanotech, medical, pharma and climate-mitigation technologies
+    - id: innovation_ip_use
+      dataflow: "OECD.STI.STP,DSD_INNOSTAT@DF_INNOIP,"
+      key: ........
+      start_period: "2010"
+      note: Shares of enterprises that applied for patents, registered designs or trade marks, by size, industry and R&D activity
+    - id: rd_tax_support
+      dataflow: "OECD.STI.STP,DSD_RDTAX@DF_RDTAX,"
+      key: .A....
+      start_period: "2000"
+      note: R&D tax incentives (GTARD), direct funding of business R&D, and government budgets for R&D
+    - id: ip_income_tax_support
+      dataflow: "OECD.STI.STP,DSD_RDTAX@DF_IPTAX,"
+      key: .A....
+      start_period: "2000"
+      note: Income-based tax support for R&D and innovation (IP boxes and similar)
+    - id: ip_tax_regimes
+      dataflow: "OECD.CTP.TPS,DSD_QDD_IPR@DF_QDD_IPR,"
+      key: .A..
+      start_period: "2015"
+      text_values: true
+      note: The IP regimes themselves (corporate tax statistics); names, qualifying assets and rates, as words
+    - id: ict_business
+      dataflow: "OECD.STI.DEP,DSD_ICT_B@DF_BUSINESSES,"
+      key: .A.G14_B+G3_B+G7_B+G13_B+G12_B+H1_B+H5_B+E3_B+K1_B.PT_ENT._T.S_GE10+S10T49+S50T249+S_GE250
+      start_period: "2010"
+      note: Businesses using AI, cloud, big data, IoT and 3D printing; ICT specialists, hard-to-fill ICT jobs, ICT security incidents, social media; by size
+    - id: services_trade_ip
+      dataflow: "OECD.SDD.TPS,DSD_BOP@DF_TIS,"
+      key: .W.S+SH+SH1+SH2+SH3+SH4+SI+SI2+SJ1.C+D.T.A.USD_EXC.N
+      start_period: "2005"
+      note: Charges for the use of IP (franchises and trade marks, R&D outcomes, software, audio-visual), computer and R&D services, and all services, revenue and expenditure with the world
+    - id: leading_indicators
+      dataflow: "OECD.SDD.STES,DSD_STES@DF_CLI,"
+      key: .M.LI+BCICP+CCICP.IX...IX._Z.
+      start_period: "2000"
+      note: Composite leading indicators, business and consumer confidence, monthly
+    - id: economic_outlook
+      dataflow: "OECD.ECO.MAD,DSD_EO@DF_EO,"
+      key: .GDPV_ANNPCT+GDPVTR_ANNPCT+UNR+CPI_YTYPCT+GGFLQ+GDPVD_CAP+ET_ANNPCT+CBGDPR+PDTY.A
+      start_period: "2000"
+      note: The latest Economic Outlook, outturns and projections; growth, potential growth, unemployment, inflation, debt, GDP per head, productivity
+    - id: fdi_restrictiveness
+      dataflow: "OECD.DAF.INV,DSD_FDIRRI_SCORES@DF_FDIRRI_SCORES,"
+      key: ._T..RR.IX
+      start_period: "1997"
+      note: FDI Regulatory Restrictiveness Index, all activities, by type of restriction
+    - id: business_dynamics
+      dataflow: "OECD.SDD.TPS,DSD_TIE@DF_TIE,"
+      key: Q..ENTRIES+EXITS+BANKRUPTCIES._T._T._T..
+      start_period: "2005"
+      note: Timely indicators of entrepreneurship, quarterly business entries, exits and bankruptcies, countries and regions
+    - id: environmental_policy_stringency
+      dataflow: "OECD.ECO.MAD,DSD_EPS@DF_EPS,"
+      key: .A.POL_STRINGENCY.
+      start_period: "1990"
+      note: Environmental Policy Stringency index and its market, non-market and technology-support parts

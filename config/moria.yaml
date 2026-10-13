@@ -23,6 +23,12 @@ http:
     www.gov.uk: 1.0
     api.prod.legislation.gov.au: 1.0
     api.openalex.org: 0.2
+    api.oecd.org: 2.0
+    sdmx.oecd.org: 6.0              # the OECD limits its Data API (as few as 20 data downloads an hour, D-020)
+    stip.oecd.org: 2.0
+    oecd.ai: 2.0
+    api.oecd.ai: 2.0
+    wp.oecd.ai: 2.0
 
 # Logical name -> the environment variable that holds it (docs/setup.md). Values never appear in config or logs.
 secrets:

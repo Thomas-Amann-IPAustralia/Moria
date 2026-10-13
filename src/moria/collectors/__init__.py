@@ -20,8 +20,10 @@ from .documents import DocumentsCollector
 from .feed import FeedCollector
 from .gdelt import GdeltCollector
 from .gkg import GkgCollector
+from .jsonlist import JsonListCollector
 from .legislation import LegislationCollector
 from .listpage import ListPageCollector
+from .oecd import OecdSdmxCollector
 from .openalex import OpenAlexCountsCollector
 from .sitemap import SitemapCollector
 from .xlsx import XlsxCollector
@@ -36,7 +38,9 @@ ADAPTERS = {
     "sitemap": SitemapCollector,
     "xlsx": XlsxCollector,
     "legislation": LegislationCollector,
+    "json_list": JsonListCollector,
     "listpage": ListPageCollector,
+    "oecd_sdmx": OecdSdmxCollector,
     "openalex_counts": OpenAlexCountsCollector,
 }
 

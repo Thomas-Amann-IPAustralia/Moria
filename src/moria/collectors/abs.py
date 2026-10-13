@@ -6,7 +6,8 @@ code and label, its unit and each observation's status. ABS revises figures, so 
 series gets the same evidence id run after run, and a revised one gets a new id (design §5.1, revision_policy).
 
 Business entries and exits (CABEE) and business R&D (BERD) are published as spreadsheets, not through this API;
-the `xlsx` adapter reads them (card abs_datacubes).
+the `xlsx` adapter reads them (card abs_datacubes). The OECD's Data API answers the same SDMX-CSV, so its collector
+(`moria.collectors.oecd`) reuses `parse_sdmx_csv` and this collector's loop.
 """
 
 from __future__ import annotations
@@ -48,17 +49,21 @@ def _split(cell: str) -> tuple[str, str]:
     return code.strip(), label.strip()
 
 
-def _value(cell: str) -> float | None:
+def _value(cell: str, text_values: bool = False) -> float | str | None:
     cell = cell.strip()
     if not cell:
         return None
     try:
         return float(cell)
     except ValueError as e:
-        raise CollectError(f"abs: a non-numeric observation value {cell[:30]!r}") from e
+        if text_values:  # a qualitative dataset (the OECD's QDD tables) holds words, not numbers
+            return cell
+        raise CollectError(f"sdmx: a non-numeric observation value {cell[:30]!r}") from e
 
 
-def parse_sdmx_csv(text: str) -> list[dict]:
+def parse_sdmx_csv(
+    text: str, series_attributes: tuple[str, ...] = SERIES_ATTRIBUTES, text_values: bool = False
+) -> list[dict]:
     """Group SDMX-CSV rows (labels=both) into series. Dimension columns are those between DATAFLOW and TIME_PERIOD."""
     reader = csv.reader(io.StringIO(text))
     header = next(reader, None)
@@ -66,7 +71,7 @@ def parse_sdmx_csv(text: str) -> list[dict]:
         return []
     ids = [_split(h)[0] for h in header]
     if not ids or ids[0] != "DATAFLOW" or TIME not in ids or VALUE not in ids:
-        raise CollectError(f"abs: unexpected CSV header {header[:4]}")
+        raise CollectError(f"sdmx: unexpected CSV header {header[:4]}")
     t, v = ids.index(TIME), ids.index(VALUE)
     st = ids.index("OBS_STATUS") if "OBS_STATUS" in ids else None
     dims = list(range(1, t))
@@ -75,7 +80,7 @@ def parse_sdmx_csv(text: str) -> list[dict]:
         if not row:
             continue
         if len(row) != len(header):
-            raise CollectError(f"abs: a row has {len(row)} columns, the header {len(header)}")
+            raise CollectError(f"sdmx: a row has {len(row)} columns, the header {len(header)}")
         codes = tuple(_split(row[i])[0] for i in dims)
         s = series.get(codes)
         if s is None:
@@ -87,10 +92,10 @@ def parse_sdmx_csv(text: str) -> list[dict]:
                 "observations": [],
             }
             for i, name in enumerate(ids):
-                if name in SERIES_ATTRIBUTES and row[i]:
+                if name in series_attributes and row[i]:
                     s["attributes"][name] = dict(zip(("code", "label"), _split(row[i]), strict=True))
         status = row[st].strip() if st is not None else ""
-        s["observations"].append([row[t].strip(), _value(row[v]), _split(status)[0] or None])
+        s["observations"].append([row[t].strip(), _value(row[v], text_values), _split(status)[0] or None])
     out = []
     for s in series.values():
         s["observations"].sort(key=lambda o: o[0])

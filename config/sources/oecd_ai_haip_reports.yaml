@@ -1,0 +1,32 @@
+id: oecd_ai_haip_reports
+name: OECD.AI transparency reports (the Hiroshima AI Process reporting framework)
+adapter: json_list
+rings: [adjacent, core]
+domains: [D3, D5]
+family: policy
+cadence: weekly
+publication_lag: "reports are published quarterly, by reporting period"
+coverage: >-
+  The reports organisations publish under the G7 Hiroshima AI Process reporting framework, run by the OECD: which
+  organisations report on their AI risk management, from which countries, for which period. 56 reports from 2025-02
+  to 2026-10 on 2026-10-13 (Q1 2025 to Q3 2026). Metadata only: organisation, country, website, reporting period,
+  date and link. Read from the JSON endpoint OECD.AI's own page uses (api.oecd.ai), as the page offers no feed.
+history_start: "2025-02 (the framework's first reports)"
+stable_since: "2026 Q1: the questionnaire's second version (v2)"
+breaks:
+  - "2026 Q1: the reporting framework's questionnaire moved to version 2"
+known_biases:
+  - Voluntary and self-reported; large AI developers and a few countries dominate
+revision_policy: none
+licence: >-
+  Each report is its organisation's own response, published in full on OECD.AI and attributed to it; OECD.AI's footer
+  reads "© OECD. All rights reserved". Metadata only, never the reports' text
+snapshot_rights: organisation, country, website, reporting period, date and link only
+expected_volume: {min_per_run: 0, max_per_run: 60}
+params:
+  url: https://api.oecd.ai/transparency-reports/published
+  date_field: publishedAt
+  title_field: organizationName
+  link_template: https://oecd.ai/en/transparency/reports/{id}
+  fields: [organizationName, country, website, reportingPeriod, reportingPeriodLabel]
+  lookback_days: 14

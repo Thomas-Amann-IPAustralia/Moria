@@ -31,6 +31,9 @@ Adapter = Literal[
     "listpage",
     "xlsx",
     "zip_csv",
+    "oecd_sdmx",
+    "json_list",
+    "delimited_csv",
 ]
 
 

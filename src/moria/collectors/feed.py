@@ -12,6 +12,9 @@ several hearings or reports under one inquiry's page) sets `item_id: link_and_co
 short hash of the title, date and summary. An item without a date is kept, with the run's time as its
 `observable_at` (when Moria first could see it); a feed that never dates its items sets `undated_items: expected`
 so that this is not a warning every day.
+
+A feed whose items carry useful categories (the OECD's content type and policy area) sets `keep_categories: true`;
+other feeds leave them out, so their records are unchanged.
 """
 
 from __future__ import annotations
@@ -36,6 +39,7 @@ class FeedParams(Strict):
     keep_summary: bool = True
     item_id: Literal["guid_or_link", "link_and_content"] = "guid_or_link"
     undated_items: Literal["warn", "expected"] = "warn"
+    keep_categories: bool = False
 
 
 def _parse_date(value: str | None) -> datetime | None:
@@ -73,6 +77,11 @@ def parse_feed(xml: bytes) -> list[dict]:
                     "published": _text(e, f"{ATOM}published"),
                     "updated": _text(e, f"{ATOM}updated"),
                     "summary": _text(e, f"{ATOM}summary") or _text(e, f"{ATOM}content"),
+                    "categories": [
+                        {"domain": c.get("scheme"), "term": c.get("term")}
+                        for c in e.findall(f"{ATOM}category")
+                        if c.get("term")
+                    ],
                 }
             )
     else:
@@ -88,6 +97,11 @@ def parse_feed(xml: bytes) -> list[dict]:
                     "published": _text(it, "pubDate"),
                     "updated": None,
                     "summary": _text(it, "description"),
+                    "categories": [
+                        {"domain": c.get("domain"), "term": c.text.strip()}
+                        for c in it.findall("category")
+                        if c.text and c.text.strip()
+                    ],
                 }
             )
     return items
@@ -123,8 +137,10 @@ class FeedCollector:
             if not record_id:
                 ctx.warnings.append("feed item without an id or link, skipped")
                 continue
-            if not self.params.keep_summary:
-                item = {k: v for k, v in item.items() if k != "summary"}
+            dropped = {"summary"} if not self.params.keep_summary else set()
+            if not self.params.keep_categories:
+                dropped.add("categories")
+            item = {k: v for k, v in item.items() if k not in dropped}
             records.append(
                 RawRecord(
                     envelope=make_envelope(
