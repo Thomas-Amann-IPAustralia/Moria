@@ -300,3 +300,84 @@ def config_hash(*models: BaseModel) -> str:
     """SHA-256 of the canonical JSON of the given config models: what a manifest records."""
     blob = json.dumps([m.model_dump(mode="json") for m in models], sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode()).hexdigest()
+
+
+class NormaliseConfig(Strict):
+    summary_chars: int
+    text_chars: int
+    near_future_days: int
+
+
+class DedupConfig(Strict):
+    cosine: float
+    window_days: int
+    title_min_words: int
+    max_neighbours: int
+
+
+class EmbedConfig(Strict):
+    model: str
+    revision: str
+    files: dict[str, str]  # path in the model repo -> SHA-256
+    dim: int
+    max_tokens: int
+    text_chars: int
+    batch_size: int
+    cache_dir: str
+
+
+class KeyphrasesConfig(Strict):
+    ngram_max: int
+    min_df: int
+    max_df: float
+    max_features: int
+    top_k: int
+    text_chars: int
+
+
+class IndexConfig(Strict):
+    text_chars: int
+
+
+class TagsConfig(Strict):
+    backend: Literal["zeroshot"]
+    version: str
+    temperature: float
+
+
+class FeaturesConfig(Strict):
+    """config/features.yaml: the settings of normalise, dedup, embed, keyphrases, the index and the tags."""
+
+    version: int
+    normalise: NormaliseConfig
+    dedup: DedupConfig
+    embed: EmbedConfig
+    keyphrases: KeyphrasesConfig
+    index: IndexConfig
+    tags: TagsConfig
+
+
+class CodebookLabel(Strict):
+    description: str
+    examples: list[str] = []
+
+
+class CodebookSet(Strict):
+    choice: Literal["single", "multi"]
+    labels: dict[str, CodebookLabel]
+
+
+class CodebookFile(Strict):
+    """config/codebook.yaml: the labels of the descriptive tags (ring, domain, PESTLE origin, rights)."""
+
+    version: int
+    status: Confirmation
+    sets: dict[str, CodebookSet]
+
+
+def load_features(config_dir: Path = CONFIG_DIR) -> FeaturesConfig:
+    return FeaturesConfig.model_validate(_load_yaml(config_dir / "features.yaml"))
+
+
+def load_codebook(config_dir: Path = CONFIG_DIR) -> CodebookFile:
+    return CodebookFile.model_validate(_load_yaml(config_dir / "codebook.yaml"))

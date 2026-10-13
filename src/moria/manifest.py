@@ -19,7 +19,10 @@ from .config import REPO_ROOT
 from .records import canonical_json, sha256_hex, utc_now
 from .store import Store
 
-TRACKED_PACKAGES = ("moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer", "duckdb")
+TRACKED_PACKAGES = (
+    "moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer", "duckdb", "pyarrow", "numpy",
+    "scikit-learn", "onnxruntime", "tokenizers",
+)  # fmt: skip
 
 
 def _git(*args: str) -> str | None:

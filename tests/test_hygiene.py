@@ -36,3 +36,17 @@ def test_private_and_local_paths_are_ignored():
     for path in (".env", "data/store/raw/x", "config/territories.context.yaml", ".venv/x"):
         assert subprocess.run(["git", "check-ignore", "-q", path], cwd=REPO_ROOT).returncode == 0, path
     assert "config/territories.context.yaml" not in _git("ls-files").splitlines()
+
+
+def test_no_invisible_or_bidirectional_characters_in_tracked_text():
+    """Trojan-source guard: zero-width and bidirectional-control characters are written as escapes, never literally."""
+    ranges = [(0x200B, 0x200F), (0x202A, 0x202E), (0x2060, 0x2064), (0x2066, 0x2069), (0xFEFF, 0xFEFF),
+              (0xE0000, 0xE007F)]  # fmt: skip
+    hidden = re.compile("[" + "".join(f"{chr(a)}-{chr(b)}" for a, b in ranges) + "]")
+    offenders = []
+    for path in _git("ls-files").splitlines():
+        full = REPO_ROOT / path
+        text_file = full.is_file() and full.suffix in {".py", ".yaml", ".yml", ".md", ".toml", ".html"}
+        if text_file and hidden.search(full.read_text(encoding="utf-8", errors="ignore")):
+            offenders.append(path)
+    assert not offenders, offenders

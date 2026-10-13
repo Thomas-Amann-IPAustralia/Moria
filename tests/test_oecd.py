@@ -181,7 +181,7 @@ def stip_file(extra_row: str = "") -> bytes:
     ]
     if extra_row:
         lines.append(extra_row)
-    return ("﻿" + "\r\r\n".join(lines) + "\r\r\n").encode("utf-8")
+    return ("\ufeff" + "\r\r\n".join(lines) + "\r\r\n").encode("utf-8")
 
 
 def stip_card(**params):

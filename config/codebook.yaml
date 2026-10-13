@@ -1,0 +1,116 @@
+# The codebook for per-item descriptive tags (design §3, §6.2, §9.1): what an item is ABOUT, never what it means.
+# Drafted by Claude on 2026-10-13 from the design's definitions (§2.1 rings and domains, §10.1 PESTLE); status
+# proposed until the owner confirms it. The owner may edit any description or example.
+#
+# The zero-shot tagger embeds each label's description and examples, averages them into one prototype vector, and
+# scores every item by cosine similarity to each prototype. Rings and PESTLE are single-choice (a softmax over the
+# similarities, uncalibrated until the owner's labels exist); domains and rights are scored independently.
+# Territories (config/territories.yaml) and known trends (config/baseline.yaml) are scored the same way, from
+# their own descriptions and statements.
+version: 1
+status: proposed
+
+sets:
+  ring:
+    choice: single
+    labels:
+      core:
+        description: >-
+          The intellectual property system itself: IP law, patents, trade marks, designs, copyright, plant breeder's
+          rights, examination, registration, enforcement, IP offices and the people and businesses who use them.
+        examples:
+          - a court ruling on patent infringement
+          - an IP office changes its trade mark examination practice
+          - a new treaty on the protection of designs
+          - a country ratifies or accedes to a WIPO-administered treaty
+          - fees for patent applications rise
+      adjacent:
+        description: >-
+          Innovation and its context: research and development, science and technology, the economy and industry,
+          business investment, international trade, technology competition and standards.
+        examples:
+          - business investment in research and development grows
+          - a breakthrough in battery chemistry
+          - export controls on semiconductors
+          - venture capital funding for start-ups falls
+          - a national research and innovation strategy or funding programme
+          - universities and public research institutes collaborate with industry
+      wider_world:
+        description: >-
+          The wider world beyond innovation: demographics and health, climate and energy, security and conflict,
+          macro-economy and finance, work and education, social values and trust, the information ecosystem, and
+          government and cities.
+        examples:
+          - population ageing and aged care demand
+          - a severe heatwave and bushfire season
+          - an armed conflict disrupts shipping
+          - trust in institutions declines
+
+  domain:
+    choice: multi
+    labels:
+      D0:
+        description: The wider world's forces outside the IP system and innovation, from demographics to climate.
+        examples: [ageing population, climate change, conflict and security, cost of living, social cohesion]
+      D1:
+        description: The IP system's law, rights and practice, and how rights are granted and enforced.
+        examples: [patent law reform, trade mark registration, copyright and artificial intelligence, IP enforcement]
+      D2:
+        description: The economy and innovation system, businesses, industries, productivity and investment.
+        examples: [business R&D expenditure, productivity growth, industry policy, small business conditions]
+      D3:
+        description: Technology and new forms of intellectual property, emerging technologies and data.
+        examples: [generative artificial intelligence, quantum computing, synthetic biology, data as an asset]
+      D4:
+        description: The customers of IP Australia, how applicants, attorneys and small businesses use IP services.
+        examples: [applicants' experience of filing, IP attorneys, small business awareness of trade marks]
+      D5:
+        description: Geopolitics and international relations in IP, trade and technology competition between nations.
+        examples: [trade agreements with IP chapters, WIPO negotiations, technology rivalry between powers]
+      D6:
+        description: Institutional capability of an IP office or government agency, its workforce, systems and funding.
+        examples: [an IP office modernises its IT systems, public service workforce, fee-funded agencies, cyber security]
+
+  pestle:
+    choice: single
+    labels:
+      political:
+        description: Government, politics, geopolitics, elections, national security and international relations.
+        examples: [a new government policy, sanctions between countries, an election result, defence strategy]
+      economic:
+        description: Markets, prices, trade, finance, industry, employment and economic growth.
+        examples: [inflation and interest rates, trade tariffs, company earnings, unemployment rises]
+      social:
+        description: Population, health, education, work, culture, values and how people live.
+        examples: [an ageing population, mental health services, university enrolments, changing social attitudes]
+      technological:
+        description: Science, research, technology, digital platforms, engineering and innovation.
+        examples: [a new AI model, advances in gene editing, satellite launches, a software platform]
+      legal:
+        description: Laws, courts, regulation, rights, legislation and legal disputes.
+        examples: [a court judgment, a new regulation, legislation passed by parliament, a legal challenge]
+      environmental:
+        description: Climate, energy, natural resources, biodiversity, pollution and the environment.
+        examples: [emissions targets, renewable energy, drought and water, biodiversity loss]
+
+  rights:
+    choice: multi
+    labels:
+      patent:
+        description: Patents and inventions, patent applications, examination and patent litigation.
+        examples: [a patent application, an invention patented, patent infringement case]
+      trade_mark:
+        description: Trade marks and brands, trade mark registration, counterfeits and brand protection.
+        examples: [a trade mark registration, a brand name dispute, counterfeit branded goods]
+      design:
+        description: Registered designs, the appearance of products, industrial design rights.
+        examples: [a registered design, industrial design protection, product appearance]
+      plant_breeders_rights:
+        description: Plant breeder's rights and new plant varieties.
+        examples: [a new plant variety, plant breeder's rights]
+      copyright:
+        description: Copyright, creative works, authors, music, film, software licences and artificial intelligence training data.
+        examples: [copyright infringement, artists and AI training data, a creative works licence]
+      trade_secret:
+        description: Trade secrets, confidential information, know-how and industrial espionage.
+        examples: [theft of trade secrets, confidential business information, industrial espionage]
