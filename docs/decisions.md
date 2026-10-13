@@ -1208,3 +1208,37 @@ the smoke test, the run), WIPO's ZIPs (23 MB), ABS's workbooks (1 MB). BigQuery:
   4. **The wishlist (W1)** is unchanged.
 
 Next free decision number: D-019.
+
+## D-019 — The owner's answers on D-018: BigQuery switched on; the court and office gaps don't hold up day 3; uploads before day 3 (2026-10-13)
+
+**Context.** D-018 asked the owner four things: merge, switch BigQuery on, ask the courts and offices for access, and
+the wishlist uploads.
+
+**Decision (the owner's).**
+1. **BigQuery:** "Yes switch on BigQuery." `patent_cpc_counts` sets `dry_run: false`. Every query still carries
+   `maximumBytesBilled` (200 GB), and the run checks its dry-run estimate against that cap before the real query.
+   The card stays monthly, by hand (`collect-source`), since the key is only in GitHub's secrets.
+2. **The gaps** (EUIPO, JPO, the Federal Court, the High Court, AustLII): "Not right now I'll see if I can find RSS
+   feeds or something but I don't want it to stop our progress." No request is sent; day 3 does not wait on them.
+   A feed the owner finds is checked from a runner first (`collect-source` with `discover`).
+3. **The wishlist:** "I'll add some documents between now and when we commence Day 3." Uploads go to the private
+   bucket at `inbox/documents/<name>` (`docs/wishlist.md`); each card is then run with `collect-source`.
+4. **The merge** was not answered; it stays open.
+
+**Checked: the first live run** (from a runner, run 38332703599, manifest `20261013T013416Z-66227a80`, commit
+`ce45929`, clean): 961 records, one per four-character CPC code, priority years 2000 to 2026; 17.07 GB processed
+and billed against the free 1 TiB a month (the estimate was exact), in one query. `reports/census/patent_cpc_counts.md`.
+- The 961 codes are more than the card expected (500 to 800): they include subclasses no longer in use (290 have
+  fewer than 100 families), the Y section (21) and 17 malformed codes (`Z…`, `C121`). The card's band is now 800 to
+  1,100 and its biases say so; normalisation filters to the current scheme.
+- **A flag for day 3, not a finding:** summed over codes, the share of families with an Australian member falls from
+  about 22% (priority year 2000) to 5% (2010) and 2% (2020) while world counts rise. That looks like the dataset's
+  coverage of AU publications, not a trend; check it against IP RAPID before using the AU series.
+- The last three priority years are incomplete (publication lag), as the card says.
+
+**Spend:** $0. BigQuery: 17.07 GB of the free 1 TiB a month.
+
+**Consequences.** Day 3 starts when the owner asks, with the uploads that are in the inbox by then. The next BigQuery
+run is due about mid-November (monthly).
+
+Next free decision number: D-020.

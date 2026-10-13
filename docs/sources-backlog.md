@@ -62,9 +62,9 @@ storage.
 | T4 | Peer offices: EUIPO and JPO news; KIPO | **KIPO built** (now MOIP); **EUIPO and JPO are gaps**: 403 to the session and to a runner | new `listpage` | `moip_news` | **you**, for EUIPO and JPO (below) |
 | T5 | WIPO statistics and treaties | **built**: treaty notifications (WIPO Lex) and the bulk statistics files | `listpage`, new `zip_csv` | `wipo_treaty_notifications`, `wipo_ipstats` | nothing |
 | T6 | ABS business entries and exits (CABEE), business R&D (BERD) | **built** | new `xlsx` | `abs_datacubes` | nothing |
-| T7 | Courts after March 2025; IP Australia's hearing decisions | **gap**: the Federal Court and AustLII answer 403 to the session and to a runner; the High Court times out | — | — | **you**: permission or an allowlist (draft below) |
+| T7 | Courts after March 2025; IP Australia's hearing decisions | **gap**: the Federal Court and AustLII answer 403 to the session and to a runner; the High Court times out | — | — | the owner is looking for feeds; day 3 doesn't wait (D-019) |
 | W1 | Wishlist documents (11, plus KIPO's optional report) and the EPO's and Canada.ca's terms | waiting on your uploads and answers | `documents` | — | **you** |
-| W2 | `patent_cpc_counts` on BigQuery | the secrets are in; the dry run from a runner: the query would scan 17.1 GB (D-018) | `bigquery_cpc` | `patent_cpc_counts` | **you**: switch `dry_run` off? |
+| W2 | `patent_cpc_counts` on BigQuery | **switched on** (D-019): the first live run gave 961 codes, 17.07 GB of the free 1 TiB a month | `bigquery_cpc` | `patent_cpc_counts` | nothing; monthly by hand |
 
 **New tools from the cleanup (D-018):**
 - `moria discover URL…` checks a new source's addresses (status, type, item counts and dates, feed links; never

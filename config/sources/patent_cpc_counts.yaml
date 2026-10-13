@@ -8,7 +8,8 @@ cadence: monthly
 publication_lag: "18 months from priority to publication, plus Google's refresh of the public dataset"
 coverage: >-
   Every patent family in Google Patents Public Datasets (patents-public-data.patents.publications) with a priority
-  date from 2000, counted once per CPC subclass it carries (about 650 subclasses), by earliest priority year; and
+  date from 2000, counted once per CPC code's first four characters it carries (961 on the first run), by earliest
+  priority year; and
   the families with at least one Australian publication. Counts only; the query is aggregate SQL.
 history_start: "2000 here (configurable)"
 stable_since: null
@@ -17,10 +18,12 @@ known_biases:
   - The last two to three priority years are incomplete, because applications publish about 18 months after priority
   - CPC is applied unevenly by offices, and some older or non-EPO/USPTO documents lack CPC codes
   - A family counts once in each subclass it carries, so subclass counts don't add up to the total
+  - "The 961 codes of the first run (D-019) include subclasses no longer in use (290 have under 100 families), the Y section, and 17 malformed codes (Z..., C121): filter to the current scheme at normalisation"
+  - "The share of families with an AU member falls from about 22% (2000) to 5% (2010) and 2% (2020) while world counts rise: check the dataset's AU coverage against IP RAPID before using the AU series"
 revision_policy: Google refreshes the dataset periodically; each run is kept as a vintage
 licence: "Google Patents Public Datasets: CC BY 4.0 (attribute IFI CLAIMS Patent Services and Google)"
 snapshot_rights: counts stored
-expected_volume: {min_per_run: 500, max_per_run: 800}
+expected_volume: {min_per_run: 800, max_per_run: 1100}  # 961 codes on the first run (D-019)
 params:
   project_env: GCP_PROJECT_ID
   table: patents-public-data.patents.publications

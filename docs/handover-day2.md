@@ -1,6 +1,6 @@
 # Handover: the machinery sprint after day 2
 
-For the next Claude Code session. Read `CLAUDE.md` first, then this note, D-011 to D-018 in `docs/decisions.md`,
+For the next Claude Code session. Read `CLAUDE.md` first, then this note, D-011 to D-019 in `docs/decisions.md`,
 and `docs/sources-backlog.md`. The Tier 1 cleanup is built (D-018); build day 3 when the owner asks. Nothing in the
 machinery spends money.
 
@@ -57,8 +57,8 @@ Tier 1 cleanup is built (D-018, branch `claude/youthful-hypatia-27egln`). Day 1'
 1. **Day 3:** normalise into the lake (dates in several source formats, sitemap `lastmod` included; ABS series into
    observations with vintages; OpenAlex groups into long form; GKG `about_documents` as the primary news series),
    de-duplicate, embeddings, BM25, tags. `moria ipr metrics` (demand, timeliness, outcomes) belongs with it.
-2. **BigQuery:** the dry run from a runner estimates 17.1 GB a run (D-018); the owner decides on switching it on
-   (D-011).
+2. **BigQuery:** switched on (D-019); the first live run is in the bucket (961 codes, 17.07 GB). Monthly, by hand
+   with `collect-source`; the AU series needs a coverage check against IP RAPID first.
 3. **The wishlist** (`docs/wishlist.md`, D-014, D-015): the owner uploads the refused documents; then run
    `foresight_syntheses`, `peer_office_strategies` and `territory_evidence` (from a runner or with `--store r2`), read the new documents, and
    add their trends to the baseline (the owner expects several). The OECD publication is the STI Outlook 2025.
@@ -74,10 +74,10 @@ Tier 1 cleanup is built (D-018, branch `claude/youthful-hypatia-27egln`). Day 1'
 
 ## For the owner
 1. Merge this branch, or ask for a pull request.
-2. BigQuery: the dry run estimates 17.1 GB a run, under 2% of the free 1 TiB a month: switch `dry_run` off?
-3. The wishlist (`docs/wishlist.md`): uploads, WEF's two top-10 lists, and the EPO's and Canada.ca's terms.
-4. The gaps (D-018): whether to ask the Federal Court, AustLII and the High Court (a draft request is in
-   `docs/sources-backlog.md`, T7), and EUIPO and JPO, to let Moria's user agent through.
+2. The wishlist (`docs/wishlist.md`): uploads before day 3 (D-019), WEF's two top-10 lists, and the EPO's and
+   Canada.ca's terms.
+3. The gaps (D-018): you are looking for feeds; day 3 doesn't wait (D-019). A draft access request is in
+   `docs/sources-backlog.md`, T7, if you want it later.
 
 ## Conventions to keep
 - Commit the code, run, then record. Never commit data or the territory context.
@@ -85,4 +85,4 @@ Tier 1 cleanup is built (D-018, branch `claude/youthful-hypatia-27egln`). Day 1'
 - Logs print counts and keys, never content. Reports in the repo are aggregates only; hit samples stay in the bucket.
 - The OpenAlex key's daily budget is shared by every run that day: the weekly run estimates about 2,900 credits
   (it used 2,424) and won't start unless 1,000 would be left after it.
-- Next free decision number: D-019.
+- Next free decision number: D-020.

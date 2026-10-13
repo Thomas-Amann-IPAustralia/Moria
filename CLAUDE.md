@@ -10,8 +10,8 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
 - **Built (day 2, D-011 to D-013):** six peer-office sources (daily); OpenAlex whole-taxonomy counts, the ABS headline
-  series and the IP RAPID lake (weekly, `collect-weekly`); patent counts by CPC subclass on BigQuery (built, dry run
-  only: it waits on a GCP project); the foresight syntheses and a draft known-trends baseline; `moria terms check`;
+  series and the IP RAPID lake (weekly, `collect-weekly`); patent counts by CPC subclass on BigQuery (switched on by
+  the owner, D-019); the foresight syntheses and a draft known-trends baseline; `moria terms check`;
   `moria census` and its reports; the collect-weekly and terms-check workflows.
 - **The owner's answers (D-014):** the 19-trend baseline is confirmed, and a known trend is a tag, never a reason to
   reject a signal (reinforcement counts); synonyms for the territory terms and an `ip_system` theme for the core ring;
@@ -23,7 +23,7 @@ then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/desi
   site snapshot (`--backfill`) and its corporate PDFs; MOIP (formerly KIPO) news; WIPO's treaty notifications and bulk
   statistics; the ABS's CABEE and BERD spreadsheets; `moria discover` for checking a source's addresses from a runner.
   **Gaps** (refused to the build session and to a runner): EUIPO and JPO news, the Federal Court, the High Court and
-  AustLII (so IP Australia's hearing decisions). They wait on the owner asking for access (D-018).
+  AustLII (so IP Australia's hearing decisions). The owner is looking for feeds; day 3 does not wait on them (D-019).
 - **Next:** day 3 (normalise, de-duplicate, embeddings, BM25, tags), when the owner asks; then day 4 (detectors,
   artefact checks), day 5 (dossiers, register export). Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, Tier 2 sources, a dashboard,
@@ -137,7 +137,7 @@ instead of the document's URL.
 | `openalex_counts` | openalex_counts | Weekly. Works by primary topic at four taxonomy levels, each year from 2010 and each of the last 36 months, worldwide and with an Australian author; research output types only (D-011). About 2,400 of the 10,000 free daily credits. |
 | `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
 | `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
-| `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. `dry_run: true`: the dry run from a runner estimates 17.1 GB a run (D-018); the owner decides when it goes live. |
+| `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. Switched on by the owner (D-019): about 17.1 GB a run, under 2% of the free 1 TiB a month; every query capped at 200 GB. Run it with `collect-source` (the key is only in GitHub's secrets). |
 | `foresight_syntheses` | documents | Once. Nine documents; three fetched (CSIRO as metadata only); the other six wait on owner uploads (`docs/wishlist.md`), stored as text only where the document states an open licence. |
 | `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5) and IP Australia's *Australian IP Report 2026* read; the AIC's crime-cost reports and the Patents Accessibility Review wait on owner uploads. |
 | `ipaustralia_publications` | documents | Once a year. IP Australia's PDFs that the sitemap misses: the corporate plan 2026-27, the annual report 2024-25, the AI transparency statement, the Minister's statement of expectations (metadata only: no licence stated) and the statement of intent, the cost recovery statement. The full site snapshot is `ipaustralia_site` with `--backfill`. |
