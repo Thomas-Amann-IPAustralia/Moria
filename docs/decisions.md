@@ -1349,6 +1349,7 @@ against review quotas of 35/35/30 (design §2.5); 17 were policy feeds, and the 
   | `stip_compass` | `20261013T114414Z-2abf650e` | `db9eb7d` | release 2026-09-08: 12,806 instruments of 8,817 initiatives from 68 countries and the EU (Australia 197); 5 rows left out |
   | `foresight_syntheses`, `territory_evidence`, `peer_office_strategies` | `20261013T115352Z-d195a64a`, `…115642Z-320ed7df`, `…115833Z-2811d035` | `7c1f370` | 10 uploads read; text stored for the Science and Research Priorities, the Net Zero Plan, the Patents Accessibility Review and CIPO's strategy; the Defence and AIC documents reserve their rights; the JPO report states no licence; the KIPO report has no text layer |
   | The breadth pack and `cipo_news` (backfill) | `20261013T122021Z-93df8773` to `…122057Z-da7dbd34` | `1ec3ed6` | UN News 30, The Conversation 42, ASPI 98, Lowy 50, Federal Register 5, the Commission 47, Standards Australia 100, arXiv 0 (no announcement that day), CIPO 23 |
+  | `oecd_headline` (a runner, `collect-source` run 38397223310) | `20261013T122654Z-dc45ffd9` | `8b20c86` | 13 queries, all HTTP 200: 17,712 series, 458,442 observations |
 
 - **Census reports** for the new and re-read sources are in `reports/census/` (aggregates only).
 
@@ -1359,7 +1360,9 @@ against review quotas of 35/35/30 (design §2.5); 17 were policy feeds, and the 
 - The first local run of `oecd_headline` found no data for the patents query: its key had one dot too many. Fixed
   and checked with one query before the commit. With a few structure queries, about 18 data downloads went to the
   OECD from this session's address in that hour, near the lower of the two published limits; no 429 came back.
-- The session's discovery runs used `collect-source` on `main`, whose code already had `discover`.
+- The session's discovery runs used `collect-source` on `main`, whose code already had `discover`. The
+  `oecd_headline` run was dispatched on this branch (its workflow file and code), from a runner, so that its first
+  run used a fresh address's hourly allowance and proved the weekly job's route.
 
 **Spend:** $0. Downloads, all free: STIP Compass twice (37 MB), the OECD feeds and API (about 40 MB of CSV), the
 owner's uploads read from the bucket (about 100 MB).
