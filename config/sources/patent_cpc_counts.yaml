@@ -26,5 +26,5 @@ params:
   table: patents-public-data.patents.publications
   from_year: 2000
   location: US
-  dry_run: true            # estimate only, until the owner has seen the estimate and switches this off (D-011)
+  dry_run: false           # the owner switched it on after the 17.1 GB estimate (D-019); every query stays capped
   max_bytes_billed: 200000000000

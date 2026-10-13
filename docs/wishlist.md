@@ -73,6 +73,5 @@ whose first chapter links a first patent grant or trade mark registration with l
 
 ## Not needed from you
 
-- ABS business entries and exits (CABEE) and business R&D (BERD): spreadsheets that a runner can fetch; they need an
-  xlsx adapter (handover open item 4).
+- ABS business entries and exits (CABEE) and business R&D (BERD): read since D-018 (`abs_datacubes`).
 - The EUIPO, JPO and other legal notices beyond the two above: each document's own licence statement decides.
