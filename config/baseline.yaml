@@ -4,11 +4,15 @@
 # signal outside every trend here and outside every Growth Territory counts towards novelty, the sprint's success test
 # (design §11.1); one that reinforces a trend is reported as reinforcement.
 #
-# Status: CONFIRMED by the owner on 2026-10-12 ("19 initial trends confirmed", D-014). Drafted by Claude on 2026-10-12
-# from the three syntheses read in full in the build session (each `item` below is the document's own name for its
-# trend). The statements are paraphrases, not quotations. The other documents in
-# config/sources/foresight_syntheses.yaml could not be fetched from the build session; they are listed as not read,
-# and their trends are added once they are read (the owner expects several more).
+# Status: the first 19 trends were CONFIRMED by the owner on 2026-10-12 ("19 initial trends confirmed", D-014), drafted
+# by Claude from the three syntheses read in full in the build session (each `item` below is the document's own name
+# for its trend). The statements are paraphrases, not quotations.
+#
+# PROPOSED (D-020, 2026-10-13): five more trends (KT20 to KT24) and new citations of confirmed trends, from the
+# documents the owner uploaded: the National Science and Research Priorities, the Net Zero Plan, the 2026 National
+# Defence Strategy and the 2026 Integrated Investment Program. Each is marked `status: proposed` until the owner
+# confirms it. The Defence documents reserve their rights: they were read in the build session and are cited by
+# item name only; their text is not stored. Documents still unread are listed as not read.
 version: 1
 status: confirmed
 
@@ -16,10 +20,11 @@ documents:
   csiro_our_future_world_2022: {read: full, items: 7, note: "seven global megatrends to 2042"}
   jrc_megatrends_hub: {read: full, items: 14, note: "the 14 megatrends (the booklet lists names; the hub has detail)"}
   treasury_intergenerational_report_2023: {read: full, items: 5, note: "five major forces shaping the economy to 2063"}
-  national_science_research_priorities_2024: {read: not_read, note: "refused from the build session"}
-  critical_technologies_list: {read: not_read, note: "refused from the build session"}
-  net_zero_plan_2025: {read: not_read, note: "refused from the build session"}
-  national_defence_strategy_2026: {read: not_read, note: "refused from the build session"}
+  national_science_research_priorities_2024: {read: full, items: 5, note: "the five priorities; the owner's upload (D-020)"}
+  critical_technologies_list: {read: not_read, note: "refused from the build session; not uploaded"}
+  net_zero_plan_2025: {read: partial, items: 3, note: "the executive summary (five decarbonisation priorities), chapter 1's title and chapter 10; the owner's upload"}
+  national_defence_strategy_2026: {read: partial, items: 5, note: "the foreword, chapter 1 (Strategic Environment) and chapter 8 (industry); rights reserved, text not stored"}
+  integrated_investment_program_2026: {read: partial, items: 2, note: "chapter 1 and the contents; rights reserved, text not stored"}
   wef_global_risks_report_2026: {read: not_read, note: "HTTP 403 from the build session"}
   oecd_sti_outlook_2025: {read: not_read, note: "HTTP 403 from the build session; on the wishlist"}
 
@@ -35,6 +40,8 @@ trends:
       - {doc: csiro_our_future_world_2022, item: Adapting to a changing climate}
       - {doc: jrc_megatrends_hub, item: Climate change and environmental degradation}
       - {doc: treasury_intergenerational_report_2023, item: Climate change and the net zero transformation}
+      - {doc: net_zero_plan_2025, item: "Climate change risk and opportunity for Australia", status: proposed}
+      - {doc: national_defence_strategy_2026, item: "Compounding security challenges", status: proposed}
 
   - id: KT02
     name: The net zero transformation
@@ -46,6 +53,8 @@ trends:
     sources:
       - {doc: csiro_our_future_world_2022, item: "Leaner, cleaner and greener"}
       - {doc: treasury_intergenerational_report_2023, item: Climate change and the net zero transformation}
+      - {doc: net_zero_plan_2025, item: "Five decarbonisation priorities to achieve net zero emissions", status: proposed}
+      - {doc: national_science_research_priorities_2024, item: "Priority 1: Transitioning to a net zero future", status: proposed}
 
   - id: KT03
     name: Resource scarcity and efficiency
@@ -57,6 +66,7 @@ trends:
     sources:
       - {doc: jrc_megatrends_hub, item: Aggravating resource scarcity}
       - {doc: csiro_our_future_world_2022, item: "Leaner, cleaner and greener"}
+      - {doc: national_science_research_priorities_2024, item: "Priority 1: Transitioning to a net zero future", status: proposed}
 
   - id: KT04
     name: Biodiversity loss and environmental degradation
@@ -68,6 +78,7 @@ trends:
     sources:
       - {doc: jrc_megatrends_hub, item: Climate change and environmental degradation}
       - {doc: csiro_our_future_world_2022, item: "Leaner, cleaner and greener"}
+      - {doc: national_science_research_priorities_2024, item: "Priority 4: Protecting and restoring Australia's environment", status: proposed}
 
   - id: KT05
     name: Population ageing
@@ -92,6 +103,7 @@ trends:
       - {doc: treasury_intergenerational_report_2023, item: Rising demand for care and support services}
       - {doc: csiro_our_future_world_2022, item: The escalating health imperative}
       - {doc: jrc_megatrends_hub, item: Shifting health challenges}
+      - {doc: national_science_research_priorities_2024, item: "Priority 2: Supporting healthy and thriving communities", status: proposed}
 
   - id: KT07
     name: Geopolitical competition and fragmentation
@@ -103,6 +115,8 @@ trends:
     sources:
       - {doc: treasury_intergenerational_report_2023, item: Geopolitical risk and fragmentation}
       - {doc: csiro_our_future_world_2022, item: Geopolitical shifts}
+      - {doc: national_defence_strategy_2026, item: "Strategic competition in the Indo-Pacific", status: proposed}
+      - {doc: national_science_research_priorities_2024, item: "Priority 5: Building a secure and resilient nation", status: proposed}
 
   - id: KT08
     name: Economic weight shifting east and south
@@ -124,6 +138,8 @@ trends:
     sources:
       - {doc: jrc_megatrends_hub, item: Changing security paradigm}
       - {doc: treasury_intergenerational_report_2023, item: Geopolitical risk and fragmentation}
+      - {doc: national_defence_strategy_2026, item: "Technological advancement and the changing character of war", status: proposed}
+      - {doc: integrated_investment_program_2026, item: "Defence capability investment priorities", status: proposed}
 
   - id: KT10
     name: The digital and data economy
@@ -148,6 +164,7 @@ trends:
       - {doc: csiro_our_future_world_2022, item: Increasingly autonomous}
       - {doc: treasury_intergenerational_report_2023, item: Technological and digital transformation}
       - {doc: jrc_megatrends_hub, item: Accelerating technological change and hyperconnectivity}
+      - {doc: national_defence_strategy_2026, item: "Technological advancement and the changing character of war", status: proposed}
 
   - id: KT12
     name: The changing nature of work
@@ -226,3 +243,67 @@ trends:
     rings: [wider_world]
     sources:
       - {doc: jrc_megatrends_hub, item: Increasing influence of new governing systems}
+
+  # Proposed by Claude on 2026-10-13 from the owner's uploads (D-020); the owner confirms or edits each.
+  - id: KT20
+    name: Indigenous knowledge, data sovereignty and cultural and intellectual property
+    status: proposed
+    statement: >-
+      Research and policy are expected to protect and elevate Aboriginal and Torres Strait Islander knowledge
+      systems, with First Nations people leading research that affects them, and with traditional knowledge,
+      language, data sovereignty, cultural expressions and other intellectual property respected and protected.
+    pestle: [social, legal, political]
+    rings: [core, adjacent]
+    sources:
+      - {doc: national_science_research_priorities_2024, item: "Priority 3: Elevating Aboriginal and Torres Strait Islander knowledge systems", status: proposed}
+
+  - id: KT21
+    name: Espionage, foreign interference and cyber threats to critical systems
+    status: proposed
+    statement: >-
+      Espionage and foreign interference run at very high levels, and state and non-state actors grow more willing
+      and able to intrude on networks and disrupt critical infrastructure, so the security of systems, data and
+      research becomes a standing concern for every organisation that holds them.
+    pestle: [political, technological, legal]
+    rings: [wider_world, adjacent, core]
+    sources:
+      - {doc: national_defence_strategy_2026, item: "Compounding security challenges", status: proposed}
+      - {doc: national_science_research_priorities_2024, item: "Priority 5: Building a secure and resilient nation", status: proposed}
+
+  - id: KT22
+    name: Mis- and disinformation and the contest for trust
+    status: proposed
+    statement: >-
+      Misinformation, disinformation and polarisation test trust in democratic institutions, and governments and
+      researchers look for ways to strengthen that trust and people's ability to judge information.
+    pestle: [social, political, technological]
+    rings: [wider_world]
+    sources:
+      - {doc: national_science_research_priorities_2024, item: "Priority 5: Building a secure and resilient nation", status: proposed}
+      - {doc: national_defence_strategy_2026, item: "Compounding security challenges", status: proposed}
+
+  - id: KT23
+    name: Rearmament and a sovereign defence industrial base
+    status: proposed
+    statement: >-
+      Defence spending rises worldwide and in Australia, and governments build domestic capacity to make, sustain and
+      rapidly adapt military equipment, munitions and dual-use technology, with allies sharing advanced technology
+      under arrangements such as AUKUS.
+    pestle: [political, economic, technological]
+    rings: [wider_world, adjacent]
+    sources:
+      - {doc: national_defence_strategy_2026, item: "The growing cost of defence", status: proposed}
+      - {doc: integrated_investment_program_2026, item: "Defence innovation, science and technology", status: proposed}
+
+  - id: KT24
+    name: The return of industrial policy
+    status: proposed
+    statement: >-
+      Governments use funds, tax incentives and guarantees to build strategic industries at home (clean energy,
+      green metals, low-emission fuels, critical minerals and defence), under banners such as Future Made in
+      Australia.
+    pestle: [economic, political]
+    rings: [adjacent, wider_world]
+    sources:
+      - {doc: net_zero_plan_2025, item: "Attracting investment to achieve net zero", status: proposed}
+      - {doc: national_defence_strategy_2026, item: "Defence Industry and Acquisition Reform", status: proposed}

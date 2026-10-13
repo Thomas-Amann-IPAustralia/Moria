@@ -1,0 +1,27 @@
+id: conversation_au
+name: The Conversation (Australian edition)
+adapter: feed
+rings: [wider_world, adjacent]
+domains: [D0, D2, D3]
+family: news
+cadence: daily
+publication_lag: same day
+coverage: >-
+  Articles by academics in The Conversation's Australian edition, on every field: health, climate and energy,
+  science and technology, the economy, politics, education, culture. About a dozen a day; an early, expert-written
+  view of what Australian researchers are noticing. Titles, links and dates only.
+history_start: "the feed holds the newest 50 articles (about four days)"
+stable_since: null
+breaks: []
+known_biases:
+  - Australian academics' framing and interests; topics follow the news cycle
+revision_policy: articles are occasionally corrected in place
+licence: >-
+  CC BY-ND 4.0 for articles (its republishing guidelines, read 2026-10-13), images excluded. Titles, links and dates
+  only, under Moria's news rule, although the licence would allow more
+snapshot_rights: titles, links and dates only
+expected_volume: {min_per_run: 0, max_per_run: 50}
+params:
+  url: https://theconversation.com/au/articles.atom
+  lookback_days: 3
+  keep_summary: false

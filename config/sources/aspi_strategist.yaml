@@ -1,0 +1,28 @@
+id: aspi_strategist
+name: ASPI's The Strategist (the Australian Strategic Policy Institute's commentary)
+adapter: feed
+rings: [adjacent, wider_world]
+domains: [D3, D5]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  Commentary from ASPI and its contributors on strategy, defence, critical and emerging technology, cyber,
+  economic security, research security and the Indo-Pacific, with each post's topic tags and opening lines. A few
+  posts a day. ASPI also runs the Critical Technology Tracker (which added patent data in October 2026).
+history_start: "the feed holds the newest 100 posts (about six weeks)"
+stable_since: null
+breaks: []
+known_biases:
+  - A security lens, partly government- and industry-funded; Australian and Indo-Pacific focus
+revision_policy: none
+licence: >-
+  CC BY-NC-ND 4.0, except material published with Project Syndicate (The Strategist's submissions page, through
+  search results, 2026-10-13). Moria's use is non-commercial research (the owner, D-017): opening lines stored, never
+  shared as adaptations
+snapshot_rights: titles, links, dates, opening lines and topic tags stored
+expected_volume: {min_per_run: 0, max_per_run: 40}
+params:
+  url: https://www.aspistrategist.org.au/feed/
+  lookback_days: 3
+  keep_categories: true

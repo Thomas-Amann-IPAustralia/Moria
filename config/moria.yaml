@@ -29,6 +29,14 @@ http:
     oecd.ai: 2.0
     api.oecd.ai: 2.0
     wp.oecd.ai: 2.0
+    news.un.org: 2.0
+    theconversation.com: 2.0
+    www.aspistrategist.org.au: 2.0
+    www.lowyinstitute.org: 2.0
+    www.federalregister.gov: 1.0
+    ec.europa.eu: 2.0
+    www.standards.org.au: 2.0
+    rss.arxiv.org: 3.0              # arXiv's API terms: at most one request every three seconds
 
 # Logical name -> the environment variable that holds it (docs/setup.md). Values never appear in config or logs.
 secrets:

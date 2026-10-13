@@ -212,9 +212,14 @@ def synonym_map(territories: TerritoriesFile, themes: ThemesFile) -> dict[str, t
 Pestle = Literal["political", "economic", "social", "technological", "legal", "environmental"]
 
 
+# A trend or a citation Claude drafts stays "proposed" until the owner confirms it (D-014, D-020)
+Confirmation = Literal["confirmed", "proposed"]
+
+
 class TrendSource(Strict):
     doc: str  # a document id in config/sources/foresight_syntheses.yaml
     item: str  # the document's own name for the trend
+    status: Confirmation = "confirmed"
 
 
 class KnownTrend(Strict):
@@ -224,6 +229,7 @@ class KnownTrend(Strict):
     pestle: list[Pestle]
     rings: list[Ring]
     sources: list[TrendSource]
+    status: Confirmation = "confirmed"
 
 
 class BaselineDocument(Strict):

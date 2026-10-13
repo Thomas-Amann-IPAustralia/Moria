@@ -1,0 +1,26 @@
+id: lowy_interpreter
+name: The Interpreter (the Lowy Institute's commentary)
+adapter: feed
+rings: [wider_world, adjacent]
+domains: [D0, D5]
+family: policy
+cadence: daily
+publication_lag: same day
+coverage: >-
+  The Lowy Institute's daily commentary on international events, Australian foreign policy, the Indo-Pacific,
+  China, the United States, trade and economic statecraft. A few posts a day. Titles, links and dates only.
+history_start: "the feed holds the newest 50 posts (about three weeks)"
+stable_since: null
+breaks: []
+known_biases:
+  - A foreign-policy lens; Australian and Indo-Pacific focus
+revision_policy: none
+licence: >-
+  The Lowy Institute's terms (read 2026-10-13) reserve its rights and bar storing its content in a retrieval system
+  without permission: titles, links and dates only
+snapshot_rights: titles, links and dates only
+expected_volume: {min_per_run: 0, max_per_run: 30}
+params:
+  url: https://www.lowyinstitute.org/the-interpreter/rss.xml
+  lookback_days: 3
+  keep_summary: false

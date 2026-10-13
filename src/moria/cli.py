@@ -279,10 +279,16 @@ def baseline() -> None:
     """Print the known-trends baseline (config/baseline.yaml): each trend and the documents it comes from."""
     b = load_baseline()
     for t in b.trends:
-        docs = sorted({s.doc for s in t.sources})
-        typer.echo(f"{t.id}  {t.name:<52} {','.join(t.pestle):<36} {', '.join(docs)}")
+        docs = sorted({s.doc + ("*" if s.status == "proposed" else "") for s in t.sources})
+        mark = "proposed " if t.status == "proposed" else ""
+        typer.echo(f"{t.id}  {mark}{t.name:<52} {','.join(t.pestle):<36} {', '.join(docs)}")
     read = sum(1 for d in b.documents.values() if d.read != "not_read")
-    typer.echo(f"{len(b.trends)} trends ({b.status}); {read} of {len(b.documents)} documents read")
+    proposed = sum(1 for t in b.trends if t.status == "proposed")
+    cites = sum(1 for t in b.trends for s in t.sources if s.status == "proposed" and t.status != "proposed")
+    typer.echo(
+        f"{len(b.trends)} trends ({b.status}; {proposed} proposed, and {cites} proposed citations of confirmed "
+        f"trends, marked *); {read} of {len(b.documents)} documents read"
+    )
 
 
 @app.command()
