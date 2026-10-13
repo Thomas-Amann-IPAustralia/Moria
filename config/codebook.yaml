@@ -7,7 +7,7 @@
 # similarities, uncalibrated until the owner's labels exist); domains and rights are scored independently.
 # Territories (config/territories.yaml) and known trends (config/baseline.yaml) are scored the same way, from
 # their own descriptions and statements.
-version: 1
+version: 2  # v2 (2026-10-13): law outside the IP system shown under the wider world and adjacent rings (D-021)
 status: proposed
 
 sets:
