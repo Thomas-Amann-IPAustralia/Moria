@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import platform
 import subprocess
+import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from importlib import metadata
@@ -19,7 +20,10 @@ from .config import REPO_ROOT
 from .records import canonical_json, sha256_hex, utc_now
 from .store import Store
 
-TRACKED_PACKAGES = ("moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer", "duckdb")
+TRACKED_PACKAGES = (
+    "moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer", "duckdb", "pyarrow", "numpy",
+    "scikit-learn", "onnxruntime", "tokenizers",
+)  # fmt: skip
 
 
 def _git(*args: str) -> str | None:
@@ -56,6 +60,7 @@ class Manifest:
     command: str
     run_id: str = field(default_factory=new_run_id)
     started_at: str = field(default_factory=lambda: utc_now().isoformat(timespec="seconds"))
+    started_ns: int = field(default_factory=time.time_ns)  # orders runs that start within the same second
     finished_at: str | None = None
     status: str = "running"
     error: str | None = None

@@ -1,0 +1,44 @@
+name: prepare
+
+# The evidence layer's preparation (day 3): normalise, embed, dedup, keyphrases, tag and index, into the private R2
+# bucket. Weekly, after collect-weekly; or by hand. Embeddings are reused while a text is unchanged, so a weekly run
+# embeds only new items. Logs are public: the stages print counts and keys, never content.
+on:
+  schedule:
+    - cron: "17 7 * * 1"  # Mondays 07:17 UTC, after collect-weekly (03:41 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prepare
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      PYTHONUNBUFFERED: "1"
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: python -m pip install --quiet uv
+      - name: Install dependencies with the local-model extra (from the lockfile)
+        run: uv sync --frozen --extra models
+      - name: Model files (pinned revision; every file is hash-checked again before it is loaded)
+        uses: actions/cache@v4
+        with:
+          path: data/models
+          key: models-${{ hashFiles('config/features.yaml') }}
+      - name: Environment check (the bucket must answer)
+        run: uv run moria env-check --require store:r2
+      - name: Prepare
+        run: uv run moria prepare --store r2

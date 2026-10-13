@@ -1,5 +1,8 @@
 # Handover: the machinery sprint after day 2
 
+**Superseded by `docs/handover-day3.md` (2026-10-13).** Kept as the record of day 2, the Tier 1 cleanup and the
+widening of sources.
+
 For the next Claude Code session. Read `CLAUDE.md` first, then this note, D-011 to D-020 in `docs/decisions.md`,
 and `docs/sources-backlog.md`. The Tier 1 cleanup (D-018) and the widening of sources (D-020) are built; build day 3
 when the owner asks. Nothing in the machinery spends money.

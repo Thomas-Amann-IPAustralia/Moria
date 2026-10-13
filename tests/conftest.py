@@ -19,6 +19,12 @@ def make_client(http_cfg: HttpConfig, handler) -> PoliteClient:
     return PoliteClient(http_cfg, transport=httpx.MockTransport(handler), sleep=lambda _s: None)
 
 
+@pytest.fixture(autouse=True)
+def private_cache(tmp_path, monkeypatch):
+    """Every test caches store objects in its own directory, never in the repo's data/cache."""
+    monkeypatch.setenv("MORIA_CACHE_DIR", str(tmp_path / "cache"))
+
+
 @pytest.fixture
 def store(tmp_path) -> LocalStore:
     return LocalStore(tmp_path / "store")

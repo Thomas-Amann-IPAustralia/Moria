@@ -1,0 +1,45 @@
+# The evidence layer's preparation (design §7, §8.1, §9.1; day 3): normalise, de-duplicate, embed, keyphrases, the
+# BM25 index and the zero-shot tags. Validated by moria.config.FeaturesConfig; unknown keys are errors.
+# A change here changes the stage's config hash, so its outputs are rebuilt on the next run.
+version: 1
+
+normalise:
+  summary_chars: 1500     # a feed summary, abstract or page description, cut at a word boundary
+  text_chars: 4000        # the excerpt of a stored text kept in lake/documents; the full text stays where it was collected
+  near_future_days: 1     # a source date later than first sight by more than this is replaced by first sight
+
+dedup:
+  cosine: 0.95            # design §8.3: near-duplicates are cosine >= 0.95 within 30 days
+  window_days: 30
+  title_min_words: 6      # an exact title match groups news items only when the title has at least this many words
+  max_neighbours: 20      # neighbours checked per item
+
+embed:
+  # BAAI/bge-small-en-v1.5 (MIT), its own ONNX export at a pinned revision. Every file is checked against its
+  # SHA-256 before it is loaded. CLS pooling and L2 normalisation, as the model's 1_Pooling config says.
+  model: BAAI/bge-small-en-v1.5
+  revision: 5c38ec7c405ec4b44b94cc5a9bb96e735b38267a
+  files:
+    onnx/model.onnx: 828e1496d7fabb79cfa4dcd84fa38625c0d3d21da474a00f08db0f559940cf35
+    tokenizer.json: d241a60d5e8f04cc1b2b3e9ef7a4921b27bf526d9f6050ab90f9267a1f9e5c66
+  dim: 384
+  max_tokens: 256         # measured on 600 sampled items: 22 texts/s at 256 tokens, 9 at 512 (4 threads, this session)
+  text_chars: 1500        # title, summary and the start of the text; the model reads at most max_tokens of it
+  batch_size: 32
+  cache_dir: data/models  # git-ignored
+
+keyphrases:
+  ngram_max: 3
+  min_df: 3               # a phrase must occur in at least this many documents
+  max_df: 0.05            # and in at most this share of them
+  max_features: 200000
+  top_k: 8                # keyphrases kept per document
+  text_chars: 1500
+
+index:
+  text_chars: 4000        # BM25 (DuckDB fts) over the title, summary and this much of the text
+
+tags:
+  backend: zeroshot       # cosine similarity to config/codebook.yaml, the territories and the known trends
+  version: zeroshot-v1
+  temperature: 0.02       # softmax over cosine similarities, for single-choice tags (uncalibrated until labels)

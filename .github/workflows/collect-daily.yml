@@ -1,6 +1,7 @@
 name: collect-daily
 
-# Collects every daily source for the previous UTC day into the private R2 bucket.
+# Collects every daily source for the previous UTC day into the private R2 bucket, then normalises the raw store
+# (design §4.4): normalise runs even when a source failed, and only sources with new bundles are rebuilt.
 # Schedules run only from the default branch. Logs are public: commands print counts and keys, never content.
 on:
   schedule:
@@ -49,3 +50,6 @@ jobs:
           else
             uv run moria collect-daily --store r2
           fi
+      - name: Normalise
+        if: success() || failure()
+        run: uv run moria normalise --store r2

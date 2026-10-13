@@ -16,7 +16,16 @@ from .census import census_markdown
 from .collectors import ADAPTERS, Window, run_collection
 from .collectors.gdelt import GdeltParams, build_groups
 from .collectors.gkg import GkgParams
-from .config import config_hash, load_baseline, load_config, load_sources, load_territories, load_themes
+from .config import (
+    config_hash,
+    load_baseline,
+    load_codebook,
+    load_config,
+    load_features,
+    load_sources,
+    load_territories,
+    load_themes,
+)
 from .discover import discover as discover_urls
 from .envcheck import run_checks
 from .http import PoliteClient
@@ -28,6 +37,10 @@ from .terms import check as terms_check
 app = typer.Typer(add_completion=False, no_args_is_help=True, help=__doc__)
 ipr_app = typer.Typer(no_args_is_help=True, help="IP RAPID: the weekly bulk release, into the lake as Parquet")
 app.add_typer(ipr_app, name="ipr")
+features_app = typer.Typer(
+    no_args_is_help=True, help="The feature stages: embeddings, de-duplication, keyphrases, BM25"
+)
+app.add_typer(features_app, name="features")
 terms_app = typer.Typer(invoke_without_command=True, help="The news query groups, and the check of every search term")
 app.add_typer(terms_app, name="terms")
 
@@ -255,6 +268,22 @@ def ipr_refresh_command(
         raise typer.Exit(2)
 
 
+@ipr_app.command("metrics")
+def ipr_metrics_command(
+    threads: int = typer.Option(4, help="DuckDB threads"),
+    memory_limit: str = typer.Option("3GB", help="DuckDB memory limit"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Monthly demand, outcome and timeliness series from the latest IP RAPID release, into lake/ipr_metrics (the
+    same shapes as lake/series and lake/observations). Organisation, sector and country level only."""
+    from .iprmetrics import COMMAND, metrics
+
+    cfg, cards = load_config(), load_sources()
+    card = next(c for c in cards.values() if c.adapter == "ip_rapid")
+    status, mkey, counts = metrics(open_store(cfg.store, store), card, config_hash(card), threads, memory_limit)
+    _stage_line(COMMAND, status, mkey, counts)
+
+
 @app.command()
 def census(
     source: str = typer.Argument(..., help="A source id from `moria sources`"),
@@ -289,6 +318,195 @@ def baseline() -> None:
         f"{len(b.trends)} trends ({b.status}; {proposed} proposed, and {cites} proposed citations of confirmed "
         f"trends, marked *); {read} of {len(b.documents)} documents read"
     )
+
+
+@app.command()
+def normalise(
+    source: Annotated[list[str] | None, typer.Argument(help="Only these sources (default: every source)")] = None,
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Normalise the raw store into lake/documents, lake/series and lake/observations, with dates read, first
+    sightings, vintages and the security sweep. Sources whose inputs are unchanged are carried over."""
+    from .normalise import run as normalise_run
+    from .sweep import load_sweep
+
+    cfg, cards, features = load_config(), load_sources(), load_features()
+    unknown = [s for s in source or [] if s not in cards]
+    if unknown:
+        typer.echo(f"unknown source(s): {', '.join(unknown)}", err=True)
+        raise typer.Exit(2)
+    sweep_cfg = load_sweep()
+    chash = config_hash(features, sweep_cfg, *cards.values())
+    status, mkey, outcomes = normalise_run(open_store(cfg.store, store), cards, features, sweep_cfg, source, chash)
+    for o in outcomes:
+        shown = {
+            k: v for k, v in sorted(o.counts.items()) if k in ("documents", "series", "observations", "quarantined")
+        }
+        line = f"{o.status:<9} {o.source:<26} {json.dumps(shown, sort_keys=True)}"
+        typer.echo(line if o.status != "failed" else f"{line}\n          cause: {o.error}")
+    typer.echo(f"{status:<9} normalise  manifest={mkey}")
+    if status != "passed":
+        raise typer.Exit(2)
+
+
+def _stage_line(name: str, status: str, mkey: str, counts: dict) -> None:
+    typer.echo(f"{status:<9} {name:<20} {json.dumps(counts, sort_keys=True)}  manifest={mkey}")
+    if status != "passed":
+        raise typer.Exit(2)
+
+
+def _features_setup(store: str | None):
+    cfg, features = load_config(), load_features()
+    return cfg, features, open_store(cfg.store, store), config_hash(features)
+
+
+def _encoder_factory(cfg, features):
+    """The real encoder (bge-small, pinned and hashed); fetched from Hugging Face on first use."""
+
+    def make():
+        from .embed import Encoder
+
+        client = PoliteClient(cfg.http.model_copy(update={"timeout_s": 300.0}))
+        return Encoder(features.embed, client)
+
+    return make
+
+
+@features_app.command("embed")
+def features_embed(
+    source: Annotated[list[str] | None, typer.Argument(help="Only these sources (others are carried over)")] = None,
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Embed every document (title, summary, opening text) with bge-small-en-v1.5; unchanged texts reuse their
+    vectors. Needs the `models` extra (uv sync --extra models)."""
+    from .features import EMBED, embed
+
+    cfg, features, st, chash = _features_setup(store)
+    status, mkey, counts = embed(st, features, _encoder_factory(cfg, features), chash, source)
+    _stage_line(EMBED, status, mkey, counts)
+
+
+@features_app.command("dedup")
+def features_dedup(store: str = typer.Option(None, help="local or r2; default from config/moria.yaml")) -> None:
+    """De-duplication groups: the same canonical URL, the same news title, or near-identical embeddings between
+    outlets, within 30 days."""
+    from .features import DEDUP, dedup
+
+    _, features, st, chash = _features_setup(store)
+    status, mkey, counts = dedup(st, features, chash)
+    _stage_line(DEDUP, status, mkey, counts)
+
+
+@features_app.command("keyphrases")
+def features_keyphrases(store: str = typer.Option(None, help="local or r2; default from config/moria.yaml")) -> None:
+    """n-gram keyphrases by TF-IDF per document, and the vocabulary with each phrase's first observable date."""
+    from .features import KEYPHRASES, keyphrases
+
+    _, features, st, chash = _features_setup(store)
+    status, mkey, counts = keyphrases(st, features, chash)
+    _stage_line(KEYPHRASES, status, mkey, counts)
+
+
+@features_app.command("index")
+def features_index(store: str = typer.Option(None, help="local or r2; default from config/moria.yaml")) -> None:
+    """The BM25 full-text index (DuckDB fts) over every document."""
+    from .features import INDEX, index
+
+    _, features, st, chash = _features_setup(store)
+    status, mkey, counts = index(st, features, chash)
+    _stage_line(INDEX, status, mkey, counts)
+
+
+@app.command()
+def tag(
+    backend: str = typer.Option("zeroshot", help="zeroshot (the only backend until the owner's labels exist)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Descriptive tags per item: ring, domain, PESTLE origin, rights, territories and the nearest known trend, by
+    similarity to their descriptions; and the territory and theme terms matched in each item."""
+    from .tags import COMMAND
+    from .tags import tag as tag_run
+
+    if backend != "zeroshot":
+        typer.echo(f"backend {backend!r} is not built: the sklearn backend needs the owner's labels", err=True)
+        raise typer.Exit(2)
+    cfg, features, st, _ = _features_setup(store)
+    codebook, territories, baseline, cards = load_codebook(), load_territories(), load_baseline(), load_sources()
+    chash = config_hash(features, codebook, territories, baseline)
+    status, mkey, counts = tag_run(st, features, codebook, territories, baseline, cards,
+                                   _encoder_factory(cfg, features), chash)  # fmt: skip
+    _stage_line(COMMAND, status, mkey, counts)
+
+
+@app.command()
+def search(
+    query: str = typer.Argument(..., help="Words to search for (BM25, stemmed)"),
+    limit: int = typer.Option(20, help="How many matches"),
+    source: str = typer.Option(None, help="Only this source"),
+    since: str = typer.Option(None, help="Only items observable from this day (YYYY-MM-DD)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Search every document (BM25) and print the matches' ids, sources, dates and titles. For the analyst's own
+    terminal: titles are evidence, so never run this in a scheduled job, whose logs are public."""
+    from .features import INDEX
+    from .features import search as bm25
+    from .tables import cache_root, fetch_outputs, upstream
+
+    cfg = load_config()
+    st = open_store(cfg.store, store)
+    m = upstream(st, INDEX)
+    (db,) = fetch_outputs(st, m, "features/index/", cache_root()).values()
+    for score, item, src, day, title in bm25(db, query, limit, source, since):
+        typer.echo(f"{score:>7} {day} {src:<24} {item[:12]} {title}")
+
+
+@app.command()
+def prepare(store: str = typer.Option(None, help="local or r2; default from config/moria.yaml")) -> None:
+    """The evidence layer's whole chain: normalise, embed, dedup, keyphrases, tag, index and the IP RAPID metrics.
+    Stops at the first stage that fails."""
+    from .features import DEDUP, EMBED, INDEX, KEYPHRASES, dedup, embed, index, keyphrases
+    from .normalise import run as normalise_run
+    from .sweep import load_sweep
+    from .tags import COMMAND
+    from .tags import tag as tag_run
+
+    cfg, cards, features = load_config(), load_sources(), load_features()
+    st = open_store(cfg.store, store)
+    sweep_cfg = load_sweep()
+    status, mkey, outcomes = normalise_run(st, cards, features, sweep_cfg, None,
+                                           config_hash(features, sweep_cfg, *cards.values()))  # fmt: skip
+    totals = {f"sources_{o.status}": sum(1 for x in outcomes if x.status == o.status) for o in outcomes}
+    _stage_line("normalise", status, mkey, totals)
+    chash = config_hash(features)
+    factory = _encoder_factory(cfg, features)
+    _stage_line(EMBED, *embed(st, features, factory, chash))
+    _stage_line(DEDUP, *dedup(st, features, chash))
+    _stage_line(KEYPHRASES, *keyphrases(st, features, chash))
+    codebook, territories, baseline = load_codebook(), load_territories(), load_baseline()
+    tag_hash = config_hash(features, codebook, territories, baseline)
+    _stage_line(COMMAND, *tag_run(st, features, codebook, territories, baseline, cards, factory, tag_hash))
+    _stage_line(INDEX, *index(st, features, chash))
+    from .iprmetrics import COMMAND as IPRM
+    from .iprmetrics import metrics as ipr_metrics
+
+    ipr_card = next(c for c in cards.values() if c.adapter == "ip_rapid")
+    _stage_line(IPRM, *ipr_metrics(st, ipr_card, config_hash(ipr_card)))
+
+
+@app.command("evidence-report")
+def evidence_report_command(
+    out: str = typer.Option("reports/evidence-layer.md", help="Where to write the report (aggregates only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Profile the evidence layer after `moria prepare`: counts by source, date basis, sweep finding, dedup rule and
+    tag. Safe for the public repo: no titles, text, URLs or keyphrases."""
+    from .evidence_report import evidence_report
+
+    text = evidence_report(open_store(load_config().store, store))
+    path = Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    typer.echo(f"wrote {path}")
 
 
 @app.command()

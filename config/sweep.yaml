@@ -1,0 +1,5 @@
+# The security sweep's allowlist (src/moria/sweep.py; SOP §22). A high-severity finding quarantines its item unless
+# the owner has reviewed it and listed it here. Only the owner adds or edits entries; Claude proposes them in chat.
+# An entry: {item_id: <64 hex>, code: <finding code>, approved_by: <name>, approved_on: YYYY-MM-DD, reason: <text>}
+version: 1
+allowlist: []
