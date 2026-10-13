@@ -31,14 +31,16 @@ params:
       url: https://www.aic.gov.au/sites/default/files/2022-04/sr38_estimating_the_costs_of_serious_and_organised_crime_v2.pdf
       licence: "to confirm (aic.gov.au refuses the build session); checked on the document"
       store_text: if_open_licence
-      note: Values counterfeit and pirated goods in the Australian market in 2021. An owner upload
+      upload: sr38_estimating_the_costs_of_serious_and_organised_crime_v2.pdf
+      note: Values counterfeit and pirated goods in the Australian market in 2021. The owner's upload of 2026-10-13 (D-020)
     - id: aic_sr55_serious_organised_crime_costs_2023_24
       title: "The costs of serious and organised crime in Australia, 2023-24 (Statistical Report 55)"
       publisher: Australian Institute of Criminology
       url: https://www.aic.gov.au/sites/default/files/2025-11/sr55_costs_of_serious_and_organised_crime_in_australia_2023-24.pdf
       licence: "to confirm (aic.gov.au refuses the build session); checked on the document"
       store_text: if_open_licence
-      note: The newer edition of Statistical Report 38. An owner upload
+      upload: sr55_costs_of_serious_and_organised_crime_in_australia_2023-24.pdf
+      note: The newer edition of Statistical Report 38. The owner's upload of 2026-10-13 (D-020)
     - id: pc_innovation_for_the_98_interim_2022
       title: "5-year Productivity Inquiry: Innovation for the 98% (Interim Report)"
       publisher: Productivity Commission
@@ -60,7 +62,8 @@ params:
       url: https://www.industry.gov.au/publications/patents-accessibility-review
       licence: "to confirm (industry.gov.au refuses the build session); checked on the document"
       store_text: if_open_licence
-      note: By Emeritus Professor Raoul Mortley AO, February 2021. An owner upload (offered as Word; saved as PDF)
+      upload: iga_patents_accessibility_review.docx
+      note: By Emeritus Professor Raoul Mortley AO, February 2021. The owner's upload of 2026-10-13, as the Word file the department offers (D-020)
     - id: patents_accessibility_review_government_response_2022
       title: "Australian Government response to the Patents Accessibility Review"
       publisher: Department of Industry, Science and Resources

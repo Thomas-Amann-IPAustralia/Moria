@@ -69,15 +69,25 @@ params:
       url: https://www.jpo.go.jp/e/resources/report/statusreport/2026/index.html
       licence: "JPO website terms (to confirm; the site answers 403 to the build session); checked on the document"
       store_text: if_open_licence
-      note: Statistics and the JPO's policy outcomes for 2025. An owner upload (the whole report, about 25 MB)
+      upload: JPO Status Report.pdf
+      note: Statistics and the JPO's policy outcomes for 2025. The owner's upload of 2026-10-13 (the whole report, about 25 MB; D-020)
+    - id: kipo_annual_report_2025
+      title: "KIPO Annual Report 2025"
+      publisher: Korean Intellectual Property Office (now the Ministry of Intellectual Property)
+      url: https://www.kipo.go.kr/en/
+      licence: "MOIP's website footer reserves all rights (D-018); checked on the document"
+      store_text: if_open_licence
+      upload: KIPO_Annual_Report_2025.pdf
+      note: Korea's IP statistics and policy for 2024-25. The owner's upload of 2026-10-13 (D-020), the optional item on the wishlist
     - id: cipo_business_strategy_2023_2028
       title: "CIPO 2023-2028 Business Strategy"
       publisher: Canadian Intellectual Property Office
       published: "2023-02-23"
       url: https://www.canada.ca/en/intellectual-property-office/news/2023/02/cipo-releases-its-20232028-business-strategy.html
       licence: >-
-        Government of Canada terms: non-commercial reproduction without charge or further permission, with the title,
-        the author and a statement that it is not an official version (according to search results; canada.ca refuses
-        the build session). Metadata only until the owner confirms
-      store_text: false
-      note: The release page; the strategy itself is linked from it. An owner upload
+        The strategy's own notice: it "may be reproduced, in part or in whole and by any means, without charge or
+        further permission" from ISED, identifying the source and not as an official version (read 2026-10-13). Moria's
+        use is non-commercial research (the owner, D-017), so the text is stored (D-020)
+      store_text: if_open_licence
+      upload: CIPOCS-1884_Business_Strategy-eng.pdf
+      note: The release page; the strategy itself is linked from it. The owner's upload of 2026-10-13 (D-020)

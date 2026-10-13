@@ -16,11 +16,13 @@ known_biases:
   - Low volume; some CIPO notices are published on ISED's own site instead, which this feed misses
 revision_policy: items can be updated in place (the Atom updated field)
 licence: >-
-  Canada.ca terms of use (not reachable from the build session to confirm). Titles, links and dates are stored until
-  the terms are confirmed
-snapshot_rights: titles, links and dates only (the summaries are dropped)
+  Canada.ca terms of use: Government of Canada materials may be reproduced for non-commercial purposes without charge
+  or further permission, crediting the source and not as an official version (from search results; CIPO's own 2023
+  strategy carries the same notice, read 2026-10-13). Moria's use is non-commercial research (the owner, D-017), so
+  summaries are stored (D-020)
+snapshot_rights: titles, links, dates and summaries stored
 expected_volume: {min_per_run: 0, max_per_run: 10}
 params:
   url: https://api.io.canada.ca/io-server/gc/news/en/v2?dept=intellectualpropertyoffice&sort=publishedDate&orderBy=desc&pick=50&format=atom
   lookback_days: 3
-  keep_summary: false
+  keep_summary: true
