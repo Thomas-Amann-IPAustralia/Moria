@@ -1242,3 +1242,141 @@ and billed against the free 1 TiB a month (the estimate was exact), in one query
 run is due about mid-November (monthly).
 
 Next free decision number: D-020.
+
+## D-020 — Sources widened before day 3: the OECD (STIP Compass first), a breadth pack of eight feeds, the owner's uploads read, and five proposed known trends (2026-10-13)
+
+**Context.** The owner: "I'm concerned that our sources aren't broad enough yet to really get a good sense of things.
+I've gone out and found some useful resources from the OECD that I'd like you to add … The STIP Compass one seems
+particularly valuable. In addition to these sources I've also added many of the documents from your wishlist into the
+inbox folder in the R2 db. Please ensure that we've got a really strong footing on information sources before we
+commence with the Day 3 build." The addresses: the OECD Data API's two explainers, three of the OECD's search feeds,
+its briefs page, OECD.AI's blog feed and transparency reports, and STIP Compass and its download page. A count of
+the cards showed the imbalance behind the concern: of 29 sources, 25 sat in the core ring and 5 in the wider world,
+against review quotas of 35/35/30 (design §2.5); 17 were policy feeds, and the research family held counts only.
+
+**Decision (the owner's, asked in the session).**
+1. **Breadth:** "OECD + a breadth pack (Recommended)": about ten free, no-account feeds on the existing adapters, for
+   the wider world and adjacent rings, each checked for terms and access first. This brings part of Tier 2 (the
+   OECD, design §5.4 and the backlog's C6) forward, and supersedes D-016's "Tier 2 waits" for these sources only;
+   the rest of Tier 2 still waits.
+2. **OECD text:** "Yes, store it (CC BY 4.0)": the OECD's publication abstracts and STIP Compass's descriptions,
+   objectives and background are stored privately, citing the OECD. The OECD's terms page and STIP Compass's pages
+   sit behind a Cloudflare challenge that refuses the session and a runner; search results say OECD data, and OECD
+   written content from 1 July 2024, are CC BY 4.0. OECD.AI's blog and the HAIP reports keep metadata only (OECD.AI
+   reads "© OECD. All rights reserved"; the reports are their organisations' own words).
+
+**Built (this session's choices; they stand until the owner says otherwise).**
+- **The OECD, six cards:**
+  - `oecd_publications` and `oecd_data_releases` (`feed`, daily): the search feeds at `api.oecd.org` with
+    `pageSize=50` (the default is 15), abstracts, and each item's content type and policy areas (`keep_categories`,
+    a new feed option that leaves other feeds' records unchanged). The owner's two publication feeds overlap: the
+    wider one covers the other and the briefs page, which `www.oecd.org` refuses to cloud addresses.
+  - `oecd_ai_blog` (`feed`, daily; titles and links) and `oecd_ai_haip_reports` (a new `json_list` adapter, weekly):
+    the Hiroshima AI Process transparency reports from the JSON endpoint OECD.AI's own page reads (`api.oecd.ai`,
+    paginated), metadata only: organisation, country, website, reporting period, date, link.
+  - `oecd_headline` (a new `oecd_sdmx` adapter, weekly): 13 queries to the OECD Data API (`sdmx.oecd.org`) chosen
+    for the IP system and its context: MSTI (R&D, researchers, patents, high-tech trade); PCT and IP5 patents in AI,
+    biotech and other selected technologies; firms' use of patents, designs and trade marks (innovation surveys);
+    R&D tax incentives and IP-income tax support, and the IP regimes themselves (words, not numbers); firms' use of
+    AI, cloud and big data; charges for the use of IP in services trade; leading indicators; the latest Economic
+    Outlook; FDI restrictiveness; business entries, exits and bankruptcies; environmental policy stringency. It
+    reuses the ABS parser (the same SDMX-CSV), keys series by agency and flow without the version (a new version
+    keeps a series' id; each vintage records its version), caps a card at 18 queries (the OECD's best-practices page
+    gives 20 or 60 data downloads an hour, in two versions), retries a refusal once, and waits 6 s between requests.
+  - `stip_compass` (a new `delimited_csv` bulk stage, weekly, into the lake): the whole database file, which answers
+    although the portal's pages are behind the challenge. It is pipe-separated with no quoting, a label line and
+    `\r\r\n` line endings; five rows hold a stray delimiter inside a field and can't be split safely, so they are
+    left out and listed in the release manifest. A re-run sends `If-Modified-Since` and does nothing on 304.
+- **The breadth pack, eight cards (`feed`, daily):** `un_news`, `conversation_au` and `lowy_interpreter` (wider
+  world; titles and links only: the UN's terms allow personal non-commercial use, The Conversation is news under
+  Moria's rule though CC BY-ND 4.0, and the Lowy Institute bars storing its content); `ec_presscorner` (the European
+  Commission's press releases, speeches and statements; reuse authorised with acknowledgement; opening lines and
+  policy areas); `aspi_strategist` (ASPI's commentary; CC BY-NC-ND 4.0, with Moria non-commercial under D-017;
+  opening lines and topic tags); `arxiv_ai_society` (arXiv's daily listings in cs.AI, cs.CY, cs.DL and econ.GN;
+  metadata, abstracts included, are CC0 under arXiv's API terms; one request every 3 s; author names not stored);
+  `standards_australia_news` (titles); `us_federal_register_ip` (the USPTO's and the Copyright Office's rules and
+  notices; public domain).
+- **Checked and not added:** WTO news (its robots.txt disallows the feed); the ACCC and the IEA (403, from the session
+  and a runner); cyber.gov.au and the TGA (time out from the session and a runner); eSafety, the ARC, the Chief
+  Scientist and the AIHW (time out or 403 from the session); WHO's feed (stopped in February 2026) and the US
+  Copyright Office's NewsNet (stopped in January 2025); GOV.UK's DSIT feed (newest item August 2026); the OAIC's feed
+  (no dates); the Productivity Commission and Treasury (no feed found); the RBA (RSS 1.0, which the feed adapter
+  doesn't read; macro data come from the ABS and the OECD).
+- **The owner's uploads (eleven files, under their own names):** a document entry may name its upload (`upload`),
+  and Word files are read from their XML. Mapped: the National Science and Research Priorities, the Net Zero Plan,
+  the 2026 National Defence Strategy and (a new entry) the 2026 Integrated Investment Program; AIC Statistical
+  Reports 38 and 55; the Patents Accessibility Review (Word); the JPO Status Report, CIPO's strategy and (a new
+  entry) the KIPO Annual Report 2025. The OECD Data API documentation was read to build `oecd_headline`; it is not
+  evidence.
+- **The licence check** now reads "no part may be reproduced" and "no part of this publication may in any form …
+  be reproduced" as reserved (the Defence and AIC documents), and the Government of Canada's "may be reproduced …
+  without charge or further permission" as permitted.
+- **CIPO (this session's reading of D-017):** CIPO's strategy carries that Government of Canada notice, and the
+  wishlist's open question was whether Moria's private storage counts as non-commercial; the owner's D-017 answer
+  ("Moria's use would be considered non-commercial research purposes") settles it. CIPO's strategy text and
+  `cipo_news` summaries are now stored. The EPO's terms (a different question) still wait.
+- **The baseline:** trends and citations carry a status (`confirmed` or `proposed`). Proposed from the uploads, for
+  the owner: KT20 Indigenous knowledge, data sovereignty and cultural and intellectual property (the Science and
+  Research Priorities, Priority 3); KT21 espionage, foreign interference and cyber threats to critical systems;
+  KT22 mis- and disinformation and the contest for trust; KT23 rearmament and a sovereign defence industrial base;
+  KT24 the return of industrial policy; and twelve citations adding the new documents to confirmed trends (KT01,
+  KT02, KT03, KT04, KT06, KT07, KT09, KT11). The Defence documents reserve their rights: read in the session and
+  cited by item name, their text not stored.
+
+**Rejected, a line each:**
+- **Running the Cloudflare challenge** on `www.oecd.org` and `stip.oecd.org`: D-011, and the file STIP Compass offers
+  answers without it.
+- **One card per OECD feed the owner listed:** the publications feed with every content type covers the narrower one
+  and the briefs page.
+- **Storing the HAIP reports' text:** each is its organisation's own response on a site that reserves its rights.
+- **OCR for the KIPO report:** its text was converted to outlines (no fonts on any page); OCR would be a new
+  dependency for a document whose licence is unknown.
+- **Interpreting STIP's malformed rows:** which field holds the stray delimiter can't be known; five of 12,811 rows.
+
+**Checked:**
+- **Tests:** 98 pass (no network): OECD series (codes, words, a version-free id, the query cap, one retry), feed
+  categories, JSON lists (pages, lookback, backfill, an empty list failing), the delimited stage (labels, `\r\r\n`,
+  rows left out, 304, an unchanged hash, a changed file under an existing release, text columns kept as lengths),
+  named uploads and Word files, the new licence wordings.
+- **From a runner** (`collect-source` with `discover`, runs 38389709143 and 38395160791): STIP's pages, its sitemap
+  and `www.oecd.org` answered 403 (a Cloudflare challenge) as to the session; OECD.AI answered; the OECD Data API's
+  structure endpoint answered 200; cyber.gov.au and the TGA timed out; the ACCC and the IEA answered 403.
+- **First runs into the bucket** (from clean commits):
+
+  | Source | Run | Commit | Result |
+  |---|---|---|---|
+  | `oecd_publications`, `oecd_data_releases`, `oecd_ai_blog`, `oecd_ai_haip_reports` (backfill) | `20261013T114352Z-cd5241ce` to `…114405Z-df68c3a6` | `db9eb7d` | 47, 49, 10 and 56 items |
+  | `stip_compass` | `20261013T114414Z-2abf650e` | `db9eb7d` | release 2026-09-08: 12,806 instruments of 8,817 initiatives from 68 countries and the EU (Australia 197); 5 rows left out |
+  | `foresight_syntheses`, `territory_evidence`, `peer_office_strategies` | `20261013T115352Z-d195a64a`, `…115642Z-320ed7df`, `…115833Z-2811d035` | `7c1f370` | 10 uploads read; text stored for the Science and Research Priorities, the Net Zero Plan, the Patents Accessibility Review and CIPO's strategy; the Defence and AIC documents reserve their rights; the JPO report states no licence; the KIPO report has no text layer |
+  | The breadth pack and `cipo_news` (backfill) | `20261013T122021Z-93df8773` to `…122057Z-da7dbd34` | `1ec3ed6` | UN News 30, The Conversation 42, ASPI 98, Lowy 50, Federal Register 5, the Commission 47, Standards Australia 100, arXiv 0 (no announcement that day), CIPO 23 |
+
+- **Census reports** for the new and re-read sources are in `reports/census/` (aggregates only).
+
+**Runs and slips, disclosed:**
+- The three document cards were first run at 11:46 to 11:51 UTC from an uncommitted tree (their manifests say
+  `dirty: true`); the licence check then missed the Defence and AIC wordings. They were re-run from `7c1f370`; the
+  earlier records stay in the bucket (raw bundles are immutable), and the newest record of each document wins.
+- The first local run of `oecd_headline` found no data for the patents query: its key had one dot too many. Fixed
+  and checked with one query before the commit. With a few structure queries, about 18 data downloads went to the
+  OECD from this session's address in that hour, near the lower of the two published limits; no 429 came back.
+- The session's discovery runs used `collect-source` on `main`, whose code already had `discover`.
+
+**Spend:** $0. Downloads, all free: STIP Compass twice (37 MB), the OECD feeds and API (about 40 MB of CSV), the
+owner's uploads read from the bucket (about 100 MB).
+
+**Consequences.**
+- Sources: 29 to 43. By ring (a source can sit in several): core 25 to 33, adjacent 17 to 29, wider world 5 to 15.
+  By family: news 1 to 3, research 1 to 2 (arXiv adds titles and abstracts), statistics 3 to 5, policy 17 to 25,
+  legal 3 to 4. After the merge, `collect-daily` takes 11 more sources and `collect-weekly` 3 more.
+- Day 3 reads new shapes: feed categories; JSON-list items; OECD series (some with words for values); STIP's lake
+  table (one row per instrument, 521 text columns, a label for each); arXiv's announcement type inside each abstract.
+- **For the owner:**
+  1. **The baseline:** confirm, edit or drop KT20 to KT24 and the twelve proposed citations (`moria baseline` marks
+     them).
+  2. **CIPO:** object if D-017 shouldn't cover CIPO's notice.
+  3. **Still wanted** (`docs/wishlist.md`): the Critical Technologies list, the OECD STI Outlook 2025 (its PDF sits
+     under a path the OECD's robots.txt disallows), the Government's response to the Patents Accessibility Review,
+     WEF's two top-10 lists, and the EPO's terms. The KIPO report can't be read; a text version would help.
+  4. **Merge this branch** (or ask for a pull request).
+
+Next free decision number: D-021.
