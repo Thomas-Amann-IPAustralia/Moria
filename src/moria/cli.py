@@ -21,6 +21,7 @@ from .config import (
     load_baseline,
     load_codebook,
     load_config,
+    load_detect,
     load_features,
     load_sources,
     load_territories,
@@ -43,6 +44,10 @@ features_app = typer.Typer(
 app.add_typer(features_app, name="features")
 terms_app = typer.Typer(invoke_without_command=True, help="The news query groups, and the check of every search term")
 app.add_typer(terms_app, name="terms")
+measure_app = typer.Typer(no_args_is_help=True, help="Day 4's detectors over series and over documents, at a date")
+app.add_typer(measure_app, name="measure")
+monitor_app = typer.Typer(no_args_is_help=True, help="The ingestion monitor: incidents per source and day")
+app.add_typer(monitor_app, name="monitor")
 
 
 @app.callback()
@@ -507,6 +512,199 @@ def evidence_report_command(
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
     typer.echo(f"wrote {path}")
+
+
+def _as_of(value: str | None) -> date:
+    """A scan's date: what was observable by the end of that UTC day; default today."""
+    if not value:
+        return datetime.now(UTC).date()
+    try:
+        return date.fromisoformat(value)
+    except ValueError as e:
+        raise typer.BadParameter(f"--as-of must be YYYY-MM-DD, got {value!r}") from e
+
+
+AS_OF_HELP = "The scan's date (YYYY-MM-DD): evidence observable by the end of that UTC day; default today"
+
+
+def _detect_setup(store: str | None):
+    cfg = load_config()
+    return load_detect(), load_sources(), open_store(cfg.store, store)
+
+
+@measure_app.command("series")
+def measure_series(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Trends, accelerations, change points, anomalies, low-base surges and AU/world divergence over every count and
+    statistical series (rates per source volume, Holm within each family)."""
+    from .measures import COMMAND, measure
+
+    detect_cfg, _, st = _detect_setup(store)
+    _stage_line(COMMAND, *measure(st, detect_cfg, _as_of(as_of), config_hash(detect_cfg)))
+
+
+@measure_app.command("documents")
+def measure_documents(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The five weak-signal indicators over documents: new terms, new combinations (keyphrases, IPC and Nice
+    classes), cross-family and cross-ring concepts, low-base surges, and micro-clusters of novel items."""
+    from .concepts import COMMAND, measure
+
+    detect_cfg, cards, st = _detect_setup(store)
+    chash = config_hash(detect_cfg, *cards.values())
+    _stage_line(COMMAND, *measure(st, detect_cfg, cards, load_features().embed.dim, _as_of(as_of), chash))
+
+
+@monitor_app.command("ingestion")
+def monitor_ingestion(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Every collection's monitor entry and manifest, as days and incidents: failed runs, volumes outside the
+    expected band, and gaps in daily sources."""
+    from .monitor import COMMAND, monitor
+
+    _, cards, st = _detect_setup(store)
+    _stage_line(COMMAND, *monitor(st, cards, _as_of(as_of), config_hash(*cards.values())))
+
+
+@app.command("detect")
+def detect_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Candidate signals from the measures of the same date: trends, accelerations, weak signals and anomalies, each
+    with its detectors' numbers and evidence."""
+    from .detect import COMMAND, detect
+
+    detect_cfg, _, st = _detect_setup(store)
+    _stage_line(COMMAND, *detect(st, detect_cfg, _as_of(as_of), config_hash(detect_cfg)))
+
+
+@app.command("artefacts")
+def artefacts_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The artefact checks on every candidate: coverage, ingestion, duplication, news cycle, source break and label
+    drift. A flag is shown, never hidden."""
+    from .artefacts import COMMAND, artefacts
+
+    detect_cfg, cards, st = _detect_setup(store)
+    _stage_line(COMMAND, *artefacts(st, detect_cfg, cards, _as_of(as_of), config_hash(detect_cfg, *cards.values())))
+
+
+def run_scan(st, detect_cfg, cards, day: date) -> None:
+    from .artefacts import COMMAND as ART
+    from .artefacts import artefacts
+    from .concepts import COMMAND as DOCS
+    from .concepts import measure as measure_docs
+    from .detect import COMMAND as DET
+    from .detect import detect
+    from .measures import COMMAND as SER
+    from .measures import measure as measure_ser
+    from .monitor import COMMAND as MON
+    from .monitor import monitor
+
+    chash = config_hash(detect_cfg, *cards.values())
+    _stage_line(MON, *monitor(st, cards, day, config_hash(*cards.values())))
+    _stage_line(SER, *measure_ser(st, detect_cfg, day, config_hash(detect_cfg)))
+    _stage_line(DOCS, *measure_docs(st, detect_cfg, cards, load_features().embed.dim, day, chash))
+    _stage_line(DET, *detect(st, detect_cfg, day, config_hash(detect_cfg)))
+    _stage_line(ART, *artefacts(st, detect_cfg, cards, day, chash))
+
+
+@app.command()
+def scan(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Day 4's chain at one date: the ingestion monitor, the series and document measures, the candidates and their
+    artefact checks. Stops at the first stage that fails."""
+    detect_cfg, cards, st = _detect_setup(store)
+    run_scan(st, detect_cfg, cards, _as_of(as_of))
+
+
+@app.command("scan-report")
+def scan_report_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option("reports/scan.md", help="Where to write the report (aggregates only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Profile a scan: candidates by type, detector, family and ring, the artefact flags, and the volumes behind
+    them. Safe for the public repo: counts only, no labels, keyphrases, titles or URLs."""
+    from .scan_report import scan_report
+
+    detect_cfg, _, st = _detect_setup(store)
+    text = scan_report(st, detect_cfg, _as_of(as_of))
+    path = Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    typer.echo(f"wrote {path}")
+
+
+eval_app = typer.Typer(no_args_is_help=True, help="Evaluations of the machinery's components")
+app.add_typer(eval_app, name="eval")
+
+
+@eval_app.command("artefacts")
+def eval_artefacts(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option("reports/eval/artefacts.md", help="Where to write the report (synthetic seeds only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Plant seeded artefacts (a volume spike, duplicated syndication, a source onboarding, an ingestion failure, a
+    news cycle) on a temporary copy of the evidence layer, each with a control, and check every one is flagged."""
+    from .seeded import COMMAND, evaluate, report
+
+    detect_cfg, cards, st = _detect_setup(store)
+    day = _as_of(as_of)
+    status, mkey, counts, result = evaluate(st, detect_cfg, load_features(), cards, day,
+                                            config_hash(detect_cfg, *cards.values()))  # fmt: skip
+    if result:
+        path = Path(out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(report(result, mkey, day), encoding="utf-8")
+        typer.echo(f"wrote {path}")
+    _stage_line(COMMAND, status, mkey, counts)
+    if counts.get("all_flagged") == 0:
+        raise typer.Exit(2)
+
+
+@app.command()
+def candidates(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    kind: str = typer.Option(None, "--type", help="Only this type: trend, acceleration, weak_signal, anomaly"),
+    clean: bool = typer.Option(False, help="Only candidates no artefact check flagged"),
+    limit: int = typer.Option(40, help="How many, strongest first"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Print a scan's candidates with their labels, detectors and flags. Labels are evidence (keyphrases, series
+    names): for the analyst's own terminal, never a scheduled job, whose logs are public."""
+    from .artefacts import COMMAND as ART
+    from .detect import COMMAND as DET
+    from .detect import _matching
+    from .tables import cache_root, fetch_outputs, read_rows
+
+    _, _, st = _detect_setup(store)
+    day = _as_of(as_of)
+    files = {k.rsplit("/", 1)[1]: p for m in (_matching(st, DET, day), _matching(st, ART, day))
+             for k, p in fetch_outputs(st, m, "candidates/", cache_root()).items()}  # fmt: skip
+    flags = {r["candidate_id"]: r["flags"] for r in read_rows(files["artefacts.parquet"])}
+    rows = [c for c in read_rows(files["candidates.parquet"]) if (not kind or c["type"] == kind)
+            and (not clean or not flags.get(c["candidate_id"]))]  # fmt: skip
+    rows.sort(key=lambda c: (-(c["strength"] or 0), c["candidate_id"]))
+    for c in rows[:limit]:
+        mark = ",".join(flags.get(c["candidate_id"]) or []) or "clean"
+        typer.echo(
+            f"{c['candidate_id']} {c['type']:<12} {c['strength']:>7.3f} {'+' if c['direction'] > 0 else '-'} "
+            f"{'/'.join(c['detectors']):<34} {mark:<28} {(c['label'] or c['subject'])[:90]}"
+        )
+    typer.echo(f"{len(rows)} candidates")
 
 
 @app.command()

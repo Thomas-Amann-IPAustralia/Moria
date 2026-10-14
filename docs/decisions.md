@@ -1559,3 +1559,166 @@ session's cache.
   4. Still open: KT20 to KT24 (D-020), the wishlist, and the merge of this branch (or a pull request).
 
 Next free decision number: D-022.
+
+## D-022 — Day 4 built and run: the detectors over every series and document, six artefact checks, all six seeded artefacts caught; 2,486 candidates, 2,129 unflagged (2026-10-14)
+
+**Context.** The owner: "Commence Day 4 build." Design §13 day 4: rates; trends, accelerations and change points over
+the whole taxonomies; world/AU divergence; anomalies; the five weak-signal indicators; cross-ring convergence;
+artefact checks with seeded artefacts. Done when there is a candidate list with artefact flags. The handover's flags
+(D-021) were read first: the legal corpus is 85% of documents; GDELT has two days; the zero-shot ring is weak.
+
+**Built (this session's engineering choices; they stand until the owner says otherwise).** The settings are in
+`config/detect.yaml` (`DetectConfig`); every stage checks its upstream manifests and writes its own.
+- **`moria measure series --as-of D`** (`src/moria/measures.py`, statistics in `src/moria/stats.py`). Every series
+  of OpenAlex, the CPC counts, ABS, the OECD, GDELT and the IP RAPID metrics, at a point in time: each period's
+  latest vintage observable by the end of D (else the earliest: backfilled history has no true first sighting), the
+  period containing D dropped (never complete), and lagged periods dropped (CPC and OECD patents 2 years; IP RAPID
+  design series 2 months, below; OpenAlex Januaries left out, being works dated by year only).
+  - **Rates per source volume** (§8.3): a count is tested as its share of the source's volume in the same period
+    (a topic over all works in its scope, a CPC subclass over all subclasses, a query group over every GKG
+    document, an IP RAPID split over the right's applications), on a log scale, so a slope is a growth rate. A
+    count absent from a period its source covered is a zero. Statistics are tested on their own scale.
+  - **Trend:** Theil–Sen with Sen's interval (matches `scipy.stats.theilslopes` exactly) and Mann–Kendall in three
+    windows: 12, 24 and 36 months as designed; 8, 12 and 16 years for annual series and 8, 16 and 24 quarters,
+    because 8 annual points can never reach p < 1e-4, which Holm needs across thousands of series. Significant in
+    at least 2 windows, in one direction, after Holm within a family (source, frequency, taxonomy level or
+    dataflow, scope class, window); a window needs 90% of its periods; a count needs a mean of 5 a period.
+    Benjamini–Hochberg's q is kept beside it for comparison only: 1,295 trends under Holm, 7,007 under BH.
+  - **Acceleration:** the recent half's Theil–Sen slope minus the earlier half's, with a bootstrap (300 resamples,
+    fixed seed) standard error and Holm; or a change point to a steeper slope on a series that is itself a trend
+    (§8.2: a trend whose growth increases). Both must change the yearly growth by at least 0.10 (counts), or the
+    yearly slope by 0.10 of the level (statistics).
+  - **Change points:** optimal partitioning of the penalised squared error, PELT's exact objective without its
+    pruning, in level and in slope. The penalty is 3 times BIC's from a robust noise estimate: on simulated noise
+    of 36 points, BIC split 17% of series in level and 15% in slope; 3 times BIC split 0.55% and 0.3%, and still
+    found a 2-sigma level shift 77% of the time (a 0.4-sigma-a-period slope change 45%). A level change is sought
+    about the window's trend line, so a trend is not read as steps.
+  - **Anomaly:** the latest value against a Theil–Sen line fitted on the periods before it (24 months, 8 years),
+    with a robust band, family-wise at 99% (Holm), and at least 25% off the expected value; or a recent change in
+    level (monthly, quarterly and daily series only).
+  - **Low-base surge:** the latest periods (3 months, 1 year, 7 days) against a trailing baseline (12 months, 5
+    years, 28 days), the exact conditional Poisson test of two rates with the source volume as exposure, a low
+    base (at most 5 expected), at least 5 items and a ratio of at least 2, Holm.
+  - **Divergence (§8.5):** Australia's share against the world's (OpenAlex, CPC, GDELT) or Australia's level
+    against the OECD's (the log ratio, so relative growth), tested for a trend like any series.
+  - Writes `measures/series/as_of=D/{measures,divergence}.parquet`. 26,999 series in 23 s.
+- **`moria measure documents --as-of D`** (`src/moria/concepts.py`). A 91-day window and the 730 days before it.
+  An item is visible when observable by D and seen by Moria by D, or observable before its source's onboarding
+  (backfill, §6.3). Undated items from a source's first collection (4,360, nearly all legal-corpus judgments) carry
+  no date and are left out of every window. Counts are of de-duplication groups.
+  - Concepts: keyphrases, the 47 term groups, and 200 MiniBatchKMeans clusters fitted at D (named by their
+    keyphrases' class-based TF-IDF).
+  - `new_term`, `cross_family` (3 families in the window, at most 1 before), `cross_ring` (rising in wider-world
+    items by the exact test, and in core items for the first time), `low_base_surge` per family, `new_combination`
+    (keyphrase pairs; IPC subclass and Nice class pairs from IP RAPID, by the month the application's classes were
+    assigned, at least 3 applications from 2 applicants), and `novel_items` (LocalOutlierFactor fitted on each
+    family's baseline, novel items grouped into micro-clusters at cosine distance 0.25).
+  - An item's ring: its card's ring when there is one; else core when it matches core-ring terms (D-021's flag);
+    else the zero-shot ring among the card's other rings.
+- **`moria ipr metrics`** now also writes applications by IPC subclass, Nice class and Locarno class (731 series in
+  all, from 59) and the co-classification tables (679,869 pair rows) the new-combination detector reads.
+- **`moria monitor ingestion`** (`src/moria/monitor.py`): days and incidents per source from the monitor entries and
+  collection manifests: a day is judged by its best passed run against the card's current band (daily and weekly
+  sources only); failed days; gaps in daily sources up to two days before D. A snapshot (a source's first day, a
+  `--backfill` run) is not above its band; a bulk release is filed under its release date.
+- **`moria detect --as-of D`** (`src/moria/detect.py`): one candidate per subject, typed acceleration, trend, weak
+  signal or anomaly, with every detector that fired, their numbers (canonical JSON), a strength for day 5's ranking,
+  the views (early warning, strategic), and the evidence (series, or window items with sources, families, rings and
+  groups). A weak signal needs 3 groups from 2 sources (45 dropped). Ids come from the subject alone, so a subject
+  keeps its id across scans.
+- **`moria artefacts --as-of D`** (`src/moria/artefacts.py`): six checks, each shown, never hiding a candidate. For a
+  weak signal from documents the question is whether it would still meet the minimum without the evidence the check
+  doubts: sources whose volume moved more than ±25% or that have no baseline (coverage), sources whose history
+  doesn't cover the baseline (source break), sources with an incident in the window (ingestion); and raw items at
+  least twice its groups (duplicate), news only inside 14 days (news cycle), tags with more than one tagger version
+  (label drift). For a series: its source's volume over the detector's window (coverage), the latest collection's
+  incident (ingestion), a dated break on its card inside the window (source break), and for GDELT volumes,
+  syndicated copies and news bursts without a primary-source item. A class pair with a class new to the scheme
+  (first seen inside the baseline, as IPC's 2025 subclasses H10D, H10F and H10H) is a source break.
+- **`moria eval artefacts --as-of D`** (`src/moria/seeded.py`): the yardstick of §11.2. The evidence layer is copied
+  to a temporary store, six artefacts are planted in synthetic sources and scopes, each with a control (a genuine
+  change of the same size without the artefact), and the whole chain runs on the copy: a volume spike in a series
+  scope and in a document source (coverage), duplicated syndication (duplicate), a source onboarded two days before
+  with 60 days of backfill (source break), a failed collection (ingestion), and a news burst with no primary source
+  (news cycle). A seed counts as caught only if it became a candidate and its check flagged it, and its control
+  became a candidate without that flag. The same evaluation on a hand-built layer is the end-to-end test.
+- **`moria scan`** (the chain: monitor, measures, detect, artefacts), **`moria scan-report`** (`reports/scan.md`,
+  counts only), **`moria candidates`** (labels, for the analyst's terminal only), and the weekly `prepare` workflow
+  now runs the scan and the seeded check after preparing.
+- **Departures from the design, a line each:** `moria measure` has two subcommands (series, documents) rather than
+  one per analysis, because each needs one point-in-time read of its inputs; forecasts are not built (deferred, §13);
+  WIPO's bulk statistics (stale: they end in 2022) and the ABS spreadsheets (one period each) are not tested; OECD
+  series are tested for Australia, the aggregates and 19 economies that file most in Australia or are its peers,
+  and national-currency series are left out (their US-dollar PPP versions are tested); the anomaly and acceleration
+  effect floors and the 3-times-BIC penalty are additions.
+
+**Runs, disclosed in order** (`--store r2`, this session's machine; every manifest kept):
+1. `ipr.metrics` `20261014T003957Z-86002796` and the first scan from `309cb43` (detect `20261014T004220Z-f94501b2`):
+   3,449 candidates. Reading them found four faults, fixed in `b460e70`:
+   - divergence on statistics took the raw difference, so Australia's GDP "diverged" from the OECD total by 2.3
+     million (US dollars, millions): now the log ratio;
+   - Argentina's and Türkiye's national-currency series (inflation) filled the accelerations, and small economies'
+     volatility the anomalies: the OECD scope and unit rules above (OECD series tested: 16,168 to 4,642 annual);
+   - **trade mark registrations in the IP RAPID metrics fell from about 5,000 a month to near zero from March 2026.
+     The scan raised it; the cause is a recording change, not a fall:** the `granted` event all but stops (821 from
+     April to September 2026, against 36,581 a year before) while `publish_registered` events and the application
+     table's registration dates go on at about 6,000 a month. Registrations are now counted from the application
+     table, and the card's known biases say so;
+   - in a release's last month, design applications have no Locarno class or Australian applicant recorded yet
+     (September 2026: 953 designs, all "overseas", 6 in class 14 against about 50): design series now lag 2 months;
+   - the monitor counted dry runs, backfills and bulk releases as incidents, and the day before D as a gap.
+2. The second scan (`b460e70`) passed; the first seeded evaluation failed (`20261014T005224Z-65e6a676`): a source
+   with no items has an empty tags file. Fixed in `be8ead3` (the fixture now has one); the re-run caught 6 of 6.
+3. Reading the class pairs: the new-class rule (`9ea53c4`).
+4. **The final runs, from `9ea53c4`, clean:** `monitor.ingestion` `20261014T005950Z-f7f54a3c`, `measure.series`
+   `20261014T010016Z-e7f4b90b`, `measure.documents` `20261014T010046Z-bfc90615`, `detect`
+   `20261014T010124Z-004fa171`, `artefacts` `20261014T010126Z-e67d87df` (with `ipr.metrics`
+   `20261014T005005Z-4aa7deae` from `b460e70`); `eval.artefacts` `20261014T010131Z-fd47baa0`. The scan takes about
+  2 minutes; the seeded evaluation about 1.5.
+
+**Results (as of 2026-10-14; `reports/scan.md`, `reports/eval/artefacts.md`):**
+- **2,486 candidates, 2,129 with no flag:** 1,068 trends (974 clean), 452 accelerations (381), 830 anomalies (733),
+  136 weak signals (41). Flags: coverage 354, source break 91, duplicate 2, news cycle 1, ingestion 0, label drift 0.
+- **Every weak signal from documents is flagged,** as it should be today: the window is full of feeds onboarded this
+  week with no baseline (GDELT, the breadth pack, the OECD feeds), the legal corpus ends in 2025 while daily
+  legislation began in October (the legal family's window holds 40 groups against 33,382 in the baseline), and STIP
+  Compass's window holds 22 initiatives against 2,514 in the baseline. The 41 clean weak signals are IP RAPID class
+  pairs (28) and series surges (13).
+- **Seeded artefacts: 6 of 6 caught; 6 of 6 controls detected without the flag,** on the real layer.
+- Series: 26,999 tested; 1,295 trends (Holm); 339 bootstrap accelerations; 808 anomalies; 124 recent level changes;
+  14 surges; 5,120 AU/world pairs, 42 diverging.
+- Documents: 5,405 items in the window and 36,773 in the baseline; new terms 18, cross-family 31, cross-ring 9,
+  low-base surges 71, new combinations 28 and rising 7, novel micro-clusters 8, before the weak-signal minimum.
+- **A correction of D-021's reading.** D-021 read the jump in IP RAPID's Australian and self-filed patent shares in
+  2025–26 as composition lag (national-phase entries arriving late). The counts don't support it: overseas
+  applications stay at about 2,100 to 2,550 a month from January 2025 to September 2026, with no shortfall in recent
+  months, while provisional applications rose from about 220–440 a month in 2023–24 to 760–1,270 in early 2026. The
+  scan reads the provisional share of patent applications as a trend (growing about 41% a year) and the self-filed
+  share as an accelerating trend (about 58% a year). No lag is applied to patent series.
+
+**Checked:** 135 tests pass with no network (stats against scipy and planted changes; series detectors on planted
+trends, a surge, an anomaly, a level shift and a divergence; point in time; the monitor's rules; rings; class pairs;
+the seeded evaluation end to end on a hand-built layer; the report holds no labels or keyphrases). CI green on
+`309cb43`. Lint and format clean.
+
+**Spend:** $0. The bucket gains the measures, candidates and monitor summaries: 8.1 MB a scan.
+
+**Consequences.**
+- Day 5 reads `candidates/as_of=D/{candidates,evidence,artefacts}.parquet` and the measures behind them;
+  `docs/handover-day4.md` lists what it needs and the flags.
+- The weak signals from documents will stay flagged until daily collection builds a baseline: a feed whose history
+  starts in October 2026 covers the 730-day baseline (before a 91-day window) from about January 2029, and the
+  source-break check passes a candidate earlier when its evidence stands without such feeds. A shorter baseline for
+  a weekly early-warning scan is a measured choice for later.
+- Known limits: series surges can't be checked for 2 sources (an OpenAlex surge of 5 works may be one book); the
+  keyphrase vocabulary was fitted on all evidence, so a hindsight scan at a past date needs a refit (day 5's
+  term-only run); GDELT's daily series become testable after 35 days of collection; the candidate list is large,
+  by design: day 5 ranks it within the ring quotas.
+- **For the owner:**
+  1. **IP RAPID's trade mark registrations:** the `granted` event has all but stopped being recorded since March
+     2026. If you know of a change in IP Australia's systems then, say so; the metric now uses registration dates.
+  2. Day 5 (dossiers, pathway suggestions, ranking and quotas, the register export) when you ask.
+  3. Still open: the T4 speed test and the codebook (D-021), KT20 to KT24 (D-020), the wishlist, and the merge of this
+     branch (or a pull request).
+
+Next free decision number: D-023.

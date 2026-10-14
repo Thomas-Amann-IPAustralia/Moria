@@ -381,3 +381,147 @@ def load_features(config_dir: Path = CONFIG_DIR) -> FeaturesConfig:
 
 def load_codebook(config_dir: Path = CONFIG_DIR) -> CodebookFile:
     return CodebookFile.model_validate(_load_yaml(config_dir / "codebook.yaml"))
+
+
+Freq = Literal["M", "Q", "A", "D"]
+
+
+class LagRule(Strict):
+    prefix: str | None = None
+    pattern: str | None = None  # a regular expression searched in the series id
+    periods: int
+
+    @model_validator(mode="after")
+    def _one(self) -> LagRule:
+        if (self.prefix is None) == (self.pattern is None):
+            raise ValueError("a lag rule has a prefix or a pattern")
+        return self
+
+    def matches(self, series_id: str) -> bool:
+        import re
+
+        return series_id.startswith(self.prefix) if self.prefix else bool(re.search(self.pattern, series_id))
+
+
+class ChangePointConfig(Strict):
+    penalty_factor: float
+    min_size: dict[Freq, int]
+    min_size_level: dict[Freq, int]
+    recent: dict[Freq, int]
+    level_frequencies: list[Freq]
+
+
+class BootstrapConfig(Strict):
+    reps: int
+    seed: int
+
+
+class SeriesSurgeConfig(Strict):
+    window: dict[Freq, int]
+    baseline: dict[Freq, int]
+    min_count: int
+    max_expected: float
+    min_ratio: float
+
+
+class DimsRule(Strict):
+    source: str
+    dims: dict[str, str]
+
+
+class SeriesDetectConfig(Strict):
+    sources: list[str]
+    windows: dict[Freq, list[int]]
+    min_coverage: float
+    min_mean_count: float
+    alpha: float
+    trend_min_windows: int
+    anomaly_alpha: float
+    anomaly_min_change: float
+    accel_min_change: float
+    anomaly_baseline: dict[Freq, int]
+    stale_after: dict[Freq, int]
+    change_points: ChangePointConfig
+    bootstrap: BootstrapConfig
+    surge: SeriesSurgeConfig
+    lags: list[LagRule] = []
+    exclude_months: dict[str, list[int]] = {}
+    divergence_reference: dict[str, str] = {}
+    scopes: dict[str, list[str]] = {}
+    exclude_dims: list[DimsRule] = []
+
+    def tested(self, source: str, scope: str | None, dims: dict) -> bool:
+        if source in self.scopes and scope not in self.scopes[source]:
+            return False
+        return not any(r.source == source and all(dims.get(k) == v for k, v in r.dims.items())
+                       for r in self.exclude_dims)  # fmt: skip
+
+    @field_validator("windows")
+    @classmethod
+    def _three_windows(cls, windows: dict[str, list[int]]) -> dict[str, list[int]]:
+        for f, ws in windows.items():
+            if len(ws) != 3 or ws != sorted(ws):
+                raise ValueError(f"windows[{f}]: three windows, shortest first")
+        return windows
+
+    def lag(self, series_id: str) -> int:
+        return next((r.periods for r in self.lags if r.matches(series_id)), 0)
+
+
+class ClusterConfig(Strict):
+    k: int
+    seed: int
+    batch: int
+    sample: int
+    name_terms: int
+
+
+class NoveltyConfig(Strict):
+    neighbours: int
+    min_baseline: int
+    baseline_sample: int
+    threshold: float
+    micro_distance: float
+
+
+class DocumentsDetectConfig(Strict):
+    window_days: int
+    baseline_days: int
+    credible_families: list[Family]
+    min_items: int
+    min_sources: int
+    new_term_min_df: int
+    cross_family_min: int
+    cross_family_max_before: int
+    surge_min_ratio: float
+    surge_max_expected: float
+    surge_min_baseline_items: int
+    alpha: float
+    combination_min_items: int
+    combination_min_each_before: int
+    combination_lift_ratio: float
+    clusters: ClusterConfig
+    novelty: NoveltyConfig
+    ipr_window_months: int
+    ipr_baseline_months: int
+    ipr_min_applicants: int
+
+
+class ArtefactsConfig(Strict):
+    coverage_change: float
+    duplicate_ratio: float
+    news_cycle_days: int
+    primary_families: list[Family]
+
+
+class DetectConfig(Strict):
+    """config/detect.yaml: the detectors' windows, tests and thresholds, and the artefact checks' rules."""
+
+    version: int
+    series: SeriesDetectConfig
+    documents: DocumentsDetectConfig
+    artefacts: ArtefactsConfig
+
+
+def load_detect(config_dir: Path = CONFIG_DIR) -> DetectConfig:
+    return DetectConfig.model_validate(_load_yaml(config_dir / "detect.yaml"))

@@ -6,7 +6,7 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Days 1 to 3, the Tier 1 cleanup and the widening of
+**Current scope: the one-week machinery sprint (design §13). Days 1 to 4, the Tier 1 cleanup and the widening of
 sources (D-020) are built.**
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
@@ -38,8 +38,17 @@ sources (D-020) are built.**
   territory terms matched in every source; `config/codebook.yaml` is proposed); `moria ipr metrics` (monthly demand,
   outcomes and timeliness); `moria prepare` (the chain, weekly); `moria search`; `moria evidence-report`. The
   decision model's T4 speed test is a script for the owner (`scripts/t4_jevstyle_speed.py`).
-- **Next:** day 4 (detectors, artefact checks), when the owner asks; then day 5 (dossiers, register export).
-  `docs/handover-day3.md` lists what day 4 reads and its flags. Pile of Law was checked and discarded (D-016).
+- **Built (day 4, D-022):** `moria measure series` (trends, accelerations, change points, anomalies, low-base
+  surges and AU/world divergence over every count and statistical series, counts as rates per source volume, Holm
+  within families); `moria measure documents` (new terms, new combinations of keyphrases and of IPC and Nice
+  classes, cross-family and cross-ring concepts, low-base surges, micro-clusters of novel items); `moria monitor
+  ingestion`; `moria detect` (candidates with their detectors' numbers and evidence); `moria artefacts` (coverage,
+  ingestion, duplicate, news cycle, source break, label drift); `moria scan` (the chain); `moria scan-report`;
+  `moria candidates` (terminal only); `moria eval artefacts` (seeded artefacts with controls: 6 of 6 caught).
+  `moria ipr metrics` adds class series and class pairs. Settings in `config/detect.yaml`.
+- **Next:** day 5 (dossiers, pathway suggestions, ranking and quotas, the register export and import, the
+  early-warning digest, a term-only hindsight smoke run), when the owner asks. `docs/handover-day4.md` lists what
+  day 5 reads and its flags. Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, the rest of Tier 2 (the OECD
   and the breadth pack came forward, D-020), a dashboard, agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
@@ -88,8 +97,8 @@ sources (D-020) are built.**
   false` for feeds, `store_text: false` for sitemaps and documents).
 - The sweep (inside `moria normalise`) quarantines high-severity items: AI-directed instructions, secrets, Unicode
   tag characters. Only the owner adds `config/sweep.yaml` allowlist entries; Claude proposes them in chat.
-- `moria search` prints titles: the analyst's own terminal only, never a scheduled job. Repo reports never hold
-  titles, text, URLs or keyphrases.
+- `moria search` prints titles and `moria candidates` prints labels: the analyst's own terminal only, never a
+  scheduled job. Repo reports never hold titles, text, URLs, keyphrases or candidate labels.
 - Owner uploads go to `inbox/documents/` in the private bucket, never into the repo. Every document's own licence
   statements are checked; one that reserves its rights is never stored as text, and `store_text: if_open_licence`
   stores text only when the document states an open licence (D-014).
@@ -113,8 +122,17 @@ sources (D-020) are built.**
 | Keyphrases | `moria features keyphrases` | documents | `features/keyphrases/source=<id>/keyphrases.parquet`, `features/keyphrases/vocabulary.parquet` |
 | Tag | `moria tag [--backend zeroshot]` | documents, embeddings, codebook, territories (and their private context), baseline | `features/tags/source=<id>/tags.parquet` |
 | Index | `moria features index` | documents | `features/index/bm25.duckdb` (DuckDB fts) |
-| IP RAPID metrics | `moria ipr metrics` | the latest IP RAPID base and delta | `lake/ipr_metrics/series.parquet`, `lake/ipr_metrics/observations.parquet` |
+| IP RAPID metrics | `moria ipr metrics` | the latest IP RAPID base and delta | `lake/ipr_metrics/series.parquet`, `lake/ipr_metrics/observations.parquet`; `class_pairs.parquet`, `class_counts.parquet` (co-classifications) |
 | Prepare (the chain) | `moria prepare [--store r2]` | the raw store | all of the above, in order; stops at the first failure |
+| Ingestion monitor | `moria monitor ingestion [--as-of D]` | monitor entries, collection manifests | `monitors/summary/as_of=<D>/{days,incidents}.parquet` |
+| Series detectors | `moria measure series [--as-of D]` | normalise's series and observations, IP RAPID metrics | `measures/series/as_of=<D>/{measures,divergence}.parquet` |
+| Document detectors | `moria measure documents [--as-of D]` | documents, dedup, keyphrases, embeddings, tags, IP RAPID class pairs | `measures/documents/as_of=<D>/` (volumes, concepts, surges, combinations, novelty, clusters, assignments, group_items, evidence) |
+| Detect | `moria detect [--as-of D]` | both measures of the same date | `candidates/as_of=<D>/{candidates,evidence}.parquet` |
+| Artefact checks | `moria artefacts [--as-of D]` | candidates, measures, monitor, cards | `candidates/as_of=<D>/artefacts.parquet` |
+| Scan (the chain) | `moria scan [--as-of D] [--store r2]` | the evidence layer | all of the above, in order; stops at the first failure |
+| Scan report | `moria scan-report [--as-of D]` | the scan's manifests and outputs | `reports/scan.md` in the repo (aggregates only) |
+| Seeded artefacts | `moria eval artefacts [--as-of D]` | a temporary copy of the evidence layer, with seeds | `manifests/eval.artefacts/`; `reports/eval/artefacts.md` (synthetic seeds only); exits 2 if a seed is missed |
+| Candidates | `moria candidates [--as-of D] [--type T] [--clean]` | candidates, artefacts | nothing (prints labels to the analyst's terminal) |
 | Search | `moria search "words" [--source S] [--since D]` | the index | nothing (prints matches to the analyst's terminal) |
 | Evidence report | `moria evidence-report` | every stage's latest manifest | `reports/evidence-layer.md` in the repo (aggregates only) |
 | Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` (proposed trends marked) | config | nothing |
@@ -130,7 +148,8 @@ instead of the document's URL.
   default branch only.
 - `collect-weekly.yml`: Mondays 03:41 UTC (after IP Australia rebuilds IP RAPID and OpenAlex's budget resets).
 - `prepare.yml`: Mondays 07:17 UTC, after collect-weekly: `moria prepare` (embeddings, dedup, keyphrases, tags,
-  index, IP RAPID metrics), with the model files cached by their pinned revision.
+  index, IP RAPID metrics), with the model files cached by their pinned revision; then `moria scan` and `moria eval
+  artefacts` (a missed seed fails the job).
 - `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
@@ -158,6 +177,14 @@ instead of the document's URL.
   (`abs_datacubes`) is one observation record, kept as published.
 - IP RAPID lives in the lake as typed Parquet: a base about quarterly and weekly deltas against it (`_change` is
   `added` or `removed`). The zip is not kept; its SHA-256 is in the release manifest.
+- A scan at `as_of` D sees what was observable by the end of that UTC day. Series: each period's latest vintage by
+  then (else the earliest), the period containing D dropped, lagged periods dropped (`config/detect.yaml`). Documents:
+  a 91-day window and the 730 days before it; an item observable before its source's onboarding is backfill, bound
+  by its observable date; undated items from a source's first collection are left out of every window.
+- A candidate (`candidates/as_of=<D>/`) is one subject (series, AU/world pair, concept, combination, micro-cluster)
+  with its type (acceleration, trend, weak_signal, anomaly), detectors, numbers, strength, evidence and artefact
+  flags. Its id (`sig-` and 12 hex digits) comes from the subject, so it is stable across scans. A weak signal needs
+  3 de-duplication groups from 2 sources. A flag marks a candidate; it never hides it.
 - `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
   documents read. Trends and citations Claude drafts are `status: proposed` until the owner confirms them (D-020).
   A signal records whether it is `novel` or `reinforces` a known trend.
@@ -176,7 +203,7 @@ instead of the document's URL.
 | `uspto_news`, `ipos_news` | sitemap | News pages by lastmod. IPOS keeps titles only: its terms forbid reproduction. |
 | `openalex_counts` | openalex_counts | Weekly. Works by primary topic at four taxonomy levels, each year from 2010 and each of the last 36 months, worldwide and with an Australian author; research output types only (D-011). About 2,400 of the 10,000 free daily credits. |
 | `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
-| `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. |
+| `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. Trade mark `granted` events all but stop from March 2026: registrations are counted from the application table's dates (D-022); a release's last month of designs lacks classes and applicant countries (lagged 2 months). |
 | `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. Switched on by the owner (D-019): about 17.1 GB a run, under 2% of the free 1 TiB a month; every query capped at 200 GB. Run it with `collect-source` (the key is only in GitHub's secrets). |
 | `foresight_syntheses` | documents | Once. Ten documents: three fetched (CSIRO as metadata only), four owner uploads (D-020: the Science and Research Priorities and the Net Zero Plan as text; the 2026 National Defence Strategy and Integrated Investment Program reserve their rights, metadata only); the Critical Technologies list, WEF and the OECD STI Outlook still wait (`docs/wishlist.md`). Text stored only where the document states an open licence. |
 | `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5), IP Australia's *Australian IP Report 2026* and the Patents Accessibility Review (an upload, Word, CC BY) as text; the AIC's crime-cost reports (uploads) reserve their rights; the Government's response to the review waits on an upload. |

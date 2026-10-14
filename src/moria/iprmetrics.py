@@ -12,12 +12,18 @@ The series (`ip_rapid_metrics|<metric>|<right>[|<split>]`), monthly from 2000:
 - demand, by application month: applications (by sub-type); by the founding applicants' origin (any Australian
   applicant, else overseas); filed without a founding agent (self-filed); first-time applicants (a founding
   applicant's first application of that right); Madrid applications designating Australia; patent applications in AI
-  (IPC or CPC G06N, current classifications);
-- outcomes, by event month: registrations or grants, acceptances, lapses, withdrawals, refusals, oppositions,
+  (IPC or CPC G06N, current classifications); applications in each IPC subclass, Nice class and Locarno class (the
+  whole taxonomy of each scheme, design §8.5);
+- outcomes, by event month: registrations or grants (trade mark registrations by the application table's registration
+  date, D-022), acceptances, lapses, withdrawals, refusals, oppositions,
   non-use removal applications, ownership changes, renewals, examination requests (current events only; the
   `*_historical` categories are migrated records);
 - timeliness: the median days from filing to registration or grant, by registration month (the application
   table's own date; the `accepted` event is not examination acceptance for every right).
+
+Co-classifications (`lake/ipr_metrics/class_pairs.parquet`, with `class_counts.parquet` for lift): pairs of IPC
+subclasses on a patent application and of Nice classes on a trade mark application, by the month the application's
+classes became observable, for the new-combination detector (design §8.2). A release's snapshot, not vintaged.
 
 A series whose last month is more than 12 months before the release is left out and counted as discontinued: some
 event categories stopped when IP Australia's systems changed (trade mark renewals and examination requests end in
@@ -33,6 +39,7 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 import duckdb
+import pyarrow as pa
 
 from .config import SourceCard
 from .manifest import Manifest
@@ -49,7 +56,6 @@ START = "2000-01-01"
 
 # (metric, rights, event categories): outcome counts by event month
 OUTCOMES = [
-    ("registered", ("trade_mark",), ("granted",)),
     ("registered", ("design",), ("registered",)),
     ("granted", ("patent", "pbr"), ("granted",)),
     ("accepted", ("patent", "trade_mark", "pbr"), ("accepted",)),
@@ -63,6 +69,15 @@ OUTCOMES = [
     ("renewals", ("trade_mark", "design"), ("publish_renew",)),
     ("exam_requests", ("patent", "trade_mark", "design"), ("exam_request",)),
 ]
+# whole-taxonomy demand (design §8.5, §10.2): applications by filing month in each class of a scheme, and the
+# co-classifications behind new combinations (§8.2): (metric, classification system, the class's SQL expression)
+CLASS_SCHEMES = [
+    ("applications_ipc", "ipc_mark", "left(classification, 4)"),  # IPC subclass, e.g. G06N
+    ("applications_nice", "nice", "classification"),  # Nice class, 1 to 45
+    ("applications_locarno", "locarno", "left(classification, 2)"),  # Locarno class, e.g. 14
+]
+PAIR_SCHEMES = {"ipc_mark": ("ipc", "left(classification, 4)"), "nice": ("nice", "classification")}
+MAX_PAIR_CLASSES = 10  # an application in more classes than this (a few name all 45) adds no pairs
 LABELS = {
     "applications": "Applications filed",
     "applications_au": "Applications with an Australian founding applicant",
@@ -72,6 +87,9 @@ LABELS = {
     "madrid_designating_au": "Madrid international registrations designating Australia",
     "applications_ai_g06n": "Patent applications classified in G06N (AI)",
     "days_to_registration_median": "Median days from filing to registration or grant, by registration month",
+    "applications_ipc": "Applications in an IPC subclass",
+    "applications_nice": "Applications in a Nice class",
+    "applications_locarno": "Applications in a Locarno class",
 }
 
 
@@ -137,6 +155,10 @@ def metric_rows(con: duckdb.DuckDBPyConnection, release: date) -> list[tuple[str
         ("madrid_designating_au|' || r", "SELECT m, r, count(DISTINCT a.application_number) FROM apps a JOIN "
          "application_links l ON l.application_number = a.application_number AND l.ip_right_type = a.r WHERE "
          "l.link_type = 'madrid_import' GROUP BY ALL"),
+        *[(f"{metric}|' || r", "SELECT m, r, cls, count(DISTINCT a.application_number) FROM apps a JOIN (SELECT "
+           f"DISTINCT application_number, ip_right_type, {code} AS cls FROM application_classification WHERE "
+           f"is_current AND classification_system = '{system}') c ON c.application_number = a.application_number "
+           "AND c.ip_right_type = a.r GROUP BY ALL") for metric, system, code in CLASS_SCHEMES],
         ("applications_ai_g06n|' || r", "SELECT m, r, count(DISTINCT a.application_number) FROM apps a JOIN "
          "application_classification c ON c.application_number = a.application_number AND c.ip_right_type = a.r "
          "WHERE c.is_current AND c.classification_system IN ('ipc_mark', 'cpc_mark') AND c.classification LIKE "
@@ -156,6 +178,13 @@ def metric_rows(con: duckdb.DuckDBPyConnection, release: date) -> list[tuple[str
                f"AND event_effective_date {window} GROUP BY ALL")  # fmt: skip
         for m, r, n in con.execute(sql).fetchall():
             out.append((f"{metric}|{r}", m, "applications", float(n)))
+    # trade mark registrations by the application table's registration date: the `granted` event all but stops being
+    # recorded from March 2026 (821 from April to September 2026, against 36,581 a year before), while registrations
+    # go on (publish_registered events, registration dates; D-022)
+    sql = (f"SELECT {month.format('gained_registration_status_date')} AS m, ip_right_type, count(*) FROM application "
+           f"WHERE ip_right_type = 'trade_mark' AND gained_registration_status_date {window} GROUP BY ALL")  # fmt: skip
+    for m, r, n in con.execute(sql).fetchall():
+        out.append((f"registered|{r}", m, "applications", float(n)))
     sql = (
         f"SELECT {month.format('gained_registration_status_date')} AS m, ip_right_type, "
         f"median(date_diff('day', application_date, gained_registration_status_date)) FROM application "
@@ -165,6 +194,62 @@ def metric_rows(con: duckdb.DuckDBPyConnection, release: date) -> list[tuple[str
     for m, r, d in con.execute(sql).fetchall():
         out.append((f"days_to_registration_median|{r}", m, "days", float(d)))
     return sorted(out)
+
+
+CLASS_PAIRS = pa.schema(
+    [
+        ("right", pa.string()),
+        ("scheme", pa.string()),  # ipc (subclass) or nice (class)
+        ("class_a", pa.string()),
+        ("class_b", pa.string()),  # class_a < class_b
+        ("period", pa.string()),  # the month the application's classes became observable (its last classification)
+        ("applications", pa.int32()),
+        ("applicant_min", pa.string()),  # the least and greatest founding applicant's party id: two differ when a
+        ("applicant_max", pa.string()),  # pair's applications come from at least two applicants, over any months
+    ]
+)
+CLASS_COUNTS = pa.schema(
+    [
+        ("right", pa.string()),
+        ("scheme", pa.string()),
+        ("class", pa.string()),  # '*': every application classified in the scheme
+        ("period", pa.string()),
+        ("applications", pa.int32()),
+    ]
+)
+
+
+def class_pair_rows(con: duckdb.DuckDBPyConnection, release: date) -> tuple[list[dict], list[dict]]:
+    """Co-classification counts for new combinations (design §8.2): per scheme, each application's current classes
+    (at most MAX_PAIR_CLASSES), dated by the month its last class was assigned (when the whole set was observable;
+    the filing date where a class has no date). Returns (pair rows, class count rows), both by that month."""
+    pairs, counts = [], []
+    for system, (scheme, code) in sorted(PAIR_SCHEMES.items()):
+        con.execute(
+            f"CREATE OR REPLACE TEMP TABLE cls AS SELECT c.ip_right_type AS r, c.application_number AS n, {code} AS k, "
+            f"min(coalesce(c.classification_date, a.application_date)) AS d FROM application_classification c "
+            f"JOIN application a ON a.application_number = c.application_number AND a.ip_right_type = "
+            f"c.ip_right_type WHERE c.is_current AND c.classification_system = '{system}' GROUP BY ALL"
+        )
+        con.execute(
+            f"CREATE OR REPLACE TEMP TABLE app AS SELECT r, n, strftime(date_trunc('month', max(d)), '%Y-%m') AS m "
+            f"FROM cls GROUP BY ALL HAVING count(*) <= {MAX_PAIR_CLASSES} AND max(d) BETWEEN DATE '{START}' AND "
+            f"DATE '{release.isoformat()}'"
+        )
+        sql = (
+            "SELECT x.r, x.k, y.k, app.m, count(*), min(f.p), max(f.p) FROM cls x JOIN cls y ON x.n = y.n AND "
+            "x.r = y.r AND x.k < y.k JOIN app ON app.n = x.n AND app.r = x.r LEFT JOIN (SELECT application_number, "
+            "ip_right_type, min(party_id) AS p FROM party_activity WHERE is_founding AND party_role_category = "
+            "'applicant' GROUP BY ALL) f ON f.application_number = x.n AND f.ip_right_type = x.r GROUP BY ALL"
+        )
+        for r, a, b, m, n, lo, hi in con.execute(sql).fetchall():
+            pairs.append({"right": r, "scheme": scheme, "class_a": a, "class_b": b, "period": m,
+                          "applications": n, "applicant_min": lo, "applicant_max": hi})  # fmt: skip
+        sql = ("SELECT x.r, x.k, app.m, count(*) FROM cls x JOIN app ON app.n = x.n AND app.r = x.r GROUP BY ALL "
+               "UNION ALL SELECT r, '*', m, count(*) FROM app GROUP BY ALL")  # fmt: skip
+        for r, k, m, n in con.execute(sql).fetchall():
+            counts.append({"right": r, "scheme": scheme, "class": k, "period": m, "applications": n})
+    return pairs, counts
 
 
 def drop_discontinued(rows: list[tuple[str, str, str, float]], release: date, months: int = 12):
@@ -222,7 +307,12 @@ def metrics(store: Store, card: SourceCard, config_hash: str | None = None, thre
             counts = {"series": write_rows(series, SERIES, Path(tmp) / "series.parquet", ("series_id",)),
                       "observations": write_rows(obs, OBSERVATIONS, Path(tmp) / "observations.parquet",
                                                  ("series_id", "period", "vintage_at"))}  # fmt: skip
-            for name in ("observations", "series"):
+            pairs, class_counts = class_pair_rows(con, release)
+            counts["class_pairs"] = write_rows(pairs, CLASS_PAIRS, Path(tmp) / "class_pairs.parquet",
+                                               ("right", "scheme", "class_a", "class_b", "period"))  # fmt: skip
+            counts["class_counts"] = write_rows(class_counts, CLASS_COUNTS, Path(tmp) / "class_counts.parquet",
+                                                ("right", "scheme", "class", "period"))  # fmt: skip
+            for name in ("class_counts", "class_pairs", "observations", "series"):
                 upload(store, manifest, f"lake/ipr_metrics/{name}.parquet", Path(tmp) / f"{name}.parquet")
         counts["discontinued_series"] = len(discontinued)
         manifest.params["discontinued"] = discontinued

@@ -19,6 +19,11 @@ known_biases:
   - Sentinel dates (1800-01-01, 1901-01-01) stand for unknown dates
   - The party grouping (party_id) is IP Australia's own name and address matching
   - Agents and attorneys are parties too; most analysis wants applicants (party_role_category)
+  - "Trade mark `granted` events all but stop from March 2026 (821 from April to September 2026, against 36,581 a year
+    before) while registrations go on (publish_registered events, the application table's registration date): count
+    registrations from the application table (D-022)"
+  - "A release's last complete month of design applications holds no Locarno class or Australian applicant yet; the
+    detectors lag design series by two months (D-022)"
 revision_policy: rebuilt weekly in full; history can change retroactively (is_standing); kept as a base and weekly deltas
 licence: "CC BY 4.0 (data.gov.au; attribute IP Australia, IP RAPID)"
 snapshot_rights: all tables stored in the private bucket, with individuals' names hashed and their postcodes dropped
