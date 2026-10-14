@@ -68,11 +68,13 @@ def scan_report(store: Store, cfg: DetectConfig, as_of: date) -> str:
 
     # by source (series) and by evidence family (documents)
     out += ["", "## Where they come from", "", "Series and AU/world pairs by source; weak signals from documents by "
-            "the families of their evidence.", "", "| From | Trend | Acceleration | Weak signal | Anomaly | Clean |",
+            "the families of their evidence; IP RAPID's class pairs apart.", "",
+            "| From | Acceleration | Trend | Weak signal | Anomaly | Clean |",
             "|---|---:|---:|---:|---:|---:|"]  # fmt: skip
     where: dict[str, Counter] = defaultdict(Counter)
     for c in cands:
         key = (f"{c['sources'][0]}" if c["subject_kind"] in ("series", "pair")
+               else "ip_rapid (class pairs)" if c["sources"] == ["ip_rapid"]
                else "documents: " + " + ".join(c["families"]) if c["families"] else f"{c['sources'][0]}")  # fmt: skip
         where[key][c["type"]] += 1
         where[key]["clean"] += arts[c["candidate_id"]]["clean"]
@@ -83,7 +85,7 @@ def scan_report(store: Store, cfg: DetectConfig, as_of: date) -> str:
     for c in cands:
         rings[" + ".join(c["rings"]) or "(none)"][c["type"]] += 1
     out += ["", "By the rings of their evidence (a series carries its card's rings; a GDELT group its own ring):", "",
-            "| Rings | Trend | Acceleration | Weak signal | Anomaly |", "|---|---:|---:|---:|---:|"]  # fmt: skip
+            "| Rings | Acceleration | Trend | Weak signal | Anomaly |", "|---|---:|---:|---:|---:|"]  # fmt: skip
     for k in sorted(rings):
         out.append(f"| {k} | " + " | ".join(f"{rings[k].get(t, 0):,}" for t in TYPES) + " |")
 

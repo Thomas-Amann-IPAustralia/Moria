@@ -19,7 +19,8 @@ Series and AU/world pairs:
 - duplicate (GDELT volumes): the group's window items are at least twice their de-duplication groups;
 - news_cycle (GDELT bursts: surges and anomalies): no item from a primary family matches the group in the window.
 
-IP RAPID class pairs: coverage (the classified applications, window against baseline) and ingestion.
+IP RAPID class pairs: coverage (the classified applications, window against baseline), ingestion, and source_break
+when one of the classes is new to the scheme (first seen inside the baseline).
 
 Writes `candidates/as_of=<D>/artefacts.parquet`: one row per candidate, each check's outcome (flag, pass or n/a),
 the flags, and the numbers behind them (canonical JSON).
@@ -233,6 +234,9 @@ class Checker:
             details["coverage"] = round(change, 3)
         latest = self.latest_day.get("ip_rapid")
         out["ingestion"] = "flag" if latest and latest["flag"] != "ok" else "pass"
+        if r.get("new_class") is not None:
+            out["source_break"] = "flag" if r["new_class"] else "pass"
+            details["source_break"] = {"classes_since": r.get("classes_since")}
         return out, details
 
 
@@ -273,7 +277,8 @@ def artefacts(store: Store, cfg: DetectConfig, cards: dict[str, SourceCard], as_
         series = {r["series_id"]: r for r in read_rows(sf["measures.parquet"], ["series_id", "denominator",
                   "volume_change", "surge_volume_change", "frequency"])}  # fmt: skip
         combos = {r["combination"]: r for r in read_rows(df["combinations.parquet"],
-                                                          ["combination", "exposure_change"])}  # fmt: skip
+                                                          ["combination", "exposure_change", "classes_since",
+                                                           "new_class"])}  # fmt: skip
         checker = Checker(cfg, cards, as_of, read_rows(df["volumes.parquet"]), read_rows(mf["incidents.parquet"]),
                           read_rows(mf["days.parquet"]), series, combos, read_rows(df["group_items.parquet"]),
                           docm["params"].get("taggers") or [])  # fmt: skip

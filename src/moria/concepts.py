@@ -133,6 +133,8 @@ COMBINATIONS = pa.schema(
         ("window_exposure", pa.int32()),  # groups (keyphrases) or classified applications in the window
         ("baseline_exposure", pa.int32()),
         ("exposure_change", F64),  # per day (or month), window against baseline, minus 1: the coverage check
+        ("classes_since", pa.string()),  # classes: the later of the two classes' first months
+        ("new_class", pa.bool_()),  # classes: one of them first seen inside the baseline (new to the scheme)
         ("ratio", F64),
         ("p", F64),
         ("p_holm", F64),
@@ -510,12 +512,18 @@ def class_pairs(files: dict, as_of: date, cfg: DetectConfig) -> list[dict]:
             FROM read_parquet('{pp}') WHERE {per} IS NOT NULL GROUP BY ALL
             HAVING sum(applications) FILTER ({per} = 'w') >= {int(dc.combination_min_items)} ORDER BY 1, 2, 3, 4"""
     ).fetchall()
+    # a class's first month: one first seen inside the baseline is new to the scheme (IPC adds subclasses, such as
+    # H10D, H10F and H10H in 2025), and a pair with it is a change of classification, not of practice
+    sql = f'SELECT scheme, "right", "class", min(period) FROM read_parquet(\'{cp}\') GROUP BY ALL'
+    first = {(r[0], r[1], r[2]): r[3] for r in con.execute(sql).fetchall()}
     out = []
     for scheme, right, a, b, w, bg, two in rows:
         g = {(k, q): counts.get((scheme, right, k, q), 0) for k in (a, b, "*") for q in ("w", "b")}
         r = _combination(scheme, a, b, int(w), int(bg), g[(a, "w")], g[(b, "w")], g[(a, "b")], g[(b, "b")],
                          g[("*", "w")], g[("*", "b")], 2 if two else 1)  # fmt: skip
         r["_right"] = right
+        r["classes_since"] = max(first.get((scheme, right, a), ""), first.get((scheme, right, b), ""))
+        r["new_class"] = r["classes_since"] > b_start
         out.append(r)
     return out
 

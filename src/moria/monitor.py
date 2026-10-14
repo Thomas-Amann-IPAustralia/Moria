@@ -55,7 +55,10 @@ def _day(m: dict) -> date | None:
     start = (m.get("params") or {}).get("window_start")
     if start:
         return date.fromisoformat(start[:10])
-    return date(int(m["run_id"][:4]), int(m["run_id"][4:6]), int(m["run_id"][6:8]))
+    try:
+        return date(int(m["run_id"][:4]), int(m["run_id"][4:6]), int(m["run_id"][6:8]))
+    except ValueError:
+        return None
 
 
 def _band_flag(records: int, card: SourceCard | None, recorded: str | None) -> str:
@@ -69,23 +72,30 @@ def _band_flag(records: int, card: SourceCard | None, recorded: str | None) -> s
 def summarise(entries: list[dict], manifests: list[dict], cards: dict[str, SourceCard],
               as_of: date) -> tuple[list[dict], list[dict]]:  # fmt: skip
     """One row per source and day, judged by the day's best passed run (the most records: a dry run or a failure
-    followed by a good run the same day is not an incident); its incident if that run is outside the card's band, or
-    if every run failed. A source's first day is its first snapshot, a backfill: above the daily band by design. A
-    daily source's day with no run is a gap, from its first day to two days before as_of (day D is collected early
-    on D + 1)."""
+    followed by a good run the same day is not an incident); its incident if that run is outside the card's band
+    (daily and weekly collections only: a monthly or one-off source has no volume per day), or if every run failed.
+    A snapshot is above the daily band by design: a source's first day, and a `--backfill` run. A daily source's
+    day with no run is a gap, from its first day to two days before as_of (day D is collected early on D + 1).
+    A run's monitor entry gives its day (a bulk release is filed under its release date) and records."""
     days: dict[tuple[str, date], dict] = defaultdict(lambda: {"passed": {}, "failed": {}})
+    with_entry = set()
     for e in entries:
+        with_entry.add(e["run_id"])
         d = date.fromisoformat(e["day"])
         if d <= as_of and e.get("status") == "passed":
             days[(e["source"], d)]["passed"][e["run_id"]] = int(e.get("records") or 0)
+    backfills = {m["run_id"] for m in manifests if (m.get("params") or {}).get("backfill")}
     for m in manifests:
+        if m["status"] == "passed" and m["run_id"] in with_entry:
+            continue  # its monitor entry gives its day and records
         source, d = m["command"].removeprefix("collect."), _day(m)
         if d is None or d > as_of:
             continue
         if m["status"] != "passed":
             days[(source, d)]["failed"][m["run_id"]] = (m.get("error") or m["status"])[:200]
         else:
-            days[(source, d)]["passed"].setdefault(m["run_id"], int((m.get("counts") or {}).get("records") or 0))
+            counts = m.get("counts") or {}
+            days[(source, d)]["passed"].setdefault(m["run_id"], int(counts.get("records", counts.get("rows")) or 0))
     first = {}
     for (source, d), slot in days.items():
         if slot["passed"]:
@@ -95,9 +105,9 @@ def summarise(entries: list[dict], manifests: list[dict], cards: dict[str, Sourc
         card = cards.get(source)
         if slot["passed"]:
             run, records = max(slot["passed"].items(), key=lambda kv: (kv[1], kv[0]))
-            flag = _band_flag(records, card, None)
-            if flag == "above_expected" and d == first.get(source):
-                flag = "ok"  # the first snapshot
+            flag = _band_flag(records, card, None) if card is None or card.cadence in ("daily", "weekly") else "ok"
+            if flag == "above_expected" and (d == first.get(source) or run in backfills):
+                flag = "ok"  # a snapshot
             if flag != "ok":
                 band = card.expected_volume.model_dump() if card else None
                 incidents.append({"source": source, "day": d, "kind": flag, "run_id": run,
