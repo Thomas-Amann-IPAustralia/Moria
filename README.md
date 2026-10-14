@@ -7,16 +7,19 @@ a Futures Cone, each finding traceable to its evidence. Free by default: scikit-
 models (including a free Jev-class decision model), with Cloudflare R2 for storage and GitHub Actions or the GCE
 free tier for compute.
 
-**Status: days 1 to 3 of the machinery sprint, the Tier 1 cleanup and the widening of sources are built** (D-007,
-D-011 to D-013, D-018, D-020, D-021). 43 sources: daily feeds (news, legislation, IP Australia, WIPO, APH's committee
+**Status: days 1 to 4 of the machinery sprint, the Tier 1 cleanup and the widening of sources are built** (D-007,
+D-011 to D-013, D-018, D-020, D-021, D-022). 43 sources: daily feeds (news, legislation, IP Australia, WIPO, APH's committee
 feeds, peer IP offices, the OECD and a breadth pack), weekly counts and statistics (OpenAlex over the whole topic
 taxonomy, ABS and OECD series, WIPO treaty notifications, the IP RAPID lake with individuals' names hashed), bulk
 sources in the lake (the Open Australian Legal Corpus, WIPO's statistics, STIP Compass), patent counts on BigQuery,
 and documents read once. Day 3 turns them into an evidence layer: 122,243 documents and about a million series,
 normalised with both dates and a security sweep, embedded, de-duplicated, keyphrased, indexed and tagged, and
-monthly IP RAPID metrics (`reports/evidence-layer.md`). Read [`CLAUDE.md`](CLAUDE.md) for the rules and commands,
-and [`docs/design.md`](docs/design.md) for the design. The decisions are in
-[`docs/decisions.md`](docs/decisions.md); what's next is in [`docs/handover-day3.md`](docs/handover-day3.md) and
+monthly IP RAPID metrics (`reports/evidence-layer.md`). Day 4 scans it: trends, accelerations, change points,
+anomalies, low-base surges and Australia/world divergence over about 27,000 series, the five weak-signal indicators
+over the documents, and six artefact checks on every candidate, themselves tested against seeded artefacts
+(`reports/scan.md`, `reports/eval/artefacts.md`). Read [`CLAUDE.md`](CLAUDE.md) for the rules and commands, and
+[`docs/design.md`](docs/design.md) for the design. The decisions are in [`docs/decisions.md`](docs/decisions.md);
+what's next is in [`docs/handover-day4.md`](docs/handover-day4.md) and
 [`docs/sources-backlog.md`](docs/sources-backlog.md).
 
 ```bash
@@ -38,6 +41,10 @@ uv run moria prepare --store r2              # day 3's chain: normalise, embed, 
 uv run moria normalise                       # the raw store into lake/documents, lake/series, lake/observations
 uv run moria search "plant breeder's rights" --store r2   # BM25 over every document (your own terminal only)
 uv run moria evidence-report --store r2      # reports/evidence-layer.md (aggregates only)
+uv run moria scan --store r2                 # day 4's chain as of today: monitor, measures, detect, artefact checks
+uv run moria scan-report --store r2          # reports/scan.md (aggregates only)
+uv run moria eval artefacts --store r2       # the artefact checks against seeded artefacts, with controls
+uv run moria candidates --clean --store r2   # the strongest unflagged candidates (your own terminal only)
 ```
 
 | Path | What it is |
@@ -48,12 +55,12 @@ uv run moria evidence-report --store r2      # reports/evidence-layer.md (aggreg
 | `docs/decisions.md` | The decision log (append-only) |
 | `docs/setup.md` | Accounts and keys: what goes where (GitHub Actions secrets, the Claude Code environment) |
 | `docs/mining-explained.md` | How the mining works, in plain terms, with a worked example and what labelling looks like |
-| `config/` | Settings, source cards, territories (public parts), broad themes, the feature stages (`features.yaml`), the tag codebook (`codebook.yaml`, proposed), the sweep's allowlist (`sweep.yaml`, the owner's) |
-| `src/moria/` | The package: store, records, manifests, HTTP client, collectors, the bulk stages (IP RAPID, the legal corpus, WIPO statistics, STIP Compass), terms check, census, discover; day 3's normalise, sweep, embed, features, tags, IP RAPID metrics and the evidence report; CLI |
-| `.github/workflows/` | `ci`, `collect-daily` (then normalise), `collect-weekly`, `prepare` (weekly), `collect-source`, `terms-check`, `probe` |
+| `config/` | Settings, source cards, territories (public parts), broad themes, the feature stages (`features.yaml`), the tag codebook (`codebook.yaml`, proposed), the detectors and artefact checks (`detect.yaml`), the sweep's allowlist (`sweep.yaml`, the owner's) |
+| `src/moria/` | The package: store, records, manifests, HTTP client, collectors, the bulk stages (IP RAPID, the legal corpus, WIPO statistics, STIP Compass), terms check, census, discover; day 3's normalise, sweep, embed, features, tags, IP RAPID metrics and the evidence report; day 4's statistics, series and document measures, ingestion monitor, detect, artefact checks, seeded evaluation and scan report; CLI |
+| `.github/workflows/` | `ci`, `collect-daily` (then normalise), `collect-weekly`, `prepare` (weekly, then the scan and the seeded check), `collect-source`, `terms-check`, `probe` |
 | `config/territories.yaml` | The five Growth Territories: descriptions, search terms, pathways and IP RAPID indicators |
 | `config/baseline.yaml` | The known-trends baseline (a draft for the owner), drafted from the foresight syntheses |
-| `reports/` | Generated reports for the owner, aggregates only: the terms check, a census per source, and the evidence layer |
+| `reports/` | Generated reports for the owner, aggregates only: the terms check, a census per source, the evidence layer, the scan, and the seeded-artefact evaluation |
 | `scripts/memprobe.py` | Peak-memory probe of the planned workloads; re-run it on the target runner on day 1 |
 | `scripts/probe_jevstyle.py` | Memory, speed and behaviour probe of the free Jev-class decision model |
 | `scripts/t4_jevstyle_speed.py` | The decision model's speed test on a free T4 (Kaggle or Colab), for the owner to run |

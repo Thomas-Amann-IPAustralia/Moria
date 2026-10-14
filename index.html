@@ -786,7 +786,7 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
 
   <figure>
     <div class="fig-wrap">
-      <svg class="dg" viewBox="0 0 970 336" role="img" aria-label="The pipeline in twelve stages. Built: 1 collect and 2 store. Sprint day 3: 3 normalise and 4 features. Day 4: 5 detect and 6 artefact check. Day 5: 7 dossier, 8 pathway suggestions and 10 register export. After the sprint: 9 people review, 11 lenses, 12 decisions.">
+      <svg class="dg" viewBox="0 0 970 336" role="img" aria-label="The pipeline in twelve stages. Built: 1 collect, 2 store, 3 normalise, 4 features, 5 detect and 6 artefact check. Day 5: 7 dossier, 8 pathway suggestions and 10 register export. After the sprint: 9 people review, 11 lenses, 12 decisions.">
         <defs>
           <marker id="pp-ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
         </defs>
@@ -798,16 +798,16 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
         <rect x="169" y="28" width="140" height="92" rx="4" class="box"/><rect x="169" y="28" width="140" height="6" class="s-built"/>
         <text x="181" y="56" class="t-b">2 Store</text><text x="181" y="76" class="t-s">raw bundles, the lake,</text><text x="181" y="91" class="t-s">manifests, monitors</text><text x="181" y="111" class="t-cap tc-ok">BUILT</text>
         <line x1="309" y1="74" x2="331" y2="74" class="ln" marker-end="url(#pp-ah)"/>
-        <rect x="333" y="28" width="140" height="92" rx="4" class="box"/><rect x="333" y="28" width="140" height="6" class="s-sprint"/>
+        <rect x="333" y="28" width="140" height="92" rx="4" class="box"/><rect x="333" y="28" width="140" height="6" class="s-built"/>
         <text x="345" y="56" class="t-b">3 Normalise</text><text x="345" y="76" class="t-s">de-duplicate; event</text><text x="345" y="91" class="t-s">and observable dates</text><text x="345" y="111" class="t-cap tc-sprint">DAY 3</text>
         <line x1="473" y1="74" x2="495" y2="74" class="ln" marker-end="url(#pp-ah)"/>
-        <rect x="497" y="28" width="140" height="92" rx="4" class="box"/><rect x="497" y="28" width="140" height="6" class="s-sprint"/>
+        <rect x="497" y="28" width="140" height="92" rx="4" class="box"/><rect x="497" y="28" width="140" height="6" class="s-built"/>
         <text x="509" y="56" class="t-b">4 Features</text><text x="509" y="76" class="t-s">embeddings, BM25,</text><text x="509" y="91" class="t-s">keyphrases, tags</text><text x="509" y="111" class="t-cap tc-sprint">DAY 3</text>
         <line x1="637" y1="74" x2="659" y2="74" class="ln" marker-end="url(#pp-ah)"/>
-        <rect x="661" y="28" width="140" height="92" rx="4" class="box"/><rect x="661" y="28" width="140" height="6" class="s-sprint"/>
+        <rect x="661" y="28" width="140" height="92" rx="4" class="box"/><rect x="661" y="28" width="140" height="6" class="s-built"/>
         <text x="673" y="56" class="t-b">5 Detect</text><text x="673" y="76" class="t-s">trends, anomalies,</text><text x="673" y="91" class="t-s">weak signals</text><text x="673" y="111" class="t-cap tc-sprint">DAY 4</text>
         <line x1="801" y1="74" x2="823" y2="74" class="ln" marker-end="url(#pp-ah)"/>
-        <rect x="825" y="28" width="140" height="92" rx="4" class="box"/><rect x="825" y="28" width="140" height="6" class="s-sprint"/>
+        <rect x="825" y="28" width="140" height="92" rx="4" class="box"/><rect x="825" y="28" width="140" height="6" class="s-built"/>
         <text x="837" y="56" class="t-b">6 Check</text><text x="837" y="76" class="t-s">artefact flags on</text><text x="837" y="91" class="t-s">every candidate</text><text x="837" y="111" class="t-cap tc-sprint">DAY 4</text>
         <!-- connector -->
         <path d="M895,120 V150 H75 V180" class="ln" marker-end="url(#pp-ah)"/>
@@ -867,9 +867,9 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
         <tr><td>1 Business understanding</td><td>Questions, territories, rings, pathways, the codebook, the known-trends baseline, the hindsight set</td><td>Owner approves</td><td><span class="st partial">Questions, territories, 19 trends confirmed</span></td></tr>
         <tr><td>2 Data understanding</td><td>Source cards, a census of each source, ingestion monitors</td><td>—</td><td><span class="st built">Built</span></td></tr>
         <tr><td>3 Data preparation</td><td>Collect, sweep, normalise, de-duplicate, features</td><td>—</td><td><span class="st built">Built (D-021)</span></td></tr>
-        <tr><td>4 Modelling</td><td>The analytical layers and detectors</td><td>Measured choices go to the owner</td><td><span class="st sprint">Day 4</span></td></tr>
+        <tr><td>4 Modelling</td><td>The analytical layers and detectors</td><td>Measured choices go to the owner</td><td><span class="st built">Built (D-022)</span></td></tr>
         <tr><td>5a Evaluation of methods</td><td>Component yardsticks: taggers, clusters, trends, forecasts</td><td>—</td><td><span class="st after">After</span></td></tr>
-        <tr><td>5b Validation of signals</td><td>Artefact checks, dossiers, pathway mapping, review</td><td>People validate or reject</td><td><span class="st sprint">Checks, dossiers: days 4–5</span></td></tr>
+        <tr><td>5b Validation of signals</td><td>Artefact checks, dossiers, pathway mapping, review</td><td>People validate or reject</td><td><span class="st partial">Checks built (D-022); dossiers day 5</span></td></tr>
         <tr><td>6 Deployment</td><td>The two views, the lenses, the decision log, tracking</td><td>Decision-makers decide</td><td><span class="st after">After</span></td></tr>
       </tbody>
     </table>
@@ -949,7 +949,7 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
     <table>
       <thead><tr><th>Not kept</th><th>Where Moria meets it</th><th>Kept in its place</th><th>How the research still uses it</th><th>Status of that use</th></tr></thead>
       <tbody>
-        <tr><td><strong>News article text</strong></td><td>Never fetched. GDELT has already read the article and publishes a row about it.</td><td>Title, URL, domain, GDELT's themes, organisations, countries and tone; which terms matched, in which field</td><td>Daily volumes per query group (worldwide, <code>.au</code>, and "about" the group) feed the trend and surge detectors. Titles are embedded and clustered with everything else. A dossier lists the title and link, and the reviewer reads the article at its publisher.</td><td><span class="st partial">Volumes built; detectors day 4</span></td></tr>
+        <tr><td><strong>News article text</strong></td><td>Never fetched. GDELT has already read the article and publishes a row about it.</td><td>Title, URL, domain, GDELT's themes, organisations, countries and tone; which terms matched, in which field</td><td>Daily volumes per query group (worldwide, <code>.au</code>, and "about" the group) feed the trend and surge detectors. Titles are embedded and clustered with everything else. A dossier lists the title and link, and the reviewer reads the article at its publisher.</td><td><span class="st partial">Volumes and detectors built; testable after 35 days of news</span></td></tr>
         <tr><td><strong>GDELT quotations</strong></td><td>In the GKG row, read in memory</td><td>The match itself: term, field ("quotations"), and a flag that the article quotes someone</td><td>Quotations widen recall: a term said by someone in the article counts, although the quote is never stored. It shows up in the volumes.</td><td><span class="st built">Built</span></td></tr>
         <tr><td><strong>Person names, page authors</strong></td><td>GDELT rows; arXiv listings</td><td>Organisations (GDELT); titles and abstracts (arXiv)</td><td>Nothing about individuals is needed: analysis stays at organisation, sector and country level, and no output profiles a person.</td><td><span class="st built">Built</span></td></tr>
         <tr><td><strong>Summaries of titles-only feeds</strong></td><td>EPO (two feeds), MOIP, UN News, The Conversation, the Lowy Interpreter, Standards Australia, OECD.AI's blog: present in the feed, dropped at collection</td><td>Title, link, date</td><td>Titles are embedded, clustered and counted per source over time; a new-term or cross-family signal can fire on titles alone. The link takes the reviewer to the original.</td><td><span class="st sprint">Day 3–4</span></td></tr>
@@ -1152,7 +1152,7 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
     </table>
   </div>
   <p>A failed check is shown to the analyst; it never hides the candidate. Ingestion monitor entries are already written
-  on every collection <span class="st built">Built</span>; turning them into incidents is day 4.</p>
+  on every collection and turned into incidents per source and day (<code>moria monitor ingestion</code>) <span class="st built">Built</span>; the seeded artefacts are all flagged (D-022).</p>
 
   <figure>
     <div class="fig-wrap">
@@ -1350,8 +1350,8 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
     <li class="done"><span class="when">12–13 Oct</span><span class="rail"></span><div class="what"><h4>Tier 1 cleanup <span class="st built">Done</span></h4><p>APH's committee feeds, the legal corpus, IP Australia's full snapshot and PDFs, MOIP, WIPO's treaties and statistics, CABEE and BERD; BigQuery switched on (D-016 to D-019).</p></div></li>
     <li class="done"><span class="when">13 Oct</span><span class="rail"></span><div class="what"><h4>The widening <span class="st built">Done</span></h4><p>Six OECD sources (STIP Compass first) and a breadth pack of eight feeds; the owner's eleven uploads read; five known trends proposed, KT20 to KT24 (D-020). 43 sources.</p></div></li>
     <li class="done"><span class="when">13 Oct</span><span class="rail"></span><div class="what"><h4>Day 3 <span class="st built">Done</span></h4><p>122,243 documents and about a million series normalised with both dates and a security sweep; embedded, de-duplicated, keyphrased, indexed and tagged (zero-shot, territories wired in); 59 monthly IP RAPID metrics. The decision model's speed on a free GPU waits on the owner's notebook run (D-021).</p></div></li>
-    <li class="next"><span class="when">Next</span><span class="rail"></span><div class="what"><h4>Day 4: detectors <span class="st sprint">When the owner asks</span></h4><p>Rates, trends, accelerations and change points over the whole taxonomies; world/Australia divergence; anomalies; the five weak-signal indicators; cross-ring convergence; artefact checks tested with seeded artefacts.</p></div></li>
-    <li class="next"><span class="when">Day 5</span><span class="rail"></span><div class="what"><h4>Dossiers and the first queue <span class="st sprint">Planned</span></h4><p>Dossiers, pathway suggestions, ring quotas and ranking, the register's spreadsheet export and import, the early-warning digest, a term-only hindsight smoke run. Done when about 40 ranked dossiers are ready for review.</p></div></li>
+    <li class="done"><span class="when">14 Oct</span><span class="rail"></span><div class="what"><h4>Day 4 <span class="st built">Done</span></h4><p>Trends, accelerations, change points, anomalies, low-base surges and Australia/world divergence over about 27,000 series; the five weak-signal indicators over the documents; six artefact checks, all six seeded artefacts caught; 2,486 candidates, 2,129 unflagged (D-022).</p></div></li>
+    <li class="next"><span class="when">Next</span><span class="rail"></span><div class="what"><h4>Day 5: dossiers and the first queue <span class="st sprint">When the owner asks</span></h4><p>Dossiers, pathway suggestions, ring quotas and ranking, the register's spreadsheet export and import, the early-warning digest, a term-only hindsight smoke run. Done when about 40 ranked dossiers are ready for review.</p></div></li>
     <li class="next"><span class="when">Days 6–7</span><span class="rail"></span><div class="what"><h4>Buffer <span class="st sprint">Planned</span></h4><p>Fixes, a methodology note, handover.</p></div></li>
     <li class="later"><span class="when">Owner's pace</span><span class="rail"></span><div class="what"><h4>Labels, review, lenses <span class="st after">After the sprint</span></h4><p>About 200 labels; the first review round (triage, then deep review); the lenses in an interpretation session.</p></div></li>
     <li class="later"><span class="when">Quarterly</span><span class="rail"></span><div class="what"><h4>Cycles <span class="st after">After the sprint</span></h4><p>The strategic view, the lenses and an interpretation session each quarter; the weekly digest between them.</p></div></li>
@@ -1369,9 +1369,9 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
         <tr><td>Territory terms and themes in the news counts; the terms check</td><td><span class="st built">Built</span></td><td><code>collectors/gkg.py</code>, <code>terms.py</code>, <code>reports/terms-check.md</code></td></tr>
         <tr><td>Known-trends baseline (19 confirmed, 5 proposed)</td><td><span class="st built">Built</span></td><td><code>config/baseline.yaml</code>; matching candidates to it is day 3</td></tr>
         <tr><td>Census reports per source</td><td><span class="st built">Built</span></td><td><code>census.py</code>, <code>reports/census/</code></td></tr>
-        <tr><td>The security sweep of collected text (hidden content, instructions aimed at AI, secrets, personal data)</td><td><span class="st sprint">Planned</span></td><td>Design §7, §12; not yet given a sprint day</td></tr>
-        <tr><td>Normalised tables, de-duplication, embeddings, BM25, tags, IP RAPID metrics</td><td><span class="st sprint">Day 3</span></td><td>Design §7, §13</td></tr>
-        <tr><td>Detectors, artefact checks, ingestion incidents</td><td><span class="st sprint">Day 4</span></td><td>Design §8</td></tr>
+        <tr><td>The security sweep of collected text (hidden content, instructions aimed at AI, secrets, personal data)</td><td><span class="st built">Built</span></td><td>Inside <code>moria normalise</code> (D-021)</td></tr>
+        <tr><td>Normalised tables, de-duplication, embeddings, BM25, tags, IP RAPID metrics</td><td><span class="st built">Built</span></td><td>D-021; <code>reports/evidence-layer.md</code></td></tr>
+        <tr><td>Detectors, artefact checks, ingestion incidents</td><td><span class="st built">Built</span></td><td>D-022; <code>reports/scan.md</code>, <code>reports/eval/artefacts.md</code></td></tr>
         <tr><td>Dossiers, pathway suggestions, ranked queue, register export, digest</td><td><span class="st sprint">Day 5</span></td><td>Design §8.4, §6.3</td></tr>
         <tr><td>Labels and the tagger comparison; review rounds; the missed-signal register</td><td><span class="st after">After</span></td><td>Design §11, §6.3; <code>docs/mining-explained.md</code></td></tr>
         <tr><td>PESTLE, SWOT/TOWS, the Futures Cone, scenarios, robustness, decision log</td><td><span class="st after">After</span></td><td>Design §10; written by people</td></tr>

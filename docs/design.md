@@ -998,8 +998,10 @@ on a route past their sites' blocks. The Tier 1 cleanup (`docs/sources-backlog.m
 (D-018): APH's committee feeds, the Open Australian Legal Corpus, IP Australia's full snapshot and PDFs, MOIP news,
 WIPO's treaty notifications and bulk statistics, and the ABS's CABEE and BERD; EUIPO, JPO and the courts are gaps. Day 3 was built and
 run on 2026-10-13 (D-021): normalise with the sweep, embeddings, de-duplication, keyphrases, BM25, zero-shot tags
-and the IP RAPID metrics; the decision model's T4 test waits on the owner (a free notebook needs a person). The rules
-and commands are in `CLAUDE.md`, and what's next is in `docs/handover-day3.md`.
+and the IP RAPID metrics; the decision model's T4 test waits on the owner (a free notebook needs a person). Day 4 was
+built and run on 2026-10-14 (D-022): the series and document detectors, the ingestion monitor, the candidates and six
+artefact checks, all six seeded artefacts caught; 2,486 candidates, 2,129 unflagged. The rules and commands are in
+`CLAUDE.md`, and what's next is in `docs/handover-day4.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 
