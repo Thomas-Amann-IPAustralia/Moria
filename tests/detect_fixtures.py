@@ -177,7 +177,8 @@ def minimal_layer(store, as_of: date = AS_OF) -> None:
     put_stage(store, "features.keyphrases", {"features/keyphrases/source=base_feed/keyphrases.parquet":
               (kp, KEYPHRASE_ROWS, ("item_id",)), "features/keyphrases/vocabulary.parquet":
               (vocab, VOCABULARY, ("phrase",))}, {"normalise_run": nrun})  # fmt: skip
-    put_stage(store, "tag", {"features/tags/source=base_feed/tags.parquet": (tags, tag_schema, ("item_id",))},
+    put_stage(store, "tag", {"features/tags/source=base_feed/tags.parquet": (tags, tag_schema, ("item_id",)),
+                             "features/tags/source=an_empty_feed/tags.parquet": ([], tag_schema, ("item_id",))},
               {"normalise_run": nrun, "embed_run": erun})  # fmt: skip
     pairs = [
         {

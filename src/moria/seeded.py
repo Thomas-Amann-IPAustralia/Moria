@@ -281,7 +281,10 @@ def build_copy(real: Store, tmp: LocalStore, cfg: DetectConfig, features: Featur
             tmp.put(key, real.get(key))
     tags_paths = sorted((tmp.root / "features/tags").glob("source=*/tags.parquet"))
     tag_schema = pq.read_schema(tags_paths[0])
-    tagger = pq.read_table(tags_paths[0], columns=["tagger"]).column(0)[0].as_py()
+    taggers = {t for path in tags_paths for t in pq.read_table(path, columns=["tagger"]).column(0).to_pylist()}
+    if len(taggers) != 1:
+        raise ValueError(f"the copy's tags carry {len(taggers)} tagger versions; the seeds need one")
+    (tagger,) = taggers  # a source with no items has an empty tags file
     p = Planter(as_of, cfg, features.embed.dim, tagger)
     p.background()
     p.seeds()
