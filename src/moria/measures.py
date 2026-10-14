@@ -134,7 +134,7 @@ DIVERGENCE = pa.schema(
         ("ref_scope", pa.string()),
         ("label", pa.string()),
         ("frequency", pa.string()),
-        ("transform", pa.string()),  # log_share: the log of AU's share over the reference's; level: the difference
+        ("transform", pa.string()),  # log_share: AU's share over the reference's; log_ratio: AU's level over it
         ("last_period", pa.string()),
         *_DTREND,
         ("windows", pa.int8()),
@@ -206,9 +206,10 @@ def as_of_end(as_of: date) -> datetime:
     return datetime(as_of.year, as_of.month, as_of.day, tzinfo=UTC) + timedelta(days=1)
 
 
-def load_series(paths: list[tuple[Path, Path]], sources: set[str], as_of: date) -> dict[str, Series]:
-    """Every series of the listed sources at as_of: each period's latest vintage observable by then (else the
-    earliest), periods ending after as_of left out, values marked incomplete left out."""
+def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date) -> dict[str, Series]:
+    """Every tested series at as_of (the configured sources, scopes and units): each period's latest vintage
+    observable by then (else the earliest), periods ending after as_of left out, values marked incomplete left out."""
+    sources = set(cfg.series.sources)
     end = as_of_end(as_of).strftime("%Y-%m-%d %H:%M:%S+00")
     out: dict[str, Series] = {}
     con = duckdb.connect()
@@ -217,7 +218,7 @@ def load_series(paths: list[tuple[Path, Path]], sources: set[str], as_of: date) 
             "SELECT series_id, source, label, unit, scope, dimensions, family, rings FROM read_parquet(?)",
             [series_path.as_posix()],
         ).fetchall()
-        metas = {r[0]: r for r in meta_rows if r[1] in sources}
+        metas = {r[0]: r for r in meta_rows if r[1] in sources and cfg.series.tested(r[1], r[4], _dims(r[5]))}
         if not metas:
             continue
         rows = con.execute(
@@ -254,6 +255,14 @@ def load_series(paths: list[tuple[Path, Path]], sources: set[str], as_of: date) 
         cur = current_index(s.kind, as_of)
         s.points = {i: v for i, v in s.points.items() if i < cur}
     return {k: v for k, v in out.items() if v.points}
+
+
+def _dims(text: str | None) -> dict:
+    try:
+        d = json.loads(text or "{}")
+    except ValueError:
+        return {}
+    return d if isinstance(d, dict) else {}
 
 
 # --------------------------------------------------------------------------------------------- roles of a series
@@ -740,7 +749,12 @@ def divergence(groups: dict[tuple[str, str], Group], rows: list[dict], cfg: Dete
         a_idx = np.array([a for _, a, _ in pairs])
         r_idx = np.array([b for _, _, b in pairs])
         last = np.minimum(g.last[a_idx], g.last[r_idx])
-        d = g.y[a_idx] - g.y[r_idx]
+        level = np.array([g.transform[a] == "level" for a in a_idx])[:, None]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ratio = np.log(np.where(g.counts[a_idx] > 0, g.counts[a_idx], np.nan)) - np.log(
+                np.where(g.counts[r_idx] > 0, g.counts[r_idx], np.nan)
+            )
+        d = np.where(level, ratio, g.y[a_idx] - g.y[r_idx])
         stale = last < (cur - 1 - sc.stale_after[kind])
         # volume: Australia's counts must be big enough to rate (counts) in the shortest window
         cnt = aligned(g.counts[a_idx], last, g.base, widths[0])
@@ -758,7 +772,7 @@ def divergence(groups: dict[tuple[str, str], Group], rows: list[dict], cfg: Dete
                 continue
             row = {"pair_id": f"{source}|{key}", "source": source, "au_series": g.ids[a], "ref_series": g.ids[b],
                    "ref_scope": g.series[b].meta.get("scope"), "label": g.series[a].meta.get("label"),
-                   "frequency": kind, "transform": g.transform[a],
+                   "frequency": kind, "transform": "log_ratio" if g.transform[a] == "level" else g.transform[a],
                    "last_period": index_label(kind, int(last[n]))}  # fmt: skip
             for j, wr in enumerate(wins, 1):
                 ok = bool(wr["ok"][n])
@@ -835,7 +849,7 @@ def measure(store: Store, cfg: DetectConfig, as_of: date, config_hash: str | Non
     try:
         runs, files = inputs(store, cfg)
         manifest.params = {"as_of": as_of.isoformat(), **runs}
-        series = load_series(files, set(cfg.series.sources), as_of)
+        series = load_series(files, cfg, as_of)
         rows, div, counts = _run(series, cfg, as_of)
         prefix = f"measures/series/as_of={as_of.isoformat()}/"
         with tempfile.TemporaryDirectory(prefix="moria-measure-") as tmp:

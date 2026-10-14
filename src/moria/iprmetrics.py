@@ -14,7 +14,8 @@ The series (`ip_rapid_metrics|<metric>|<right>[|<split>]`), monthly from 2000:
   applicant's first application of that right); Madrid applications designating Australia; patent applications in AI
   (IPC or CPC G06N, current classifications); applications in each IPC subclass, Nice class and Locarno class (the
   whole taxonomy of each scheme, design §8.5);
-- outcomes, by event month: registrations or grants, acceptances, lapses, withdrawals, refusals, oppositions,
+- outcomes, by event month: registrations or grants (trade mark registrations by the application table's registration
+  date, D-022), acceptances, lapses, withdrawals, refusals, oppositions,
   non-use removal applications, ownership changes, renewals, examination requests (current events only; the
   `*_historical` categories are migrated records);
 - timeliness: the median days from filing to registration or grant, by registration month (the application
@@ -55,7 +56,6 @@ START = "2000-01-01"
 
 # (metric, rights, event categories): outcome counts by event month
 OUTCOMES = [
-    ("registered", ("trade_mark",), ("granted",)),
     ("registered", ("design",), ("registered",)),
     ("granted", ("patent", "pbr"), ("granted",)),
     ("accepted", ("patent", "trade_mark", "pbr"), ("accepted",)),
@@ -178,6 +178,13 @@ def metric_rows(con: duckdb.DuckDBPyConnection, release: date) -> list[tuple[str
                f"AND event_effective_date {window} GROUP BY ALL")  # fmt: skip
         for m, r, n in con.execute(sql).fetchall():
             out.append((f"{metric}|{r}", m, "applications", float(n)))
+    # trade mark registrations by the application table's registration date: the `granted` event all but stops being
+    # recorded from March 2026 (821 from April to September 2026, against 36,581 a year before), while registrations
+    # go on (publish_registered events, registration dates; D-022)
+    sql = (f"SELECT {month.format('gained_registration_status_date')} AS m, ip_right_type, count(*) FROM application "
+           f"WHERE ip_right_type = 'trade_mark' AND gained_registration_status_date {window} GROUP BY ALL")  # fmt: skip
+    for m, r, n in con.execute(sql).fetchall():
+        out.append((f"registered|{r}", m, "applications", float(n)))
     sql = (
         f"SELECT {month.format('gained_registration_status_date')} AS m, ip_right_type, "
         f"median(date_diff('day', application_date, gained_registration_status_date)) FROM application "

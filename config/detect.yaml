@@ -37,9 +37,18 @@ series:
   lags:
     - {prefix: "patent_cpc_counts|", periods: 2}                      # 18 months to publication (the card)
     - {prefix: "oecd_headline|OECD.STI.PIE:DSD_PATENTS", periods: 2}  # patents by priority fill in for about 3 years
+    # IP RAPID designs: a release's last month holds no Locarno class or Australian applicant yet (D-022)
+    - {pattern: '^ip_rapid_metrics\|[a-z_]+\|design', periods: 2}
   exclude_months:            # calendar months left out of monthly series
     openalex_counts: [1]     # works dated by year only are given 1 January (the card)
   divergence_reference: {openalex_counts: world, patent_cpc_counts: world, gdelt_news: world, oecd_headline: OECD}
+  # Scopes tested, where a source covers many countries: Australia, the aggregates, and the economies that file most
+  # in Australia or are its peers (D-022). Without this, small economies' volatility filled the anomalies.
+  scopes:
+    oecd_headline: [AUS, OECD, W, EU27_2020, G7, USA, CHN, JPN, KOR, DEU, GBR, FRA, CHE, NLD, SWE, CAN, NZL, SGP, IND,
+                    ISR, TWN]
+  exclude_dims:              # series left out: the same indicator is also published in a comparable unit
+    - {source: oecd_headline, dims: {UNIT_MEASURE: XDC}}   # national currency at current prices (inflation; USD PPP too)
 
 documents:
   window_days: 91            # the weak-signal window ends at as_of

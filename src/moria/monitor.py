@@ -58,58 +58,68 @@ def _day(m: dict) -> date | None:
     return date(int(m["run_id"][:4]), int(m["run_id"][4:6]), int(m["run_id"][6:8]))
 
 
+def _band_flag(records: int, card: SourceCard | None, recorded: str | None) -> str:
+    """A run's volume against the card's current band (a band revised after a run applies to it too)."""
+    if card is None:
+        return recorded or "ok"
+    band = card.expected_volume
+    return "below_expected" if records < band.min_per_run else "above_expected" if records > band.max_per_run else "ok"
+
+
 def summarise(entries: list[dict], manifests: list[dict], cards: dict[str, SourceCard],
               as_of: date) -> tuple[list[dict], list[dict]]:  # fmt: skip
-    days: dict[tuple[str, date], dict] = {}
-    incidents: list[dict] = []
+    """One row per source and day, judged by the day's best passed run (the most records: a dry run or a failure
+    followed by a good run the same day is not an incident); its incident if that run is outside the card's band, or
+    if every run failed. A source's first day is its first snapshot, a backfill: above the daily band by design. A
+    daily source's day with no run is a gap, from its first day to two days before as_of (day D is collected early
+    on D + 1)."""
+    days: dict[tuple[str, date], dict] = defaultdict(lambda: {"passed": {}, "failed": {}})
     for e in entries:
         d = date.fromisoformat(e["day"])
-        if d > as_of:
-            continue
-        slot = days.setdefault((e["source"], d), {"runs": set(), "failed": set(), "records": 0, "flags": set()})
-        slot["runs"].add(e["run_id"])
-        if e.get("status") == "passed":
-            slot["records"] = max(slot["records"], int(e.get("records") or 0))
-            slot["flags"].add(e.get("flag") or "ok")
-            if e.get("flag") in ("below_expected", "above_expected"):
-                incidents.append({"source": e["source"], "day": d, "kind": e["flag"], "run_id": e["run_id"],
-                                  "detail": f"{e.get('records')} records; expected {e.get('expected')}"})  # fmt: skip
+        if d <= as_of and e.get("status") == "passed":
+            days[(e["source"], d)]["passed"][e["run_id"]] = int(e.get("records") or 0)
     for m in manifests:
-        source = m["command"].removeprefix("collect.")
-        d = _day(m)
+        source, d = m["command"].removeprefix("collect."), _day(m)
         if d is None or d > as_of:
             continue
-        slot = days.setdefault((source, d), {"runs": set(), "failed": set(), "records": 0, "flags": set()})
-        slot["runs"].add(m["run_id"])
         if m["status"] != "passed":
-            slot["failed"].add(m["run_id"])
-            incidents.append({"source": source, "day": d, "kind": "failed_run", "run_id": m["run_id"],
-                              "detail": (m.get("error") or m["status"])[:200]})  # fmt: skip
-    rows = []
-    passed_days: dict[str, set[date]] = defaultdict(set)
+            days[(source, d)]["failed"][m["run_id"]] = (m.get("error") or m["status"])[:200]
+        else:
+            days[(source, d)]["passed"].setdefault(m["run_id"], int((m.get("counts") or {}).get("records") or 0))
+    first = {}
     for (source, d), slot in days.items():
-        ok = len(slot["runs"]) > len(slot["failed"])
-        if ok:
-            passed_days[source].add(d)
-        flags = slot["flags"]
-        flag = ("failed" if not ok else "below_expected" if "below_expected" in flags
-                else "above_expected" if "above_expected" in flags else "ok")  # fmt: skip
+        if slot["passed"]:
+            first[source] = min(first.get(source, d), d)
+    rows, incidents = [], []
+    for (source, d), slot in sorted(days.items()):
         card = cards.get(source)
-        rows.append({"source": source, "day": d, "cadence": card.cadence if card else None, "runs": len(slot["runs"]),
-                     "failed": len(slot["failed"]), "records": slot["records"], "flag": flag})  # fmt: skip
-    # gaps: days since a daily source's first passed collection with no run at all (a day whose runs failed is an
-    # incident already); as_of's own day is not over
-    for source, ds in sorted(passed_days.items()):
+        if slot["passed"]:
+            run, records = max(slot["passed"].items(), key=lambda kv: (kv[1], kv[0]))
+            flag = _band_flag(records, card, None)
+            if flag == "above_expected" and d == first.get(source):
+                flag = "ok"  # the first snapshot
+            if flag != "ok":
+                band = card.expected_volume.model_dump() if card else None
+                incidents.append({"source": source, "day": d, "kind": flag, "run_id": run,
+                                  "detail": f"{records} records; expected {band}"})  # fmt: skip
+        else:
+            run, error = sorted(slot["failed"].items())[-1]
+            records, flag = 0, "failed"
+            incidents.append({"source": source, "day": d, "kind": "failed_run", "run_id": run, "detail": error})
+        rows.append({"source": source, "day": d, "cadence": card.cadence if card else None,
+                     "runs": len(slot["passed"]) + len(slot["failed"]), "failed": len(slot["failed"]),
+                     "records": records, "flag": flag})  # fmt: skip
+    for source, start in sorted(first.items()):
         card = cards.get(source)
         if not card or card.cadence != "daily":
             continue
-        d = min(ds)
-        while d < as_of:
+        d = start
+        while d < as_of - timedelta(days=1):
             if (source, d) not in days:
                 rows.append({"source": source, "day": d, "cadence": "daily", "runs": 0, "failed": 0, "records": 0,
                              "flag": "gap"})  # fmt: skip
                 incidents.append({"source": source, "day": d, "kind": "gap", "run_id": None,
-                                  "detail": "no passed collection for this day"})  # fmt: skip
+                                  "detail": "no collection for this day"})  # fmt: skip
             d += timedelta(days=1)
     return rows, incidents
 

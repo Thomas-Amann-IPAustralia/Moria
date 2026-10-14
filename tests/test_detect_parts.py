@@ -14,19 +14,31 @@ from .conftest import card
 
 
 def test_monitor_finds_failures_bands_and_gaps():
-    daily = card("feed", {}, id="feed_a", cadence="daily")
+    daily = card("feed", {}, id="feed_a", cadence="daily", expected_volume={"min_per_run": 1, "max_per_run": 50})
     entries = [
-        {"source": "feed_a", "day": "2026-10-10", "run_id": "r1", "status": "passed", "records": 5, "flag": "ok"},
-        {"source": "feed_a", "day": "2026-10-13", "run_id": "r3", "status": "passed", "records": 0,
-         "flag": "below_expected", "expected": {"min_per_run": 1}},
+        {"source": "feed_a", "day": "2026-10-06", "run_id": "r0", "status": "passed", "records": 500},  # backfill
+        {"source": "feed_a", "day": "2026-10-07", "run_id": "r1", "status": "passed", "records": 90},
+        {"source": "feed_a", "day": "2026-10-10", "run_id": "r3", "status": "passed", "records": 0},
+        {"source": "feed_a", "day": "2026-10-11", "run_id": "r4", "status": "passed", "records": 0},  # a dry run
+        {"source": "feed_a", "day": "2026-10-11", "run_id": "r5", "status": "passed", "records": 7},  # then a good one
+    ]
+    manifests = [
+        {"command": "collect.feed_a", "run_id": "20261008T020000Z-x", "status": "failed", "error": "boom",
+         "params": {"window_start": "2026-10-08T00:00:00+00:00"}},
+        {"command": "collect.feed_a", "run_id": "20261011T020000Z-y", "status": "failed", "error": "retried",
+         "params": {"window_start": "2026-10-11T00:00:00+00:00"}},
     ]  # fmt: skip
-    manifests = [{"command": "collect.feed_a", "run_id": "20261011T020000Z-x", "status": "failed", "error": "boom",
-                  "params": {"window_start": "2026-10-11T00:00:00+00:00"}}]  # fmt: skip
     days, incidents = summarise(entries, manifests, {"feed_a": daily}, date(2026, 10, 14))
     kinds = {(i["day"].isoformat(), i["kind"]) for i in incidents}
-    assert kinds == {("2026-10-11", "failed_run"), ("2026-10-12", "gap"), ("2026-10-13", "below_expected")}
+    assert kinds == {
+        ("2026-10-07", "above_expected"),
+        ("2026-10-08", "failed_run"),
+        ("2026-10-09", "gap"),
+        ("2026-10-10", "below_expected"),
+        ("2026-10-12", "gap"),
+    }  # 10-13 is collected on 10-14
     flags = {d["day"].isoformat(): d["flag"] for d in days}
-    assert flags == {"2026-10-10": "ok", "2026-10-11": "failed", "2026-10-12": "gap", "2026-10-13": "below_expected"}
+    assert flags["2026-10-06"] == "ok" and flags["2026-10-11"] == "ok"  # the first snapshot; the day's best run
 
 
 def test_item_ring_uses_the_card_then_core_terms_then_the_tagger():

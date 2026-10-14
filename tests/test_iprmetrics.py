@@ -98,6 +98,7 @@ def test_metrics_from_a_base_then_a_delta(tmp_path, store):
     assert v[("applications_ai_g06n|patent", "2026-02")] == 1 and v[("madrid_designating_au|trade_mark", "2026-01")]
     assert v[("days_to_registration_median|trade_mark", "2026-08")] == 222
     assert v[("oppositions|trade_mark", "2026-05")] == 1
+    assert v[("registered|trade_mark", "2026-08")] == 1  # by the application table's registration date
     assert v[("applications_ipc|patent|G06N", "2026-02")] == 1 and v[("applications_ipc|patent|A61B", "2026-02")] == 1
     assert v[("applications_nice|trade_mark|9", "2026-01")] == 2 and v[("applications_nice|trade_mark|35", "2026-03")]
     pairs = pq.read_table(store.root / "lake/ipr_metrics/class_pairs.parquet").to_pylist()

@@ -387,8 +387,20 @@ Freq = Literal["M", "Q", "A", "D"]
 
 
 class LagRule(Strict):
-    prefix: str
+    prefix: str | None = None
+    pattern: str | None = None  # a regular expression searched in the series id
     periods: int
+
+    @model_validator(mode="after")
+    def _one(self) -> LagRule:
+        if (self.prefix is None) == (self.pattern is None):
+            raise ValueError("a lag rule has a prefix or a pattern")
+        return self
+
+    def matches(self, series_id: str) -> bool:
+        import re
+
+        return series_id.startswith(self.prefix) if self.prefix else bool(re.search(self.pattern, series_id))
 
 
 class ChangePointConfig(Strict):
@@ -412,6 +424,11 @@ class SeriesSurgeConfig(Strict):
     min_ratio: float
 
 
+class DimsRule(Strict):
+    source: str
+    dims: dict[str, str]
+
+
 class SeriesDetectConfig(Strict):
     sources: list[str]
     windows: dict[Freq, list[int]]
@@ -430,6 +447,14 @@ class SeriesDetectConfig(Strict):
     lags: list[LagRule] = []
     exclude_months: dict[str, list[int]] = {}
     divergence_reference: dict[str, str] = {}
+    scopes: dict[str, list[str]] = {}
+    exclude_dims: list[DimsRule] = []
+
+    def tested(self, source: str, scope: str | None, dims: dict) -> bool:
+        if source in self.scopes and scope not in self.scopes[source]:
+            return False
+        return not any(r.source == source and all(dims.get(k) == v for k, v in r.dims.items())
+                       for r in self.exclude_dims)  # fmt: skip
 
     @field_validator("windows")
     @classmethod
@@ -440,7 +465,7 @@ class SeriesDetectConfig(Strict):
         return windows
 
     def lag(self, series_id: str) -> int:
-        return next((r.periods for r in self.lags if series_id.startswith(r.prefix)), 0)
+        return next((r.periods for r in self.lags if r.matches(series_id)), 0)
 
 
 class ClusterConfig(Strict):
