@@ -22,7 +22,7 @@ from .store import Store
 
 TRACKED_PACKAGES = (
     "moria", "httpx", "pydantic", "boto3", "zstandard", "defusedxml", "pyyaml", "typer", "duckdb", "pyarrow", "numpy",
-    "scikit-learn", "onnxruntime", "tokenizers",
+    "scikit-learn", "scipy", "onnxruntime", "tokenizers",
 )  # fmt: skip
 
 

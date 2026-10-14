@@ -1,0 +1,75 @@
+# The detectors and artefact checks (design §8.2, §8.3, §8.5; day 4). Validated by moria.config.DetectConfig; unknown
+# keys are errors. Claude's engineering settings (D-022); the owner adopts measured changes.
+version: 1
+
+series:
+  # Sources whose series are tested. Left out: wipo_ipstats (stale: its files end in 2022; 966,306 office-by-origin
+  # series with a median of 4 years) and abs_datacubes (one period per table until more releases arrive).
+  sources: [openalex_counts, patent_cpc_counts, abs_headline, oecd_headline, gdelt_news, ip_rapid_metrics]
+  # Trend windows in periods. Monthly: the design's 12, 24 and 36 months. Other frequencies get windows long enough
+  # for the test to pass at all after Holm: 8 annual points can never reach p < 1e-4.
+  windows: {M: [12, 24, 36], Q: [8, 16, 24], A: [8, 12, 16], D: [28, 56, 84]}
+  min_coverage: 0.9          # a window is tested only if this share of its periods (excluded months aside) is present
+  min_mean_count: 5          # count series: mean count per period in the window; smaller series go to the surge test
+  alpha: 0.05                # trends, accelerations and surges: Holm-adjusted within each family
+  trend_min_windows: 2       # design §8.2: significant in at least 2 of 3 windows
+  anomaly_alpha: 0.01        # the 99% band, family-wise (Holm) across the taxonomy
+  anomaly_min_change: 0.25   # and at least 25% off the expected value (counts; statistics: of their level or spread)
+  accel_min_change: 0.10     # an acceleration changes the yearly growth rate (counts) or slope over level by >= 0.10
+  anomaly_baseline: {M: 24, Q: 12, A: 8, D: 28}  # points before the latest one that the band is fitted on
+  stale_after: {M: 6, Q: 4, A: 3, D: 7}          # a series whose last period is older than this is not tested
+  change_points:
+    penalty_factor: 3        # times BIC's: 0.3–0.6% of noise series split at 36 points, against 12–17% at BIC (D-022)
+    min_size: {M: 6, Q: 4, A: 4, D: 7}           # shortest segment of a slope
+    min_size_level: {M: 3, Q: 2, A: 2, D: 4}     # shortest segment of a level (the calibration used 3)
+    recent: {M: 3, Q: 2, A: 2, D: 7}             # a level change counts as an anomaly when the new level has lasted
+                                                 # at most min_size_level plus this many periods
+    level_frequencies: [M, Q, D]                 # annual series: 'recent' would mean years, and 7.6% of them fired
+  bootstrap: {reps: 300, seed: 20261014}
+  surge:                     # low-base surges: the latest periods against a trailing baseline, exact Poisson test
+    window: {M: 3, Q: 2, A: 1, D: 7}
+    baseline: {M: 12, Q: 8, A: 5, D: 28}
+    min_count: 5             # design §8.2: at least 5 items
+    max_expected: 5.0        # a low base: the baseline rate predicts at most this many in the window
+    min_ratio: 2.0
+  # Trailing periods dropped as incomplete, beyond the period that contains as_of (never complete). A series id
+  # matching a prefix uses the first match.
+  lags:
+    - {prefix: "patent_cpc_counts|", periods: 2}                      # 18 months to publication (the card)
+    - {prefix: "oecd_headline|OECD.STI.PIE:DSD_PATENTS", periods: 2}  # patents by priority fill in for about 3 years
+  exclude_months:            # calendar months left out of monthly series
+    openalex_counts: [1]     # works dated by year only are given 1 January (the card)
+  divergence_reference: {openalex_counts: world, patent_cpc_counts: world, gdelt_news: world, oecd_headline: OECD}
+
+documents:
+  window_days: 91            # the weak-signal window ends at as_of
+  baseline_days: 730         # the trailing baseline before the window
+  credible_families: [research, patent, legal, policy]   # design §8.2, new_term
+  min_items: 3               # design §8.2: a weak signal has at least 3 items (one per de-duplication group)
+  min_sources: 2             # from at least 2 sources
+  new_term_min_df: 3         # k: window documents holding the new phrase
+  cross_family_min: 3        # families in the window
+  cross_family_max_before: 1 # families in the baseline
+  surge_min_ratio: 2.0
+  surge_max_expected: 5.0
+  surge_min_baseline_items: 200   # a family's baseline must hold this many items for a rate to mean anything
+  alpha: 0.05
+  combination_min_items: 3
+  combination_min_each_before: 3  # each phrase of a new pair already appeared this often in the baseline
+  combination_lift_ratio: 2.0     # a rising pair: its lift at least doubled
+  clusters: {k: 200, seed: 20261014, batch: 4096, sample: 60000, name_terms: 5}
+  novelty:
+    neighbours: 20
+    min_baseline: 500        # items a family's baseline needs before its novelty is scored
+    baseline_sample: 20000
+    threshold: -1.5          # LOF's decision function below this is novel (scikit-learn's offset is -1.5)
+    micro_distance: 0.25     # cosine distance at which novel items join one micro-cluster (average linkage)
+  ipr_window_months: 12      # IP RAPID class pairs: the window, and the baseline before it
+  ipr_baseline_months: 60
+  ipr_min_applicants: 2      # a class pair's applications come from at least this many applicants
+
+artefacts:
+  coverage_change: 0.25      # design §8.3: flag if the source's total moved more than ±25% in the window
+  duplicate_ratio: 2.0       # raw items over de-duplicated items
+  news_cycle_days: 14        # a news-only burst inside this span, with no primary source
+  primary_families: [research, patent, policy, legal, statistics, ipa_internal]

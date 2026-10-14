@@ -1,8 +1,9 @@
 name: prepare
 
 # The evidence layer's preparation (day 3): normalise, embed, dedup, keyphrases, tag and index, into the private R2
-# bucket. Weekly, after collect-weekly; or by hand. Embeddings are reused while a text is unchanged, so a weekly run
-# embeds only new items. Logs are public: the stages print counts and keys, never content.
+# bucket; then day 4's scan (the detectors and artefact checks) and the seeded-artefact check. Weekly, after
+# collect-weekly; or by hand. Embeddings are reused while a text is unchanged, so a weekly run embeds only new items.
+# Logs are public: the stages print counts and keys, never content (`moria candidates` is for a terminal, not here).
 on:
   schedule:
     - cron: "17 7 * * 1"  # Mondays 07:17 UTC, after collect-weekly (03:41 UTC)
@@ -42,3 +43,7 @@ jobs:
         run: uv run moria env-check --require store:r2
       - name: Prepare
         run: uv run moria prepare --store r2
+      - name: Scan (day 4): the ingestion monitor, the detectors and the artefact checks, as of today
+        run: uv run moria scan --store r2
+      - name: The artefact checks against seeded artefacts (fails the job if a seed is missed)
+        run: uv run moria eval artefacts --store r2

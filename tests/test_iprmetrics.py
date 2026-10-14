@@ -51,8 +51,19 @@ def lake(tmp_path, store, apps, release, mode="base", delta_rows=None):
                             "party_role_category, country_code, is_founding)")  # fmt: skip
     write("application_links", "SELECT '1' AS application_number, 'trade_mark' AS ip_right_type, "
                                "'madrid_import' AS link_type")  # fmt: skip
-    write("application_classification", "SELECT '3' AS application_number, 'patent' AS ip_right_type, true AS "
-          "is_current, 'ipc_mark' AS classification_system, 'G06N 3/08' AS classification")  # fmt: skip
+    cls = [  # number, right, system, classification, assigned
+        ("3", "patent", "ipc_mark", "G06N 3/08", "2026-04-01"),
+        ("3", "patent", "ipc_mark", "G06N 5/02", "2026-04-01"),
+        ("3", "patent", "ipc_mark", "A61B 5/00", "2026-06-10"),
+        ("1", "trade_mark", "nice", "9", "2026-01-10"),
+        ("1", "trade_mark", "nice", "42", None),
+        ("2", "trade_mark", "nice", "9", "2026-01-21"),
+        ("2", "trade_mark", "nice", "42", "2026-02-02"),
+        ("4", "trade_mark", "nice", "35", "2026-03-01"),
+    ]
+    cv = ", ".join(f"('{n}', '{r}', true, '{s}', '{c}', {f'DATE {d!r}' if d else 'NULL'})" for n, r, s, c, d in cls)
+    write("application_classification", f"SELECT * FROM (VALUES {cv}) t(application_number, ip_right_type, "
+          "is_current, classification_system, classification, classification_date)")  # fmt: skip
     write("application_events", "SELECT * FROM (VALUES ('1', 'trade_mark', 'opposition', DATE '2026-05-02'), "
           "('2', 'trade_mark', 'publish_renew', DATE '2018-11-01')) t(application_number, ip_right_type, "
           "event_category, event_effective_date)")  # fmt: skip
@@ -87,6 +98,19 @@ def test_metrics_from_a_base_then_a_delta(tmp_path, store):
     assert v[("applications_ai_g06n|patent", "2026-02")] == 1 and v[("madrid_designating_au|trade_mark", "2026-01")]
     assert v[("days_to_registration_median|trade_mark", "2026-08")] == 222
     assert v[("oppositions|trade_mark", "2026-05")] == 1
+    assert v[("applications_ipc|patent|G06N", "2026-02")] == 1 and v[("applications_ipc|patent|A61B", "2026-02")] == 1
+    assert v[("applications_nice|trade_mark|9", "2026-01")] == 2 and v[("applications_nice|trade_mark|35", "2026-03")]
+    pairs = pq.read_table(store.root / "lake/ipr_metrics/class_pairs.parquet").to_pylist()
+    got = {(p["scheme"], p["class_a"], p["class_b"], p["period"]): p for p in pairs}
+    assert set(got) == {
+        ("ipc", "A61B", "G06N", "2026-06"),
+        ("nice", "42", "9", "2026-01"),
+        ("nice", "42", "9", "2026-02"),
+    }  # dated by each application's last class; one subclass once
+    jan = got[("nice", "42", "9", "2026-01")]  # number 1: class 42 has no date, so its filing date stands in
+    assert jan["applications"] == 1 and jan["applicant_min"] == jan["applicant_max"] == "p1"
+    counts = pq.read_table(store.root / "lake/ipr_metrics/class_counts.parquet").to_pylist()
+    assert {(c["scheme"], c["class"], c["period"]): c["applications"] for c in counts}[("nice", "*", "2026-01")] == 1
     m = json.loads(store.get(mkey))
     assert "renewals|trade_mark" in m["params"]["discontinued"]  # its events stop in 2018
     # a delta: one more application in January; only the changed values become a new vintage
