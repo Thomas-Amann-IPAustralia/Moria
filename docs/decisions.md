@@ -1793,3 +1793,31 @@ and format clean.
   4. Day 5 when you ask.
 
 Next free decision number: D-024.
+
+## D-024 — The owner's answers on D-023: the DAP's descriptions stored; CSIRO's publications to the backlog; IP RAPID's reading of data.gov.au accepted (2026-10-15)
+
+**The owner's answers** to D-023's questions:
+1. **The DAP's descriptions:** "Yes, Moria can store the collections' descriptions." `csiro_dap` now has
+   `keep_summary: true`; its card's licence and snapshot rights say so. The entries' categories stay unread.
+2. **CSIRO's publications:** "We'll leave the gap for now. Add it to the backlog to revisit later." In
+   `docs/sources-backlog.md` §5, with both routes (OpenAlex by CSIRO's institution; a key and leave to use it from
+   a runner, from CSIRO's library). Asked how 899 records were collected if a key is needed, Claude explained in
+   chat: the 899 are data collections from the Data Access Portal, whose search API is public; the gap is the
+   separate publications repository (articles, papers, reports), which refuses every address to a runner (a
+   firewall, by the look of it). That its API needs a key comes from search results only, not verified.
+3. **data.gov.au's robots.txt:** "Yes, that's very acceptable for us to continue accessing IP RAPID data." IP
+   RAPID's refresh keeps reading data.gov.au's catalogue API and download; CLAUDE.md records the acceptance.
+
+**Run.** From `5d2d747`: `collect csiro_dap --backfill` from a runner (`20261015T134625Z-b0252ac2`): passed, 22
+requests, all HTTP 200; 899 collections, every one with a description (median 786 characters, longest 3,982; 19
+hold HTML, which normalise strips). Then `moria normalise csiro_dap --store r2` from this session: the first attempt
+failed reading a bundle from R2 (a broken connection, `20261015T134737Z-fe65bd71`); the re-run passed
+(`20261015T134810Z-44a7efe5`): 899 documents, each at its latest version (two bundles, 1,798 records); the sweep
+found one email address (low severity: flagged, not quarantined) and nothing high.
+
+**Spend:** $0.
+
+**Consequences.** The descriptions reach embeddings, keyphrases, tags and the index at the next `prepare`. Day 5
+when the owner asks.
+
+Next free decision number: D-025.
