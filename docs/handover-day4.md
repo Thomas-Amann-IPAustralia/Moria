@@ -8,6 +8,25 @@ For the next Claude Code session. Read `CLAUDE.md` first, then this note and D-0
 clean commits: 2,486 candidates at as_of 2026-10-14, 2,129 with no artefact flag; the seeded artefacts all caught
 (`reports/scan.md`, `reports/eval/artefacts.md`).
 
+## Since day 4: the SignalBoost detectors (D-025)
+The owner's proposal (`docs/SignalBoost-Proposal.md`) was built before day 5 on branch `claude/charming-sagan-quk1nw`:
+horizons (3 to 180 months), contextual anomalies and coupling, fading pairs, applicant countries by class (IP
+RAPID's new `country_classes.parquet`), redundancy groups and corroboration, and `moria eval detectors`. Every new
+detector is measured at each scan; **all seven are switched off** (`config/detect.yaml` `new_detectors`) until the
+owner answers D-025. The evaluation (`reports/eval/detectors.md`) passes fading pairs and jurisdictions by class;
+the others fail its rules (the contextual model adds precision, not recall).
+
+What day 5 gains: `candidates.parquet` has `corroboration`, `redundancy_group` and `redundancy_size` (count a
+redundancy group once in the quotas and in "breadth"); `measures/series/as_of=D/` has `horizons.parquet` (the
+horizon profile of a series), `context.parquet` (each covariate's contribution; `explained` marks a band anomaly
+its context predicts: an alternative explanation for the dossier) and `redundancy.parquet`. Flags for day 5:
+- Day 4's band anomaly is weak evidence: it catches 53% of doubled spikes, flags 2.5 to 3.8% of null series, and
+  7.8% of its onsets are confirmed by a trend a year later. Rank band anomalies low unless something else agrees.
+- `prepare` couldn't run in D-025's session (huggingface.co refused), so the features are one normalise run behind:
+  the first Monday `prepare` after the merge refreshes them, scans with every new table, and runs the keyphrase
+  half of the fading evaluation. `prepare.yml` did not parse on main from day 4 until this branch (fixed).
+- Next free decision number: D-026.
+
 ## What day 4 built
 - **`moria measure series --as-of D`** (`src/moria/measures.py`, `src/moria/stats.py`): trends (Theil–Sen, Mann–
   Kendall, Holm within families, three windows), accelerations (bootstrap; a steeper change point on a trend), change

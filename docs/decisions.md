@@ -1821,3 +1821,156 @@ found one email address (low severity: flagged, not quarantined) and nothing hig
 when the owner asks.
 
 Next free decision number: D-025.
+
+## D-025 — The SignalBoost proposal built before day 5: horizons, context, relationship change and corroboration, measured against day 4; two detectors pass, five don't, all switched off for the owner (2026-10-15)
+
+**Context.** The owner, before day 5: "I've added a suggestion which I would like you to implement before the Day 5
+build" (`docs/SignalBoost-Proposal.md`): multi-horizon analysis (3 to 180 months); multivariate (contextual) anomaly
+detection; relationship-change detection; and evidence-based evaluation, retaining an enhancement "only where [it
+demonstrates] measurable improvements in detection quality". Acceptance: horizons configurable by source and method
+with minimum history; interpretable explanations with provenance; evaluation of incremental value, false positives
+and robustness to artefacts; overlapping windows and correlated indicators not counted as independent corroboration.
+"Please tell me if you disagree or have concerns. Otherwise, please implement."
+
+**Claude's concerns, raised with the build rather than before it (none is a disagreement with the proposal):**
+1. **Short horizons can't be trends.** Mann-Kendall on 3 monthly points can't reach significance, and 6 points can't
+   survive Holm across thousands of series; so 3 and 6 months are read as shifts in the recent mean (anomalies), as
+   the proposal's "methods appropriate to each horizon" allows.
+2. **History.** Measured at as_of 2026-10-14: OpenAlex has 35 months monthly and 16 years annual; the CPC counts 26
+   years; ABS and OECD statistics up to 583 months; IP RAPID 321 months; GDELT 3 days. A horizon is tested only where
+   a series reaches it, and the long horizons fall mostly on annual statistics and IP RAPID.
+3. **More horizons mean more tests.** Each horizon and method is its own Holm family, and a series that fires at
+   several horizons is still one line of evidence (the proposal's last criterion applies to day 4's own "2 of 3
+   windows" rule too: it is a robustness check, not corroboration).
+4. **Context can explain a real signal away** (a whole field rising). So a contextual model adds a detector and an
+   alternative explanation; it never hides a band anomaly.
+5. **No labelled hindsight set yet** (design §11.3 is day 5's and the owner's). The backtest therefore uses a
+   label-free proxy (a flag confirmed by day 4's trend detectors a year later), beside planted changes and nulls.
+6. **Adopting a detector is the owner's call** (CLAUDE.md). Every new detector is measured at each scan, but adds
+   candidates only when switched on; Claude recommends from the evaluation.
+
+**Built (Claude's engineering choices; they stand until the owner says otherwise).** Settings in `config/detect.yaml`
+(`horizons`, `context`, `relationships`, `redundancy`, `evaluation`, `new_detectors`).
+- **Horizons** (`src/moria/horizons.py`, inside `moria measure series`): each horizon becomes the series' own
+  periods (6 months = 2 quarters = 182 days; shorter than a period, not tested). Short (3, 6 months): the recent mean
+  against the trailing baseline's Theil-Sen line, the band from the baseline's own rolling means, 99% after Holm and
+  a 25% minimum change. Medium (12, 36): Theil-Sen and Mann-Kendall (at least 8 points). Long (60, 120, 180): the
+  same with Mann-Kendall's variance inflated by the residuals' lag-1 autocorrelation (Yue and Wang's effective
+  sample size), and the last structural break in slope or level (day 4's optimal partitioning, segments of at least
+  24 months). `by_source` limits a source's horizons (GDELT: 3 and 6 months). A profile per series:
+  structural_shift, reversal, sustained, long_run or transient. `horizons.parquet`.
+- **Context** (`src/moria/context.py`): the latest value against a ridge regression fitted on the baseline before it
+  (24 months, 16 quarters, 12 years), row by row in one batched solve: a time trend, the mean of up to 5 peers (the
+  series of its own test family whose changes correlated best with its own over the baseline, at least 0.5; chosen
+  on the baseline alone), the world or OECD counterpart of an Australian series, and the log volume of a share's
+  source. Tested against the full context, the peers alone and the counterpart alone, keeping the context that
+  explains it best: a first version credited the less noisy world series when peers and counterpart carried the
+  same movement, so an Australia-wide move shared by every peer still read as contextual (found by a test). Each row
+  keeps each covariate's contribution and the peers' and counterpart's series ids. A band anomaly whose move the
+  context predicts (at least half of it) is marked `explained`. **Coupling:** an Australian series' period-to-period
+  changes against its counterpart's, early half against recent half of up to 72 periods, Fisher's test with Holm;
+  decoupled (from at least 0.5 to at most 0.2) or coupled. Peers are not tested for coupling (chosen for their
+  correlation). `context.parquet`.
+- **Relationship change** (`src/moria/concepts.py`, inside `moria measure documents`): **fading** pairs, an
+  established pair (at least 10 groups or applications in the baseline, from 2 sources or applicants) whose window
+  count falls well below what its baseline lift predicts from each side's activity in the window (exact Poisson
+  lower tail, Holm; at least 5 expected, lift at most halved, each side still active), over keyphrase, IPC and Nice
+  pairs. **Jurisdictions by class:** `moria ipr metrics` now writes `country_classes.parquet` (applications by
+  founding applicants' country and IPC subclass or Nice class, by the month the classes were observable; countries
+  only, no party named), and the new, rising and fading tests run on country-class pairs (`ipc_country`,
+  `nice_country`). Day 4's rising test keeps its own family (only pairs it tested before), so its results don't move.
+- **Corroboration** (`moria measure series`, `moria detect`): flagged series whose first differences correlate at
+  least 0.8 (absolute, over the longest trend window, average linkage) share a redundancy group
+  (`redundancy.parquet`); candidates carry `redundancy_group`, `redundancy_size` and `corroboration` (1 per series;
+  a document candidate's sources, each de-duplication group counted once by its earliest item). An AU/world pair
+  takes its Australian series' group.
+- **Candidates** (`moria detect`): the new detectors (`short_shift`, `long_trend`, `structural_shift`,
+  `contextual_anomaly`, `decoupling`, `fading_combination`, `jurisdiction_shift`) join only when switched on; their
+  numbers carry the explanation and their evidence the peers and counterpart (`peer`, `reference`). `moria
+  scan-report` adds a section with each detector's counts.
+- **`moria eval detectors`** (`src/moria/evaldetect.py`): in memory, on the real layer: changes planted in series no
+  detector flags (40 per source and frequency per kind: a doubled period, a 3-month shift, 0.25 more growth a year
+  over 36 months, 0.15 more from 60 months back, a 60% jump alone, the same jump with its peers and counterpart, a
+  shuffled relationship); null series (the series' own residuals, resampled in blocks of 3, about a flat level or
+  its own line); artefacts (every count source's volume and counts up 60% in the last 3 months, or one period
+  counted twice); a backtest at 17 dates over 4 years; placebo (window and baseline reassigned) and synthetic
+  (pairs cut or tripled) tests of the relationship detectors. Every detector runs over the whole layer with the
+  plants in place, so Holm's families are real. The weekly `prepare` workflow runs it after the scan, its report in
+  the job summary.
+
+**Calibration and a change of rules, both before the recorded run.**
+- A development run (seed 20261015, not recorded) showed the **absolute retention rules miscalibrated**: day 4's own
+  band catches 47% of doubled spikes and flags 4.4% of the null series, so "recall at least 50%" and "at most 1%
+  false positives" would have rejected day 4 itself. The rules were changed to compare with day 4: incremental value
+  (plants caught by the new detector and by no day-4 detector) at least 10%; false positives at most day 4's
+  comparable detector's rate on the same nulls plus 1 point, and at most 5%; artefact flags at most 2 points beyond
+  day 4's. **This change was made after seeing the development run;** the owner should confirm or replace the rules.
+- **Long-window break penalty:** on nulls built with a separate seed (seed + 100), a penalty of 3 times BIC split
+  15% of null series, 6 times split 5 to 6% while still catching 17% of planted breaks that day 4 missed, and 10
+  times split no fewer while catching half as many. Set to 6. (The 0.3 to 0.6% day 4 measured at 36 points was on
+  simulated white noise; these nulls carry real series' heavy-tailed residuals.)
+- Long-run trends: Mann-Kendall's variance is inflated for autocorrelation; without it, 6.7% of flat nulls passed.
+
+**Run.** From `7105962` (code at `a0ec05e`): `moria ipr metrics --store r2` (`20261015T171058Z-c2295f58`): passed,
+731 series and 679,869 class-pair rows as before, 857,250 country-class rows. `moria eval detectors --as-of
+2026-10-15 --store r2` (`20261015T172147Z-0a1a9610`, about 17 minutes): passed; `reports/eval/detectors.md`.
+`moria prepare` couldn't run in this session (huggingface.co is refused, and the embeddings need the pinned model),
+so the features are one normalise run behind (CSIRO's descriptions, D-024): the keyphrase pairs were skipped in this
+run (the report says why), and no scan was run at a new date. A development run of `measure series` at 2026-10-14
+took 66 s (23 s for day 4's detectors alone): 12,339 short, 12,112 medium and 26,528 long horizon tests; 18,612
+series modelled in context, 348 contextual and 283 band anomalies explained; 1,558 coupling tests; 6,327 flagged
+series in 3,209 redundancy groups.
+
+**Results** (`reports/eval/detectors.md`; recall where a detector could test):
+
+| Detector | Recall | Incremental | False positives (day 4's) | Artefact excess | Verdict |
+|---|---:|---:|---:|---:|---|
+| short-term shift | 31% | 4.8% | 0% (3.8%) | +0.6 pt | fails: incremental |
+| long-run trend | 4.2% | 0.8% | 0% (1.2%) | -0.5 pt | fails: incremental |
+| structural break | 35% | 13% | 9.5% (3.8%) | -0.4 pt | fails: false positives |
+| contextual anomaly | 25% | 0% | 0.6% (3.8%) | -0.4 pt | fails: incremental |
+| decoupling | 4.7% | 3.4% | 0% (3.8%) | -0.5 pt | fails: incremental |
+| fading pair (IPC and Nice only) | 95% | 95% | 0.0% (0.3%) | n/a | **passes** |
+| jurisdiction by class | 85% | 85% | 0.3% (0.3%) | n/a | **passes** |
+
+- **The contextual model adds precision, not recall.** It catches nothing day 4's band misses, but on a jump shared
+  by its peers and counterpart it fires on 10% where the band fires on 39%; on nulls 0.6% against 3.8%; and in the
+  backtest 15% of its onsets are confirmed a year later against 7.8% of the band's. Its value is the `explained`
+  marking (an alternative explanation for the dossier), which the incremental rule doesn't measure.
+- **Structural breaks** catch 13% of planted long-run changes that day 4 misses, but split 9.5 to 11% of null series
+  (the calibration seed had suggested 5 to 6%; with 116 to 120 nulls the margin of error is about 3 points). The
+  backtest confirms 19% of their onsets (the band: 7.8%).
+- **Short-term shifts** mostly re-find the band's anomalies (median lead 4 months in the backtest, same confirmation).
+- **Decoupling** has little power: 88 established relationships planted, 4.7% found. Few series are long enough.
+- **Relationships:** in the real data, 7 fading class pairs; country-class pairs: 26 fading, 14 new, 20 rising.
+  Placebo detections stay at day 4's level (0.0 to 0.3% of tests).
+- **Artefacts:** no new detector fires more than 0.6 points beyond day 4 under a volume jump or a duplicated period.
+- **Day 4's own numbers, for day 5:** the band catches 53% of doubled spikes and flags 2.5 to 3.8% of null series;
+  only 7.8% of its onsets are confirmed by a trend a year later. Ranking should not treat band anomalies as strong.
+
+**Checked:** 155 tests pass (one skipped) with no network: horizons tell a break from a shift and from noise, and
+skip horizons beyond a series' history; context separates a lone jump from a shared one; coupling finds a broken
+relationship; fading pairs and jurisdictions on hand-built tables; the switches; corroboration; the planter; the
+evaluation end to end on hand-built series and a minimal layer. Lint and format clean. **Also fixed:**
+`prepare.yml` hasn't parsed on main since day 4 (an unquoted colon in a step name: `Scan (day 4): …`), so its
+Monday schedule would not have run; fixed on this branch.
+
+**Spend:** $0.
+
+**Consequences.**
+- All seven switches are off: the candidates are day 4's, with the new `corroboration` and `redundancy_group`
+  columns. The shadow measures are written at every scan and the evaluation reruns weekly.
+- The keyphrase half of the fading test, and a scan with every new table, wait for `prepare` on a runner: the next
+  Monday after this branch is merged (or `prepare` by hand from main).
+- **For the owner:**
+  1. **Switch on `fading_combination` and `jurisdiction_shift`?** Claude recommends both (for keyphrase pairs, after
+     the first weekly evaluation that tests them).
+  2. **The contextual model:** keep it off as a detector, but let day 5's dossiers show "explained by its context"
+     on band anomalies? That needs a switch of its own (today it rides with `contextual_anomaly`).
+  3. **Confirm or replace the retention rules,** changed after the development run (above).
+  4. **Structural breaks:** leave off, or Claude can raise the long-window penalty and re-measure (it costs recall).
+  5. Short-term shifts, long-run trends and decoupling: leave off; Claude would keep measuring them in the
+     background (they cost about 40 s a scan) unless you'd rather remove them.
+  6. Merge this branch (or a pull request) so the weekly `prepare` runs again.
+
+Next free decision number: D-026.
