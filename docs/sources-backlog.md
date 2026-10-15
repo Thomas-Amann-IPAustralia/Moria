@@ -302,6 +302,16 @@ hang on cloud addresses; an owner upload is the route for their documents.
 **Uploads (D-020):** a document entry may name its upload in `inbox/documents/` (`upload`), and Word files are read.
 Ten of the owner's eleven files are evidence; the OECD Data API documentation was read to build `oecd_headline`.
 
+## 2b. CSIRO (D-023, 2026-10-15)
+
+The owner asked for CSIRO's publications API and the Data Access Portal's 22 field-of-research feeds, "treated as one
+source with each RSS feed just being a different topic tag".
+
+| Group | Card | Adapter | Text kept | Notes |
+|---|---|---|---|---|
+| CSIRO Data Access Portal | `csiro_dap` | `feed` with the new `topics` (22 feeds, one record per collection, its divisions in `topics`) | descriptions (the owner's approval, D-024) | `sb=RECENT`, 100 a feed; robots.txt allows `/dap/ws/v2/` (RFC 9309); law and legal studies has no collections |
+| CSIRO research publications | none: **a gap** | — | — | publications.csiro.au answers 403 to the session and a runner; its API is for CSIRO staff or keyed users. In the backlog (§5) |
+
 ## 3. Day 3 implications of the cleanup
 
 - **Normalisation** gains feed items from APH (dates in RSS format) and legal documents from the corpus (dates as
@@ -348,6 +358,18 @@ On "UN decisions": the UN material is the General Debate speeches and the ICJ's 
 resolutions.
 
 ## 5. The backlog (not now)
+
+### CSIRO's research publications (D-023, D-024)
+
+The owner: "We'll leave the gap for now. Add it to the backlog to revisit later." publications.csiro.au (the
+Research Publications Repository: journal articles, conference papers, reports and books) answers 403 to the build
+session and to a runner for every address, robots.txt included, which looks like a firewall turning away cloud
+addresses rather than an API's refusal. A CSIRO library guide (read only through search results) says its API is
+for CSIRO staff and that outside users ask the library for a key; not verified. A key alone may not get a runner
+past the firewall. Routes when revisited:
+1. **OpenAlex:** CSIRO-affiliated works by CSIRO's institution id (titles, dates, often abstracts), with the key
+   Moria already has; covers most articles and papers, likely not CSIRO's own client and technical reports.
+2. **CSIRO's library:** ask for a key and whether automated access from a cloud runner is allowed.
 
 ### Parliament, beyond T1
 - **L1. ParlInfo: Hansard, Bills Digests, Library papers.** Today ParlInfo, including its robots.txt and its Bills

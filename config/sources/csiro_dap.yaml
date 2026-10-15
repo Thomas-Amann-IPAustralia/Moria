@@ -1,0 +1,60 @@
+id: csiro_dap
+name: CSIRO Data Access Portal (new data collections, by field of research)
+adapter: feed
+rings: [adjacent, wider_world]
+domains: [D3, D0, D2]
+family: research
+cadence: daily
+publication_lag: same day (a collection is listed when CSIRO publishes it)
+coverage: >-
+  The data collections CSIRO publishes on its Data Access Portal (DAP): research datasets, models and software, each
+  listed under the ANZSRC 2020 fields of research (divisions) it is filed under. One source reads the portal's search
+  feed once per division (22 feeds; the owner's request, 2026-10-15), newest first, 100 a feed; an item filed under
+  several divisions is one record carrying each division in its `topics`. About 140 new collections a month across
+  the divisions (2026-09-15 to 10-14, up to 12 a day); busy divisions fill their 100 in about five months
+  (environmental sciences: 2026-04-30 to 10-08), small ones hold years (philosophy: 1 collection). Law and
+  legal studies, the 23rd division, has no collections (2026-10-15) and is left out. Titles, links, dates,
+  divisions and descriptions (D-024). CSIRO's research publications (publications.csiro.au) are a gap (D-023, D-024).
+history_start: "each feed reaches back 100 collections: months for busy divisions, years for small ones"
+stable_since: null
+breaks: []
+known_biases:
+  - CSIRO's own research only, and only what it chooses to deposit; strongest in environmental, earth, agricultural
+    and physical sciences
+  - A division is CSIRO's filing, not a judgment of the work; some collections are filed under none and never appear
+  - Version updates of a collection may appear as new items
+revision_policy: a collection can be versioned or withdrawn; the feed lists the current version
+licence: >-
+  Each collection's data carry their own licence (CC BY 4.0 by default under CSIRO's deposit terms); no licence for
+  the portal's metadata was found, and csiro.au states CSIRO copyright without an open licence (2026-10-15, read
+  through search results: CSIRO's sites refuse the build session). The owner approved storing the descriptions
+  (D-024). robots.txt allows /dap/ws/v2/ (read with RFC 9309, D-023)
+snapshot_rights: titles, links, dates, divisions and descriptions (the owner, D-024); never the data
+expected_volume: {min_per_run: 0, max_per_run: 150}
+params:
+  url: https://data.csiro.au/dap/ws/v2/collections/searchbylocation?p=1&rpp=100&sb=RECENT&browseType=td&browseValue={topic}&inclAttribution=false&atom=true
+  lookback_days: 7
+  keep_summary: true
+  topics:
+    - "AGRICULTURAL, VETERINARY AND FOOD SCIENCES"
+    - "BIOLOGICAL SCIENCES"
+    - "BIOMEDICAL AND CLINICAL SCIENCES"
+    - "BUILT ENVIRONMENT AND DESIGN"
+    - "CHEMICAL SCIENCES"
+    - "COMMERCE, MANAGEMENT, TOURISM AND SERVICES"
+    - "CREATIVE ARTS AND WRITING"
+    - "EARTH SCIENCES"
+    - "ECONOMICS"
+    - "EDUCATION"
+    - "ENGINEERING"
+    - "ENVIRONMENTAL SCIENCES"
+    - "HEALTH SCIENCES"
+    - "HISTORY, HERITAGE AND ARCHAEOLOGY"
+    - "HUMAN SOCIETY"
+    - "INDIGENOUS STUDIES"
+    - "INFORMATION AND COMPUTING SCIENCES"
+    - "LANGUAGE, COMMUNICATION AND CULTURE"
+    - "MATHEMATICAL SCIENCES"
+    - "PHILOSOPHY AND RELIGIOUS STUDIES"
+    - "PHYSICAL SCIENCES"
+    - "PSYCHOLOGY"

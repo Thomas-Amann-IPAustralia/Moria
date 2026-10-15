@@ -82,6 +82,20 @@ def describe_xml(data: bytes) -> str | None:
     return f"XML, root <{root.tag[:60]}>"
 
 
+ROBOTS_FIELD = re.compile(r"^\s*(user-agent|allow|disallow|crawl-delay)\s*:\s*(\S{0,200})", re.IGNORECASE)
+
+
+def robots_rules(text: str, limit: int = 60) -> list[str]:
+    """A robots.txt's user-agent, allow, disallow and crawl-delay lines, normalised (directives for crawlers, which
+    is why they may be printed); comments and anything else are left out."""
+    rules = []
+    for line in text.splitlines():
+        m = ROBOTS_FIELD.match(line.split("#", 1)[0])
+        if m:
+            rules.append(f"{m.group(1).lower()}: {m.group(2)}")
+    return rules[:limit]
+
+
 def html_links(html: str, base: str, match: re.Pattern | None) -> tuple[list[str], list[str]]:
     """(feed links the page declares, other links that look like feeds or sitemaps or match the pattern)"""
     p = _Links()
@@ -125,6 +139,8 @@ def discover(client: PoliteClient, urls: list[str], match: str | None = None) ->
                 ln.split(":", 1)[1].strip() for ln in resp.text.splitlines() if ln.lower().startswith("sitemap:")
             ]
             yield f"  robots.txt: {len(resp.text.splitlines())} lines; sitemaps: {', '.join(sitemaps) or 'none'}"
+            for rule in robots_rules(resp.text):
+                yield f"  rule: {rule}"
             continue
         xml = describe_xml(resp.content) if ("xml" in ctype or resp.content.lstrip()[:5] == b"<?xml") else None
         if xml:

@@ -130,6 +130,55 @@ def test_feed_without_a_clear_licence_keeps_titles_and_links_only(http_cfg):
     assert rec.payload["link"] == "https://feed.test/1"
 
 
+def _topic_feed(entries: list[tuple[str, str]]) -> bytes:
+    body = "".join(
+        f'<entry><id>{i}</id><title>Placeholder</title><link href="https://feed.test/c/{i}"/>'
+        f"<updated>{when}</updated><summary>placeholder</summary></entry>"
+        for i, when in entries
+    )
+    return f'<feed xmlns="http://www.w3.org/2005/Atom"><title>T</title>{body}</feed>'.encode()
+
+
+def test_one_source_reads_a_feed_per_topic_and_tags_each_item(http_cfg):
+    # one feed per field of research, as the CSIRO Data Access Portal offers them
+    feeds = {
+        "ECONOMICS": _topic_feed([("c1", "2026-10-09T01:00:00Z"), ("c2", "2026-10-08T01:00:00Z")]),
+        "LAW AND LEGAL STUDIES": _topic_feed([("c1", "2026-10-09T01:00:00Z"), ("c3", "2026-01-01T00:00:00Z")]),
+        "HUMAN SOCIETY": _topic_feed([]),
+    }
+    asked = []
+
+    def handler(request):
+        topic = parse_qs(urlsplit(str(request.url)).query)["browseValue"][0]
+        asked.append(topic)
+        return httpx.Response(200, content=feeds[topic])
+
+    params = {
+        "url": "https://feed.test/search?browseValue={topic}&atom=true",
+        "topics": list(feeds),
+        "keep_summary": False,
+    }
+    c = card("feed", params)
+    ctx = CollectContext(card=c, client=make_client(http_cfg, handler), window=Window.for_day(DAY))
+    collector = FeedCollector(c)
+    recs = collector.collect(ctx)
+    assert asked == list(feeds)  # the topic's spaces are encoded, and decoded back by the server
+    assert {r.envelope.provider_record_id: r.payload["topics"] for r in recs} == {
+        "c1": ["ECONOMICS", "LAW AND LEGAL STUDIES"],
+        "c2": ["ECONOMICS"],
+    }
+    assert all("summary" not in r.payload for r in recs)
+    assert ctx.warnings == ["feed: the topic 'HUMAN SOCIETY' has no items"]
+    assert collector.counts == {"items_in_feed": 3, "items_undated": 0, "feeds_read": 3}
+
+
+def test_feed_topics_need_a_template():
+    with pytest.raises(ValueError, match="topic"):
+        FeedCollector(card("feed", {"url": "https://feed.test/rss", "topics": ["A"]}))
+    with pytest.raises(ValueError, match="topic"):
+        FeedCollector(card("feed", {"url": "https://feed.test/{topic}"}))
+
+
 SITEMAP = b"""<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://site.test/news/new</loc><lastmod>2026-10-09</lastmod></url>
 <url><loc>https://site.test/old</loc><lastmod>2025-01-01</lastmod></url></urlset>"""

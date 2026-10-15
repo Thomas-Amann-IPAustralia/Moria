@@ -10,7 +10,7 @@ import pyarrow.parquet as pq
 
 from moria.config import load_features
 from moria.manifest import Manifest
-from moria.normalise import latest_passed, run
+from moria.normalise import _doc_fields, latest_passed, run
 from moria.records import RawRecord, bundle_key, encode_bundle, make_envelope
 from moria.sweep import SweepFile
 
@@ -155,3 +155,11 @@ def test_an_unmapped_payload_fails_the_run_loudly_and_names_the_source(store):
     assert by["good_feed"].status == "built" and by["bad_cube"].status == "failed"
     assert by["bad_cube"].error.startswith("bad_cube: KeyError")
     assert latest_passed(store) is None and json.loads(store.get(mkey))["error"].startswith("bad_cube")
+
+
+def test_a_feed_item_keeps_its_topics_and_categories():
+    c = card("feed", {"url": "https://feed.test/search?t={topic}", "topics": ["A", "B"]})
+    payload = {"title": "Placeholder", "link": "https://feed.test/c/1", "topics": ["A", "B"], "categories": []}
+    assert _doc_fields(c, payload)["extra"] == {"topics": ["A", "B"]}
+    plain = {"title": "Placeholder", "link": "https://feed.test/2"}
+    assert _doc_fields(card("feed", {"url": "https://feed.test/rss"}), plain)["extra"] == {}

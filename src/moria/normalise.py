@@ -135,7 +135,8 @@ def _doc_fields(card: SourceCard, payload: dict) -> dict:
     """The document's fields from its payload, by adapter. An unknown payload shape is an error, not a guess."""
     a = card.adapter
     if a == "feed":
-        extra = {"categories": payload["categories"]} if payload.get("categories") else {}
+        # categories as the feed gives them; topics, the feeds of a multi-topic source it was found in (csiro_dap)
+        extra = {k: payload[k] for k in ("categories", "topics") if payload.get(k)}
         return {
             "doc_type": "feed_item",
             "title": payload.get("title"),

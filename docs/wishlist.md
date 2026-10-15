@@ -74,8 +74,9 @@ whose first chapter links a first patent grant or trade mark registration with l
 |---|---|---|
 | **EPO** ([terms of use](https://www.epo.org/en/terms-of-use/terms-and-conditions-use-website-european-patent-office), section 6) | Read on 2026-10-12. The EPO's own information may be downloaded, printed and processed "for private and commercial purposes", displayed accurately and citing the website. Excluded: third-party content, the EPO's logos and trade marks, and images not offered for download. | Confirm, and I'll store the text of EPO news, Boards of Appeal news, the Strategic Plan 2028 page and the Annual Work Plan, citing the EPO. |
 | **Canada.ca**, settled (D-020): CIPO's own strategy carries the same notice, and Moria's use is non-commercial (D-017); CIPO's strategy text and news summaries are stored ([terms and conditions](https://www.canada.ca/en/transparency/terms.html)) | Canada.ca refuses this session; from search results: materials may be reproduced "for non-commercial purposes, and in any format, without charge or further permission", stating the title and author and that the copy is not an official version; the official symbols are excluded. | Confirm that Moria's private, internal storage counts as non-commercial, and I'll store CIPO's news summaries and its strategy. |
+| **CSIRO Data Access Portal** (card `csiro_dap`), settled (D-024): the owner approved storing the descriptions | CSIRO's sites refuse this session. From search results: each collection's data carry their own licence, CC BY 4.0 by default under CSIRO's deposit terms; no licence for the portal's metadata (titles, descriptions, keywords) was found, and csiro.au states CSIRO copyright without an open licence. | Settled: descriptions are stored. |
 
 ## Not needed from you
 
 - ABS business entries and exits (CABEE) and business R&D (BERD): read since D-018 (`abs_datacubes`).
-- The EUIPO, JPO and other legal notices beyond the two above: each document's own licence statement decides.
+- The EUIPO, JPO and other legal notices beyond those above: each document's own licence statement decides.

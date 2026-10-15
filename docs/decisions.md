@@ -1722,3 +1722,102 @@ the seeded evaluation end to end on a hand-built layer; the report holds no labe
      branch (or a pull request).
 
 Next free decision number: D-023.
+
+## D-023 — CSIRO added before day 5: the Data Access Portal as one source over 22 topic feeds; CSIRO's publications are a gap; robots.txt read as RFC 9309 (2026-10-15)
+
+**Context.** The owner, before day 5: "I would like to add some extra data to the mix", with CSIRO's publications
+API (`publications.csiro.au/rpr/swagger-ui/`) and 22 Atom feeds from the CSIRO Data Access Portal (DAP), one per
+ANZSRC 2020 field of research (division), and: "All the CSIRO sources can probably just be treated as one source with
+each RSS feed just being a different topic tag or something."
+
+**Access (checked 2026-10-15).** Every CSIRO host refuses this build session (the egress policy), so each address was
+checked from a runner (`collect-source` with `discover`; runs 38738506473, 38738869888, 38739306934, 38739694165):
+- **publications.csiro.au answers 403 to the runner** for everything, robots.txt included (a firewall page). From
+  search results, CSIRO's library guide says the RPR API is for CSIRO staff; external users ask its librarians for a
+  key. **A gap**, until the owner wants to ask CSIRO for a key.
+- **data.csiro.au answers.** Its robots.txt (now printed by `moria discover`, rules only) reads `Disallow: /dap/` then
+  `Allow: /dap/ws/v2/`, with the data downloads under it disallowed. Moria's check called the search API disallowed:
+  Python's `urllib.robotparser` applies the first matching rule in file order and reads `*` literally. RFC 9309
+  (§2.2.2) says the most specific (longest) match wins, which allows `/dap/ws/v2/collections/searchbylocation`.
+- The search's `sb` takes `RELEVANCE` and `RECENT` (`PUBLISHED_DATE`, `PUBLICATION_DATE` and `DATE` answer 417).
+  `RECENT` is newest first: environmental sciences' first 100 run from 2026-04-30 to 10-08, its next 100 from
+  2025-09-04 to 2026-04-29. Law and legal studies, the 23rd division, has no collections.
+
+**Built (Claude's engineering choices; they stand until the owner says otherwise).**
+- **`moria.robots`**: robots.txt read as RFC 9309 reads it: the group naming Moria's product token, else `*`; the
+  longest matching pattern wins, an allow on a tie; `*` and `$` are wildcards; percent-encoding compared decoded.
+  It replaces `urllib.robotparser` in the polite client. Checked from a runner against the robots.txt of every host
+  a check covers (IP Australia, the USPTO, IPOS, WIPO, the ABS, OECD.AI, STIP Compass): none of Moria's addresses
+  changes verdict (IPOS's `/search` and the ABS's `/*/print$` now apply as written; Moria fetches neither).
+- **`moria discover`** prints a robots.txt's user-agent, allow, disallow and crawl-delay lines (directives for
+  crawlers, never comments), so a runner's log shows why an address is refused.
+- **The feed adapter's `topics`**: a `url` holding `{topic}` is read once per topic (the topic URL-encoded as the
+  owner's addresses are); an item found under several topics is one record whose payload lists them (`topics`);
+  normalise keeps them in the document's `extra`. A topic whose feed is empty is a warning. `moria env-check`
+  probes the first topic's address.
+- **`csiro_dap`** (daily; adjacent and wider world; D3, D0, D2; family research): the owner's 22 divisions,
+  `sb=RECENT`, 100 a feed, a 7-day lookback, 2 seconds between requests (22 requests, under a minute). The owner's
+  addresses also asked for facets (`showFacets=true`), which Moria doesn't read: left out.
+- **Titles, links, dates and divisions only** (`keep_summary: false`). Each collection's data carry their own
+  licence (CC BY 4.0 by default under CSIRO's deposit terms, by search results); no licence for the portal's
+  metadata was found, and CSIRO's site states its copyright without an open licence (read through search results:
+  csiro.au refuses this session). Not stored either: the entries' categories, unread.
+
+**Run.** `collect csiro_dap --backfill` from a runner (run 38740097893, `fea146e`): passed, 22 requests, all HTTP
+200; 899 collections (900 in the feeds, one dated after the window), 220 under more than one division, every one
+dated (`published`); from 2012-10-02 to 2026-10-14. Divisions at the 100 cap: agricultural, biological, chemical,
+engineering and environmental sciences (earth, information and computing, and physical sciences 98 to 99); the
+smallest: philosophy 1, language 3, education 5, Indigenous studies 8. About 140 new collections a month across
+the divisions (2026-09-15 to 10-14), up to 12 a day. The ingestion monitor's band warning is the backfill's size.
+
+**Checked:** 142 tests pass (one skipped) with no network (RFC 9309 precedence, wildcards, end anchors, ties, agent groups and
+percent-encoding; topic feeds merged, tagged and warned; a topic needs a template; normalise keeps topics). Lint
+and format clean.
+
+**Spend:** $0.
+
+**Consequences.**
+- Sources: 44. `collect-daily` reads `csiro_dap` from the next run after this branch is merged (schedules run from
+  the default branch).
+- The divisions are CSIRO's filing: day 5 can read them as a field-of-research tag beside the zero-shot tags.
+- CSIRO's publications stay a gap. Two routes, for the owner: ask CSIRO's librarians for an RPR API key; or count
+  and list CSIRO-affiliated works through OpenAlex (CSIRO's ROR id), which Moria already pays nothing for.
+- **For the owner:**
+  1. **The DAP's descriptions:** confirm whether Moria may store the collections' descriptions (CSIRO states no
+     licence for its metadata; the data are mostly CC BY 4.0). Until then, titles only.
+  2. **CSIRO's publications:** ask CSIRO for an RPR API key, or take the OpenAlex route, or leave the gap.
+  3. **data.gov.au's robots.txt** disallows everything for every agent (`Disallow: /`), seen in passing. IP RAPID's
+     refresh reads data.gov.au's catalogue API and download, which Moria's adapters don't check against robots.txt
+     (an API and a bulk file, not web pages). It has worked for weeks and data.gov.au exists to publish these files;
+     raised so that the reading is the owner's.
+  4. Day 5 when you ask.
+
+Next free decision number: D-024.
+
+## D-024 — The owner's answers on D-023: the DAP's descriptions stored; CSIRO's publications to the backlog; IP RAPID's reading of data.gov.au accepted (2026-10-15)
+
+**The owner's answers** to D-023's questions:
+1. **The DAP's descriptions:** "Yes, Moria can store the collections' descriptions." `csiro_dap` now has
+   `keep_summary: true`; its card's licence and snapshot rights say so. The entries' categories stay unread.
+2. **CSIRO's publications:** "We'll leave the gap for now. Add it to the backlog to revisit later." In
+   `docs/sources-backlog.md` §5, with both routes (OpenAlex by CSIRO's institution; a key and leave to use it from
+   a runner, from CSIRO's library). Asked how 899 records were collected if a key is needed, Claude explained in
+   chat: the 899 are data collections from the Data Access Portal, whose search API is public; the gap is the
+   separate publications repository (articles, papers, reports), which refuses every address to a runner (a
+   firewall, by the look of it). That its API needs a key comes from search results only, not verified.
+3. **data.gov.au's robots.txt:** "Yes, that's very acceptable for us to continue accessing IP RAPID data." IP
+   RAPID's refresh keeps reading data.gov.au's catalogue API and download; CLAUDE.md records the acceptance.
+
+**Run.** From `5d2d747`: `collect csiro_dap --backfill` from a runner (`20261015T134625Z-b0252ac2`): passed, 22
+requests, all HTTP 200; 899 collections, every one with a description (median 786 characters, longest 3,982; 19
+hold HTML, which normalise strips). Then `moria normalise csiro_dap --store r2` from this session: the first attempt
+failed reading a bundle from R2 (a broken connection, `20261015T134737Z-fe65bd71`); the re-run passed
+(`20261015T134810Z-44a7efe5`): 899 documents, each at its latest version (two bundles, 1,798 records); the sweep
+found one email address (low severity: flagged, not quarantined) and nothing high.
+
+**Spend:** $0.
+
+**Consequences.** The descriptions reach embeddings, keyphrases, tags and the index at the next `prepare`. Day 5
+when the owner asks.
+
+Next free decision number: D-025.
