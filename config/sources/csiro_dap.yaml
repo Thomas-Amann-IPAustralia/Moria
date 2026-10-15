@@ -10,8 +10,9 @@ coverage: >-
   The data collections CSIRO publishes on its Data Access Portal (DAP): research datasets, models and software, each
   listed under the ANZSRC 2020 fields of research (divisions) it is filed under. One source reads the portal's search
   feed once per division (22 feeds; the owner's request, 2026-10-15), newest first, 100 a feed; an item filed under
-  several divisions is one record carrying each division in its `topics`. Busy divisions publish about 20
-  collections a month (environmental sciences: 100 from 2026-04-30 to 2026-10-08); small ones a few a year. Law and
+  several divisions is one record carrying each division in its `topics`. About 140 new collections a month across
+  the divisions (2026-09-15 to 10-14, up to 12 a day); busy divisions fill their 100 in about five months
+  (environmental sciences: 2026-04-30 to 10-08), small ones hold years (philosophy: 1 collection). Law and
   legal studies, the 23rd division, has no collections (2026-10-15) and is left out. Titles, links, dates and
   divisions only. CSIRO's research publications (publications.csiro.au) are a gap (D-023).
 history_start: "each feed reaches back 100 collections: months for busy divisions, years for small ones"

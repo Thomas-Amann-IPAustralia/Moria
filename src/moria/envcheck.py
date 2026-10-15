@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from .collectors.feed import FeedParams
 from .config import MoriaConfig, SourceCard
 from .http import FetchError, PoliteClient
 from .store import R2Store, StoreError
@@ -86,7 +87,8 @@ def run_checks(cfg: MoriaConfig, cards: dict[str, SourceCard], client: PoliteCli
             base = card.params.get("base_url", "https://data.gdeltproject.org/gdeltv2")
             probes[f"source:{card.id}"] = (f"{base}/lastupdate.txt", None)
         elif card.adapter == "feed":
-            probes[f"source:{card.id}"] = (card.params["url"], None)
+            # a feed with topics: its first topic's address, not the template
+            probes[f"source:{card.id}"] = (FeedParams.model_validate(card.params).urls()[0][1], None)
         elif card.adapter == "sitemap":
             probes[f"source:{card.id}"] = (card.params["sitemap_url"], None)
         elif card.adapter == "legislation":

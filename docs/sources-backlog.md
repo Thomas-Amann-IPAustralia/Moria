@@ -302,6 +302,16 @@ hang on cloud addresses; an owner upload is the route for their documents.
 **Uploads (D-020):** a document entry may name its upload in `inbox/documents/` (`upload`), and Word files are read.
 Ten of the owner's eleven files are evidence; the OECD Data API documentation was read to build `oecd_headline`.
 
+## 2b. CSIRO (D-023, 2026-10-15)
+
+The owner asked for CSIRO's publications API and the Data Access Portal's 22 field-of-research feeds, "treated as one
+source with each RSS feed just being a different topic tag".
+
+| Group | Card | Adapter | Text kept | Notes |
+|---|---|---|---|---|
+| CSIRO Data Access Portal | `csiro_dap` | `feed` with the new `topics` (22 feeds, one record per collection, its divisions in `topics`) | titles only (no licence found for the metadata) | `sb=RECENT`, 100 a feed; robots.txt allows `/dap/ws/v2/` (RFC 9309); law and legal studies has no collections |
+| CSIRO research publications | none: **a gap** | — | — | publications.csiro.au answers 403 to the session and a runner; its API is for CSIRO staff or keyed users. Routes: a key from CSIRO's librarians, or CSIRO's works through OpenAlex |
+
 ## 3. Day 3 implications of the cleanup
 
 - **Normalisation** gains feed items from APH (dates in RSS format) and legal documents from the corpus (dates as

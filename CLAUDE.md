@@ -46,6 +46,11 @@ sources (D-020) are built.**
   ingestion, duplicate, news cycle, source break, label drift); `moria scan` (the chain); `moria scan-report`;
   `moria candidates` (terminal only); `moria eval artefacts` (seeded artefacts with controls: 6 of 6 caught).
   `moria ipr metrics` adds class series and class pairs. Settings in `config/detect.yaml`.
+- **Built (CSIRO, D-023):** `csiro_dap`, the CSIRO Data Access Portal's new data collections, one source over 22
+  feeds (one per ANZSRC field of research; the feed adapter's new `topics`), each item tagged with its divisions;
+  titles, links and dates only. robots.txt is now read as RFC 9309 reads it (the most specific rule wins).
+  **Gap:** CSIRO's research publications (publications.csiro.au refuses the session and a runner, and its API is
+  for CSIRO staff or keyed users). Sources: 44.
 - **Next:** day 5 (dossiers, pathway suggestions, ranking and quotas, the register export and import, the
   early-warning digest, a term-only hindsight smoke run), when the owner asks. `docs/handover-day4.md` lists what
   day 5 reads and its flags. Pile of Law was checked and discarded (D-016).
@@ -85,7 +90,8 @@ sources (D-020) are built.**
 - News: titles, URLs and metadata only, never article text. Text may be searched in memory (GDELT quotations), then
   dropped. Web pages: extracted text plus the original HTML's hash
   and size.
-- robots.txt is honoured for web pages. Per-host minimum intervals are in `config/moria.yaml`: GDELT at 5.5 s.
+- robots.txt is honoured for web pages, read as RFC 9309 reads it (`src/moria/robots.py`: the most specific rule
+  wins, with wildcards; D-023). Per-host minimum intervals are in `config/moria.yaml`: GDELT at 5.5 s.
 - Third-party model code (for example, a model repo's own runtime) is read before it is run, pinned and hashed.
   `trust_remote_code` needs the owner's exception.
 - Judgments (the legal corpus) name parties and witnesses: their text stays in the bucket's lake; logs and the census
@@ -220,6 +226,7 @@ instead of the document's URL.
 | `ec_presscorner`, `aspi_strategist` | feed | Daily. The European Commission's press releases and speeches (reuse authorised; opening lines and policy areas); ASPI's Strategist (CC BY-NC-ND; opening lines and tags). |
 | `arxiv_ai_society` | feed | Daily. arXiv's listings in cs.AI, cs.CY, cs.DL and econ.GN with abstracts (CC0); author names not stored; one request every 3 s. Empty on days without an announcement. |
 | `standards_australia_news`, `us_federal_register_ip` | feed | Daily. Standards Australia's news (titles only); the USPTO's and the Copyright Office's Federal Register documents (public domain; abstracts). |
+| `csiro_dap` | feed (`topics`) | Daily (D-023). The CSIRO Data Access Portal's search feed, once per ANZSRC 2020 division (22; law has no collections), newest first, 100 a feed, 7-day lookback; an item under several divisions is one record listing them (`topics`, kept in the document's `extra`). Titles, links, dates and divisions only: no licence found for the portal's metadata. robots.txt allows `/dap/ws/v2/`. |
 
 ## Model choice
 Free first (design §9):
