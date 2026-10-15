@@ -23,10 +23,10 @@ its context predicts: an alternative explanation for the dossier) and `redundanc
 - Day 4's band anomaly is weak evidence: it catches 53% of doubled spikes, flags 2.5 to 3.8% of null series, and
   7.8% of its onsets are confirmed by a trend a year later. Rank band anomalies low unless something else agrees.
 - The layer was prepared and scanned at 2026-10-15 from the build session (D-026): 2,567 candidates, 2,129 clean;
-  977 of them sit behind another candidate in a redundancy group. The BM25 index is stale (DuckDB's `fts` extension
-  host was refused); the weekly `prepare` rebuilds it. `prepare.yml` did not parse on main from day 4 until this
+  977 of them sit behind another candidate in a redundancy group. The BM25 index was rebuilt the same day
+  (D-027), so the whole layer is current. `prepare.yml` did not parse on main from day 4 until this
   branch (fixed).
-- Next free decision number: D-027.
+- Next free decision number: D-028.
 
 ## What day 4 built
 - **`moria measure series --as-of D`** (`src/moria/measures.py`, `src/moria/stats.py`): trends (Theil–Sen, Mann–

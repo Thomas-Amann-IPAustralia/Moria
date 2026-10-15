@@ -2019,3 +2019,23 @@ any failed ones; a test plants a failed run between two passes.
   (none fire, none in the placebos).
 
 Next free decision number: D-027.
+
+## D-027 — The BM25 index rebuilt from the build session (2026-10-15)
+
+**Context.** D-026 left `features.index` failed: DuckDB fetches its `fts` extension over plain HTTP from
+`extensions.duckdb.org`, which the session couldn't reach. The owner then enabled all network access for the
+environment.
+
+**Done.** Plain HTTP still had no proxy in this environment, so the extension (DuckDB 1.5.6, linux_amd64) was
+downloaded over HTTPS and installed from the file into DuckDB's own extension folder (outside the repo). DuckDB
+checks an extension's signature before loading it, and it loaded: the official build. Then `moria features index
+--store r2` from `d107ba1` (`20261015T234656Z-74ca25ce`): passed, 132,939 documents. The layer, its index included,
+is now current.
+
+**Spend:** $0.
+
+**Consequences.** Nothing in the repo changed for this; a runner installs the extension itself over HTTP. D-025's
+questions stand.
+
+Next free decision number: D-028.
+
