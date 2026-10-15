@@ -13,8 +13,8 @@ coverage: >-
   several divisions is one record carrying each division in its `topics`. About 140 new collections a month across
   the divisions (2026-09-15 to 10-14, up to 12 a day); busy divisions fill their 100 in about five months
   (environmental sciences: 2026-04-30 to 10-08), small ones hold years (philosophy: 1 collection). Law and
-  legal studies, the 23rd division, has no collections (2026-10-15) and is left out. Titles, links, dates and
-  divisions only. CSIRO's research publications (publications.csiro.au) are a gap (D-023).
+  legal studies, the 23rd division, has no collections (2026-10-15) and is left out. Titles, links, dates,
+  divisions and descriptions (D-024). CSIRO's research publications (publications.csiro.au) are a gap (D-023, D-024).
 history_start: "each feed reaches back 100 collections: months for busy divisions, years for small ones"
 stable_since: null
 breaks: []
@@ -27,14 +27,14 @@ revision_policy: a collection can be versioned or withdrawn; the feed lists the 
 licence: >-
   Each collection's data carry their own licence (CC BY 4.0 by default under CSIRO's deposit terms); no licence for
   the portal's metadata was found, and csiro.au states CSIRO copyright without an open licence (2026-10-15, read
-  through search results: CSIRO's sites refuse the build session). Titles, links, dates and divisions only until the
-  owner says otherwise (D-023). robots.txt allows /dap/ws/v2/ (read with RFC 9309, D-023)
-snapshot_rights: titles, links, dates and divisions only; never descriptions or data
+  through search results: CSIRO's sites refuse the build session). The owner approved storing the descriptions
+  (D-024). robots.txt allows /dap/ws/v2/ (read with RFC 9309, D-023)
+snapshot_rights: titles, links, dates, divisions and descriptions (the owner, D-024); never the data
 expected_volume: {min_per_run: 0, max_per_run: 150}
 params:
   url: https://data.csiro.au/dap/ws/v2/collections/searchbylocation?p=1&rpp=100&sb=RECENT&browseType=td&browseValue={topic}&inclAttribution=false&atom=true
   lookback_days: 7
-  keep_summary: false
+  keep_summary: true
   topics:
     - "AGRICULTURAL, VETERINARY AND FOOD SCIENCES"
     - "BIOLOGICAL SCIENCES"

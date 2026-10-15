@@ -48,9 +48,10 @@ sources (D-020) are built.**
   `moria ipr metrics` adds class series and class pairs. Settings in `config/detect.yaml`.
 - **Built (CSIRO, D-023):** `csiro_dap`, the CSIRO Data Access Portal's new data collections, one source over 22
   feeds (one per ANZSRC field of research; the feed adapter's new `topics`), each item tagged with its divisions;
-  titles, links and dates only. robots.txt is now read as RFC 9309 reads it (the most specific rule wins).
-  **Gap:** CSIRO's research publications (publications.csiro.au refuses the session and a runner, and its API is
-  for CSIRO staff or keyed users). Sources: 44.
+  descriptions stored (the owner, D-024). robots.txt is now read as RFC 9309 reads it (the most specific rule
+  wins). **Gap, in the backlog (D-024):** CSIRO's research publications (publications.csiro.au refuses the session
+  and a runner). The owner accepts IP RAPID's reading of data.gov.au's API and files despite its robots.txt (D-024).
+  Sources: 44.
 - **Next:** day 5 (dossiers, pathway suggestions, ranking and quotas, the register export and import, the
   early-warning digest, a term-only hindsight smoke run), when the owner asks. `docs/handover-day4.md` lists what
   day 5 reads and its flags. Pile of Law was checked and discarded (D-016).
@@ -209,7 +210,7 @@ instead of the document's URL.
 | `uspto_news`, `ipos_news` | sitemap | News pages by lastmod. IPOS keeps titles only: its terms forbid reproduction. |
 | `openalex_counts` | openalex_counts | Weekly. Works by primary topic at four taxonomy levels, each year from 2010 and each of the last 36 months, worldwide and with an Australian author; research output types only (D-011). About 2,400 of the 10,000 free daily credits. |
 | `abs_headline` | abs_sdmx | Weekly. Eleven SDMX queries: population by age, labour, vacancies, wages, CPI, national accounts, industry, trade in IP and knowledge services by country, innovation. 839 series. |
-| `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). Six tables, about 93M rows, 1 GB of Parquet a base. Trade mark `granted` events all but stop from March 2026: registrations are counted from the application table's dates (D-022); a release's last month of designs lacks classes and applicant countries (lagged 2 months). |
+| `ip_rapid` | ip_rapid | Weekly (`moria ipr refresh`). data.gov.au's robots.txt disallows everything; the owner accepts reading its catalogue API and download (D-024). Six tables, about 93M rows, 1 GB of Parquet a base. Trade mark `granted` events all but stop from March 2026: registrations are counted from the application table's dates (D-022); a release's last month of designs lacks classes and applicant countries (lagged 2 months). |
 | `patent_cpc_counts` | bigquery_cpc | Monthly, by hand for now. Patent families by CPC subclass and priority year, worldwide and with an AU member. Switched on by the owner (D-019): about 17.1 GB a run, under 2% of the free 1 TiB a month; every query capped at 200 GB. Run it with `collect-source` (the key is only in GitHub's secrets). |
 | `foresight_syntheses` | documents | Once. Ten documents: three fetched (CSIRO as metadata only), four owner uploads (D-020: the Science and Research Priorities and the Net Zero Plan as text; the 2026 National Defence Strategy and Integrated Investment Program reserve their rights, metadata only); the Critical Technologies list, WEF and the OECD STI Outlook still wait (`docs/wishlist.md`). Text stored only where the document states an open licence. |
 | `territory_evidence` | documents | Once. Public documents the territory context cites (D-015): the PC's *Innovation for the 98%* (interim report and Volume 5), IP Australia's *Australian IP Report 2026* and the Patents Accessibility Review (an upload, Word, CC BY) as text; the AIC's crime-cost reports (uploads) reserve their rights; the Government's response to the review waits on an upload. |
@@ -226,7 +227,7 @@ instead of the document's URL.
 | `ec_presscorner`, `aspi_strategist` | feed | Daily. The European Commission's press releases and speeches (reuse authorised; opening lines and policy areas); ASPI's Strategist (CC BY-NC-ND; opening lines and tags). |
 | `arxiv_ai_society` | feed | Daily. arXiv's listings in cs.AI, cs.CY, cs.DL and econ.GN with abstracts (CC0); author names not stored; one request every 3 s. Empty on days without an announcement. |
 | `standards_australia_news`, `us_federal_register_ip` | feed | Daily. Standards Australia's news (titles only); the USPTO's and the Copyright Office's Federal Register documents (public domain; abstracts). |
-| `csiro_dap` | feed (`topics`) | Daily (D-023). The CSIRO Data Access Portal's search feed, once per ANZSRC 2020 division (22; law has no collections), newest first, 100 a feed, 7-day lookback; an item under several divisions is one record listing them (`topics`, kept in the document's `extra`). Titles, links, dates and divisions only: no licence found for the portal's metadata. robots.txt allows `/dap/ws/v2/`. |
+| `csiro_dap` | feed (`topics`) | Daily (D-023). The CSIRO Data Access Portal's search feed, once per ANZSRC 2020 division (22; law has no collections), newest first, 100 a feed, 7-day lookback; an item under several divisions is one record listing them (`topics`, kept in the document's `extra`). Titles, links, dates, divisions and descriptions (the owner's approval, D-024). robots.txt allows `/dap/ws/v2/`. |
 
 ## Model choice
 Free first (design §9):
