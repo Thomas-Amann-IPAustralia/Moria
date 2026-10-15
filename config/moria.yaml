@@ -26,6 +26,7 @@ http:
     api.oecd.org: 2.0
     sdmx.oecd.org: 6.0              # the OECD limits its Data API (as few as 20 data downloads an hour, D-020)
     stip.oecd.org: 2.0
+    data.csiro.au: 2.0
     oecd.ai: 2.0
     api.oecd.ai: 2.0
     wp.oecd.ai: 2.0

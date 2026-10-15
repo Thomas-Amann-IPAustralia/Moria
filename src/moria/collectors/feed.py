@@ -15,6 +15,10 @@ so that this is not a warning every day.
 
 A feed whose items carry useful categories (the OECD's content type and policy area) sets `keep_categories: true`;
 other feeds leave them out, so their records are unchanged.
+
+One source can read several feeds that differ by a topic only (the CSIRO Data Access Portal's collections, one feed
+per field of research): `url` holds `{topic}` and `topics` lists them. Each topic's feed is read in turn; an item
+found under several topics is one record, with every topic it was found under in its `topics`.
 """
 
 from __future__ import annotations
@@ -22,8 +26,10 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from typing import Literal
+from urllib.parse import quote_plus
 
 from defusedxml import ElementTree
+from pydantic import Field, model_validator
 
 from ..config import Strict
 from ..records import RawRecord, make_envelope, sha256_hex, utc_now
@@ -40,6 +46,21 @@ class FeedParams(Strict):
     item_id: Literal["guid_or_link", "link_and_content"] = "guid_or_link"
     undated_items: Literal["warn", "expected"] = "warn"
     keep_categories: bool = False
+    topics: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _topics_need_a_template(self):
+        if bool(self.topics) != ("{topic}" in self.url):
+            raise ValueError("a feed with topics needs {topic} in its url, and {topic} needs topics")
+        if len(set(self.topics)) != len(self.topics):
+            raise ValueError("feed topics must be distinct")
+        return self
+
+    def urls(self) -> list[tuple[str | None, str]]:
+        """(topic, address) for each feed to read: one per topic, or the one url."""
+        if not self.topics:
+            return [(None, self.url)]
+        return [(t, self.url.replace("{topic}", quote_plus(t))) for t in self.topics]
 
 
 def _parse_date(value: str | None) -> datetime | None:
@@ -120,10 +141,29 @@ class FeedCollector:
             return f"{item['link']}#{sha256_hex(content)[:16]}"
         return item.get("id") or item.get("link")
 
+    def _items(self, ctx: CollectContext) -> list[dict]:
+        """Every feed's items; with topics, one item per id carrying the topics it was found under."""
+        if not self.params.topics:
+            return parse_feed(ctx.client.get(self.params.url).content)
+        merged: dict[str, dict] = {}
+        unkeyed: list[dict] = []
+        for topic, url in self.params.urls():
+            found = parse_feed(ctx.client.get(url).content)
+            if not found:
+                ctx.warnings.append(f"feed: the topic {topic!r} has no items")
+            for item in found:
+                key = self._record_id(item)
+                if key is None:
+                    unkeyed.append({**item, "topics": [topic]})
+                elif key in merged:
+                    merged[key]["topics"] = sorted({*merged[key]["topics"], topic})
+                else:
+                    merged[key] = {**item, "topics": [topic]}
+        return [merged[k] for k in sorted(merged)] + unkeyed
+
     def collect(self, ctx: CollectContext) -> list[RawRecord]:
-        resp = ctx.client.get(self.params.url)
+        items = self._items(ctx)
         retrieved_at = utc_now().isoformat(timespec="seconds")
-        items = parse_feed(resp.content)
         earliest = ctx.window.start - timedelta(days=self.params.lookback_days)
         records: list[RawRecord] = []
         undated = 0
@@ -171,4 +211,6 @@ class FeedCollector:
         if undated and self.params.undated_items == "warn":
             ctx.warnings.append(f"feed: {undated} items without a usable date; observable_at is the retrieval time")
         self.counts = {"items_in_feed": len(items), "items_undated": undated}
+        if self.params.topics:
+            self.counts["feeds_read"] = len(self.params.topics)
         return records
