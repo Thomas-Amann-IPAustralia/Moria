@@ -45,10 +45,12 @@ import numpy as np
 from . import concepts, measures, stats
 from .config import DetectConfig, SourceCard
 from .horizons import periods_of
+from .iprmetrics import COMMAND as IPRM
 from .manifest import Manifest
 from .measures import PER_YEAR, Series, current_index, role
 from .records import canonical_json
 from .store import Store
+from .tables import StageInputError, cache_root, fetch_outputs, upstream
 
 log = logging.getLogger("moria.evaldetect")
 
@@ -414,9 +416,25 @@ def _rates(rows: list[dict]) -> dict:
 
 
 def relationship_experiment(store: Store, cfg: DetectConfig, cards: dict[str, SourceCard], as_of: date) -> dict:
-    ec, rc = cfg.evaluation, cfg.relationships
+    ec = cfg.evaluation
     rng = np.random.default_rng(ec.seed + 1)
-    _, files = concepts.inputs(store)
+    try:
+        _, files = concepts.inputs(store)
+    except (StageInputError, ValueError) as e:
+        # the features are behind normalise (prepare has not run since): the IP RAPID pairs are tested, the
+        # keyphrase pairs are skipped and the report says why
+        im = upstream(store, IPRM)
+        files = {"ipr": {**fetch_outputs(store, im, "lake/ipr_metrics/class_", cache_root()),
+                         **fetch_outputs(store, im, "lake/ipr_metrics/country_", cache_root())}}  # fmt: skip
+        out: dict = {"real": {}, "placebo": [{} for _ in range(ec.placebo_repeats)], "synthetic": {},
+                     "kp_skipped": str(e).splitlines()[0][:300]}  # fmt: skip
+        return _class_experiment(files, cfg, as_of, rng, out)
+    return _class_experiment(files, cfg, as_of, rng, _kp_experiment(files, cards, cfg, as_of, rng))
+
+
+def _kp_experiment(files: dict, cards: dict[str, SourceCard], cfg: DetectConfig, as_of: date, rng) -> dict:
+    """Keyphrase pairs: placebos (window and baseline items reassigned) and synthetic breakdowns."""
+    ec, rc = cfg.evaluation, cfg.relationships
     items, _ = concepts.load_items(files, cards, as_of, cfg)
     wanted = {i["item_id"] for i in items}
     kp_rows: dict[str, list[str]] = defaultdict(list)
@@ -455,7 +473,12 @@ def relationship_experiment(store: Store, cfg: DetectConfig, cards: dict[str, So
         "planted": len(chosen),
         "caught": sum(1 for r in chosen if after.get(r["combination"], {}).get("fading")),
     }
-    # classes and countries
+    return out
+
+
+def _class_experiment(files: dict, cfg: DetectConfig, as_of: date, rng, out: dict) -> dict:
+    """IP RAPID's class pairs and country-class pairs: placebos (months reassigned) and synthetic changes."""
+    ec, rc = cfg.evaluation, cfg.relationships
     paths = _ipr_files(files)
     window, baseline = _window_months(as_of, cfg)
     span = window + baseline
@@ -676,6 +699,8 @@ def report(result: dict, mkey: str, as_of: date, cfg: DetectConfig) -> str:
             name = {"kp": "keyphrases", "class": "IPC and Nice classes", "country": "countries by class"}[g]
             lines.append(f"| {name} | {real.get('fading', 0):,} | {real.get('new', 0):,} / {real.get('rising', 0):,} "
                          f"| {_p(pf / pt if pt else None)} | {_p(pr / prt if prt else None)} |")  # fmt: skip
+        if r.get("kp_skipped"):
+            lines += ["", f"Keyphrase pairs were not tested in this run: {r['kp_skipped']}"]
         lines += ["", "| Synthetic | Planted | Caught |", "|---|---:|---:|"]
         for k, v in r["synthetic"].items():
             lines.append(f"| {k.replace('_', ' ')} | {v['planted']:,} | {v['caught']:,} |")
