@@ -20,7 +20,9 @@ RSS = b"""<?xml version="1.0"?><rss version="2.0"><channel><title>T</title>
 def handler(request):
     path = request.url.path
     if path == "/robots.txt":
-        return httpx.Response(200, text="User-agent: *\nDisallow: /private/\nSitemap: https://site.test/sitemap.xml\n")
+        return httpx.Response(
+            200, text="# a comment\nUser-agent: *\nDisallow: /private/ # why\nSitemap: https://site.test/sitemap.xml\n"
+        )
     if path == "/news/":
         return httpx.Response(200, content=PAGE, headers={"content-type": "text/html; charset=utf-8"})
     if path == "/news/rss.xml":
@@ -45,6 +47,7 @@ def test_discover_reports_addresses_and_counts_never_text(http_cfg):
     assert "#top" not in out and "other.test/feed" in out
     assert "RSS, 2 items, dates 2026-10-05 to 2026-10-09 (2 of 2)" in out
     assert "sitemaps: https://site.test/sitemap.xml" in out
+    assert "  rule: user-agent: *\n  rule: disallow: /private/\n" in out and "comment" not in out
     assert "https://site.test/private/x: disallowed for Moria by robots.txt; not fetched" in out
     assert "https://site.test/blocked: HTTP 403, text/plain" in out
 
