@@ -11,7 +11,6 @@ from __future__ import annotations
 import hashlib
 import logging
 import time
-import urllib.robotparser
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -19,6 +18,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from .config import HttpConfig
+from .robots import RobotsRules
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
@@ -39,7 +39,7 @@ class PoliteClient:
         self.cfg = cfg
         self._sleep = sleep
         self._last: dict[str, float] = {}
-        self._robots: dict[str, urllib.robotparser.RobotFileParser | None] = {}
+        self._robots: dict[str, RobotsRules | None] = {}
         self._client = httpx.Client(
             headers={"User-Agent": cfg.user_agent},
             timeout=cfg.timeout_s,
@@ -65,17 +65,16 @@ class PoliteClient:
         parts = urlsplit(url)
         base = f"{parts.scheme}://{parts.netloc}"
         if base not in self._robots:
-            parser: urllib.robotparser.RobotFileParser | None = None  # no robots.txt: allowed
+            parser: RobotsRules | None = None  # no robots.txt: allowed
             try:
                 resp = self.get(f"{base}/robots.txt", retries=1, ok_statuses=(200, 401, 403, 404, 410))
                 if resp.status_code == 200:
-                    parser = urllib.robotparser.RobotFileParser()
-                    parser.parse(resp.text.splitlines())
+                    parser = RobotsRules(resp.text, self.cfg.user_agent)
             except FetchError:
                 parser = None
             self._robots[base] = parser
         parser = self._robots[base]
-        return True if parser is None else parser.can_fetch(self.cfg.user_agent, url)
+        return True if parser is None else parser.allowed(url)
 
     def get(
         self,
