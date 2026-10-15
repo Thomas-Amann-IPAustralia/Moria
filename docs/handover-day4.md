@@ -22,10 +22,11 @@ horizon profile of a series), `context.parquet` (each covariate's contribution; 
 its context predicts: an alternative explanation for the dossier) and `redundancy.parquet`. Flags for day 5:
 - Day 4's band anomaly is weak evidence: it catches 53% of doubled spikes, flags 2.5 to 3.8% of null series, and
   7.8% of its onsets are confirmed by a trend a year later. Rank band anomalies low unless something else agrees.
-- `prepare` couldn't run in D-025's session (huggingface.co refused), so the features are one normalise run behind:
-  the first Monday `prepare` after the merge refreshes them, scans with every new table, and runs the keyphrase
-  half of the fading evaluation. `prepare.yml` did not parse on main from day 4 until this branch (fixed).
-- Next free decision number: D-026.
+- The layer was prepared and scanned at 2026-10-15 from the build session (D-026): 2,567 candidates, 2,129 clean;
+  977 of them sit behind another candidate in a redundancy group. The BM25 index is stale (DuckDB's `fts` extension
+  host was refused); the weekly `prepare` rebuilds it. `prepare.yml` did not parse on main from day 4 until this
+  branch (fixed).
+- Next free decision number: D-027.
 
 ## What day 4 built
 - **`moria measure series --as-of D`** (`src/moria/measures.py`, `src/moria/stats.py`): trends (Theil–Sen, Mann–

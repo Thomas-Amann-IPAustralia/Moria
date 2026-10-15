@@ -1974,3 +1974,48 @@ Monday schedule would not have run; fixed on this branch.
   6. Merge this branch (or a pull request) so the weekly `prepare` runs again.
 
 Next free decision number: D-026.
+
+## D-026 — Prepare and the scan run from the build session once Hugging Face was allowed; the keyphrase half of D-025's evaluation; an embedding-reuse bug fixed (2026-10-15)
+
+**Context.** D-025 couldn't run `moria prepare` (huggingface.co refused), so the features were a normalise run behind
+and the keyphrase half of the evaluation was skipped. The owner added the Hugging Face connector, then
+`huggingface.co` and `us.aws.cdn.hf.co` (where the model's large file is served) to the environment's allowed
+domains. The connector alone browses the Hub as text and can't deliver the 133 MB model file.
+
+**Run** (from `7746f71`, then `6908ca2`, all into the bucket):
+- `moria prepare --store r2`: the first attempt failed at `features.embed` (`20261015T215717Z-37acbc23`: the model's
+  file redirects to `us.aws.cdn.hf.co`, then refused). After the owner allowed it: normalise
+  (`20261015T215959Z-2149c365`, nothing new), embed (`20261015T220108Z-39112825`: 132,939 documents, 126,665
+  embedded, about 75 minutes), dedup (`20261015T231559Z-ac0eb697`: 126,178 groups), keyphrases
+  (`20261015T231628Z-e361eea6`), tags (`20261015T231910Z-eecc5c6c`) passed; **`features.index` failed**
+  (`20261015T232004Z-a1b00263`): DuckDB downloads its `fts` extension from `extensions.duckdb.org`, refused to this
+  session. The scan doesn't read the index; `moria search` and day 5's counter-evidence do. IP RAPID's metrics were
+  current (D-025's `20261015T171058Z-c2295f58`).
+- `moria scan --as-of 2026-10-15` (monitor `20261015T232118Z-6ec3b796` to artefacts `20261015T232404Z-bf8ca879`):
+  **2,567 candidates, 2,129 with no artefact flag** (acceleration 452, trend 1,068, weak signal 217, anomaly 830).
+  All new detectors off, so the candidates are day 4's detectors on the newer layer. **Redundancy:** 1,370 groups
+  hold 977 candidates beyond the first of each; for day 5, more than a third of the list is not independent
+  evidence. `reports/scan.md`.
+- `moria eval artefacts` (`20261015T232417Z-5373a20c`): 6 of 6 seeds caught, 6 of 6 controls clean.
+- `moria eval detectors` (`20261015T232643Z-c9954ebf`, with the keyphrase pairs): the series results are D-025's
+  (same layer, same seed). **Keyphrase pairs:** 0 fading and 16 new in the real data; placebo 0% fading; only 4
+  established pairs were eligible for a planted breakdown, and none was caught. Class pairs: 39 of 40 planted
+  breakdowns caught; country-class: 37 of 40 fading and 36 of 40 rising caught. Verdicts unchanged: fading pairs
+  (89%, carried by the class pairs) and jurisdictions by class (91%) pass; the other five fail.
+  `reports/eval/detectors.md`.
+
+**Fixed (`6908ca2`).** `features.embed` reused vectors only from the *latest* embed manifest, and only if it had
+passed; the failed first attempt therefore made the next run re-embed nearly everything (126,665 of 132,939, about
+75 minutes, the same vectors) instead of the roughly 1,000 changed items. It now reuses the latest passed run past
+any failed ones; a test plants a failed run between two passes.
+
+**Spend:** $0.
+
+**Consequences.**
+- The layer is current except the BM25 index. **For the owner:** allow `extensions.duckdb.org` (or let the weekly
+  `prepare` on a runner rebuild the index after the merge).
+- D-025's questions stand. On the first: the evaluation supports switching on fading pairs for IPC and Nice classes;
+  for keyphrase pairs it is unproven (too few established pairs while most feeds are weeks old), though harmless
+  (none fire, none in the placebos).
+
+Next free decision number: D-027.
