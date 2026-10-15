@@ -52,6 +52,15 @@ sources (D-020) are built.**
   wins). **Gap, in the backlog (D-024):** CSIRO's research publications (publications.csiro.au refuses the session
   and a runner). The owner accepts IP RAPID's reading of data.gov.au's API and files despite its robots.txt (D-024).
   Sources: 44.
+- **Built (SignalBoost, D-025; the owner's `docs/SignalBoost-Proposal.md`):** horizons of 3 to 180 months, each
+  read by its own method (short-term shifts; trends; long-run trends and structural breaks) where a series' history
+  allows (`src/moria/horizons.py`); contextual anomalies against peers, the international counterpart, the source's
+  volume and the series' own trend, and the coupling of an Australian series with its counterpart
+  (`src/moria/context.py`); fading pairs and applicant countries by class (IP RAPID's new `country_classes`);
+  redundancy groups and corroboration on the candidates (correlated indicators and overlapping windows are not
+  independent corroboration); `moria eval detectors` against day 4's detectors. **Every new detector is measured
+  at each scan and adds candidates only when switched on in `config/detect.yaml` `new_detectors` (all off until the
+  owner decides on the evaluation's verdicts).**
 - **Next:** day 5 (dossiers, pathway suggestions, ranking and quotas, the register export and import, the
   early-warning digest, a term-only hindsight smoke run), when the owner asks. `docs/handover-day4.md` lists what
   day 5 reads and its flags. Pile of Law was checked and discarded (D-016).
@@ -129,16 +138,17 @@ sources (D-020) are built.**
 | Keyphrases | `moria features keyphrases` | documents | `features/keyphrases/source=<id>/keyphrases.parquet`, `features/keyphrases/vocabulary.parquet` |
 | Tag | `moria tag [--backend zeroshot]` | documents, embeddings, codebook, territories (and their private context), baseline | `features/tags/source=<id>/tags.parquet` |
 | Index | `moria features index` | documents | `features/index/bm25.duckdb` (DuckDB fts) |
-| IP RAPID metrics | `moria ipr metrics` | the latest IP RAPID base and delta | `lake/ipr_metrics/series.parquet`, `lake/ipr_metrics/observations.parquet`; `class_pairs.parquet`, `class_counts.parquet` (co-classifications) |
+| IP RAPID metrics | `moria ipr metrics` | the latest IP RAPID base and delta | `lake/ipr_metrics/series.parquet`, `lake/ipr_metrics/observations.parquet`; `class_pairs.parquet`, `class_counts.parquet` (co-classifications), `country_classes.parquet` (applicant countries by class) |
 | Prepare (the chain) | `moria prepare [--store r2]` | the raw store | all of the above, in order; stops at the first failure |
 | Ingestion monitor | `moria monitor ingestion [--as-of D]` | monitor entries, collection manifests | `monitors/summary/as_of=<D>/{days,incidents}.parquet` |
-| Series detectors | `moria measure series [--as-of D]` | normalise's series and observations, IP RAPID metrics | `measures/series/as_of=<D>/{measures,divergence}.parquet` |
+| Series detectors | `moria measure series [--as-of D]` | normalise's series and observations, IP RAPID metrics | `measures/series/as_of=<D>/{measures,divergence,horizons,context,redundancy}.parquet` |
 | Document detectors | `moria measure documents [--as-of D]` | documents, dedup, keyphrases, embeddings, tags, IP RAPID class pairs | `measures/documents/as_of=<D>/` (volumes, concepts, surges, combinations, novelty, clusters, assignments, group_items, evidence) |
 | Detect | `moria detect [--as-of D]` | both measures of the same date | `candidates/as_of=<D>/{candidates,evidence}.parquet` |
 | Artefact checks | `moria artefacts [--as-of D]` | candidates, measures, monitor, cards | `candidates/as_of=<D>/artefacts.parquet` |
 | Scan (the chain) | `moria scan [--as-of D] [--store r2]` | the evidence layer | all of the above, in order; stops at the first failure |
 | Scan report | `moria scan-report [--as-of D]` | the scan's manifests and outputs | `reports/scan.md` in the repo (aggregates only) |
 | Seeded artefacts | `moria eval artefacts [--as-of D]` | a temporary copy of the evidence layer, with seeds | `manifests/eval.artefacts/`; `reports/eval/artefacts.md` (synthetic seeds only); exits 2 if a seed is missed |
+| New detectors' evaluation | `moria eval detectors [--as-of D] [--no-backtest]` | the series, documents and IP RAPID pairs, in memory | `manifests/eval.detectors/`; `reports/eval/detectors.md` (aggregates only): plants, nulls, artefacts, backtest, placebos, verdicts |
 | Candidates | `moria candidates [--as-of D] [--type T] [--clean]` | candidates, artefacts | nothing (prints labels to the analyst's terminal) |
 | Search | `moria search "words" [--source S] [--since D]` | the index | nothing (prints matches to the analyst's terminal) |
 | Evidence report | `moria evidence-report` | every stage's latest manifest | `reports/evidence-layer.md` in the repo (aggregates only) |
@@ -155,8 +165,9 @@ instead of the document's URL.
   default branch only.
 - `collect-weekly.yml`: Mondays 03:41 UTC (after IP Australia rebuilds IP RAPID and OpenAlex's budget resets).
 - `prepare.yml`: Mondays 07:17 UTC, after collect-weekly: `moria prepare` (embeddings, dedup, keyphrases, tags,
-  index, IP RAPID metrics), with the model files cached by their pinned revision; then `moria scan` and `moria eval
-  artefacts` (a missed seed fails the job).
+  index, IP RAPID metrics), with the model files cached by their pinned revision; then `moria scan`, `moria eval
+  artefacts` (a missed seed fails the job) and `moria eval detectors` (its report in the job summary). It did not
+  parse on main from 2026-10-14 to D-025 (a colon in a step name): fixed on D-025's branch.
 - `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
@@ -191,7 +202,9 @@ instead of the document's URL.
 - A candidate (`candidates/as_of=<D>/`) is one subject (series, AU/world pair, concept, combination, micro-cluster)
   with its type (acceleration, trend, weak_signal, anomaly), detectors, numbers, strength, evidence and artefact
   flags. Its id (`sig-` and 12 hex digits) comes from the subject, so it is stable across scans. A weak signal needs
-  3 de-duplication groups from 2 sources. A flag marks a candidate; it never hides it.
+  3 de-duplication groups from 2 sources. A flag marks a candidate; it never hides it. `corroboration` counts
+  independent lines of evidence (1 per series; a document candidate's sources, once per de-duplication group);
+  candidates whose series move together share a `redundancy_group` (D-025).
 - `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
   documents read. Trends and citations Claude drafts are `status: proposed` until the owner confirms them (D-020).
   A signal records whether it is `novel` or `reinforces` a known trend.
