@@ -47,3 +47,7 @@ jobs:
         run: uv run moria scan --store r2
       - name: The artefact checks against seeded artefacts (fails the job if a seed is missed)
         run: uv run moria eval artefacts --store r2
+      - name: The SignalBoost detectors against day 4's (D-025; aggregates only, a verdict never fails the job)
+        run: |
+          uv run moria eval detectors --store r2
+          cat reports/eval/detectors.md >> "$GITHUB_STEP_SUMMARY"

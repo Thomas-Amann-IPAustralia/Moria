@@ -675,6 +675,30 @@ def eval_artefacts(
         raise typer.Exit(2)
 
 
+@eval_app.command("detectors")
+def eval_detectors(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option("reports/eval/detectors.md", help="Where to write the report (aggregates only)"),
+    with_backtest: bool = typer.Option(True, "--backtest/--no-backtest", help="Run the series chain at past dates"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Score the SignalBoost detectors against day 4's (D-025): changes planted in real series, null series,
+    artefacts, a backtest at past dates, and placebo and synthetic tests of the relationship detectors. The verdicts
+    are recommendations; switching a detector on (config/detect.yaml `new_detectors`) is the owner's call."""
+    from .evaldetect import COMMAND, evaluate, report
+
+    detect_cfg, cards, st = _detect_setup(store)
+    day = _as_of(as_of)
+    status, mkey, counts, result = evaluate(st, detect_cfg, cards, day, with_backtest,
+                                            config_hash(detect_cfg, *cards.values()))  # fmt: skip
+    if result:
+        path = Path(out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(report(result, mkey, day, detect_cfg), encoding="utf-8")
+        typer.echo(f"wrote {path}")
+    _stage_line(COMMAND, status, mkey, counts)
+
+
 @app.command()
 def candidates(
     as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),

@@ -117,6 +117,34 @@ def scan_report(store: Store, cfg: DetectConfig, as_of: date) -> str:
             "Accelerations here are the bootstrap test alone; a candidate is also an acceleration when a change "
             "point to a steeper slope falls on a significant trend."]  # fmt: skip
 
+    # the SignalBoost detectors (D-025)
+    dmc, detc = runs[DOCS]["counts"], runs[DET]["counts"]
+    on = [d.replace("_", " ") for d, v in cfg.new_detectors.items() if v]
+    out += ["", "## SignalBoost detectors (D-025)", "",
+            "Measured at every scan; they add candidates only when switched on in `config/detect.yaml` (on: "
+            f"{', '.join(on) or 'none yet'}). Their evaluation is `reports/eval/detectors.md`.", "",
+            "| Detector | Tested | Fired |", "|---|---:|---:|",
+            f"| short-term shift (3 and 6 months) | {sm.get('horizon_short_tested', 0):,} | "
+            f"{sm.get('horizon_short_sig', 0):,} |",
+            f"| medium-term trend (12 and 36 months) | {sm.get('horizon_medium_tested', 0):,} | "
+            f"{sm.get('horizon_medium_sig', 0):,} |",
+            f"| long-run trend (60, 120 and 180 months) | {sm.get('horizon_long_tested', 0):,} | "
+            f"{sm.get('horizon_long_sig', 0):,} |",
+            f"| structural break (series) | {sm.get('horizon_long_tested', 0):,} | "
+            f"{sm.get('horizon_structural', 0):,} |",
+            f"| contextual anomaly | {sm.get('context_modelled', 0):,} | {sm.get('contextual', 0):,} |",
+            f"| band anomaly explained by its context | {sm.get('anomaly', 0):,} | "
+            f"{sm.get('context_explained', 0):,} |",
+            f"| decoupled / coupled from its counterpart | {sm.get('coupling_tested', 0):,} | "
+            f"{sm.get('decoupled', 0):,} / {sm.get('coupled', 0):,} |",
+            f"| fading pair (keyphrases, classes, countries) | - | {dmc.get('combinations_fading', 0):,} |",
+            f"| jurisdiction by class: new / rising / fading | - | {dmc.get('jurisdiction_new', 0):,} / "
+            f"{dmc.get('jurisdiction_rising', 0):,} / {dmc.get('jurisdiction_fading', 0):,} |", "",
+            f"Correlated indicators: {sm.get('redundancy_flagged', 0):,} flagged series fall into "
+            f"{sm.get('redundancy_groups', 0):,} redundancy groups; among the candidates, "
+            f"{detc.get('redundancy_groups', 0):,} groups hold {detc.get('redundant_candidates', 0):,} candidates "
+            "beyond the first of each, which are not independent corroboration."]  # fmt: skip
+
     # documents
     df = _files(store, runs[DOCS], "measures/documents/")
     dm = runs[DOCS]["counts"]

@@ -514,6 +514,129 @@ class ArtefactsConfig(Strict):
     primary_families: list[Family]
 
 
+class ShortHorizonConfig(Strict):
+    months: list[int]
+    baseline_factor: int  # the baseline: this many times the horizon, at least the series' anomaly baseline
+    min_baseline: float  # share of the baseline's periods present
+    alpha: float
+    min_change: float
+
+
+class MediumHorizonConfig(Strict):
+    months: list[int]
+    min_points: int
+
+
+class LongHorizonConfig(Strict):
+    months: list[int]
+    min_points: int
+    min_segment_months: int
+    penalty_factor: float  # the change-point penalty over long windows, times BIC's
+    autocorrelation: bool  # inflate Mann-Kendall's variance by the residuals' lag-1 autocorrelation
+
+
+class HorizonsConfig(Strict):
+    """The SignalBoost proposal's item 1 (D-025): horizons in months, each read by the method that suits it."""
+
+    short: ShortHorizonConfig
+    medium: MediumHorizonConfig
+    long: LongHorizonConfig
+    by_source: dict[str, list[int]] = {}
+
+    @model_validator(mode="after")
+    def _disjoint(self) -> HorizonsConfig:
+        every = self.short.months + self.medium.months + self.long.months
+        if len(set(every)) != len(every) or any(m <= 0 for m in every):
+            raise ValueError("horizons: each horizon (positive months) belongs to one method")
+        for src, ms in self.by_source.items():
+            if not set(ms) <= set(every):
+                raise ValueError(f"horizons.by_source[{src}]: {sorted(set(ms) - set(every))} is not a horizon")
+        return self
+
+    def months(self, source: str) -> list[int]:
+        every = sorted(self.short.months + self.medium.months + self.long.months)
+        return sorted(self.by_source.get(source, every))
+
+    def method(self, months: int) -> str:
+        return ("short" if months in self.short.months else "medium" if months in self.medium.months
+                else "long")  # fmt: skip
+
+
+class CouplingConfig(Strict):
+    min_points: int
+    max_points: int
+    alpha: float
+    established: float
+    broken: float
+
+
+class ContextConfig(Strict):
+    """The proposal's item 2 (D-025): the latest value against a model of its context."""
+
+    baseline: dict[Freq, int]
+    min_baseline: float
+    peers: int
+    peer_min_corr: float
+    ridge: float
+    alpha: float
+    min_change: float
+    explained_share: float
+    coupling: CouplingConfig
+
+
+class RelationshipsConfig(Strict):
+    """The proposal's item 3 (D-025): established associations that break down, and jurisdictions by class."""
+
+    fade_min_baseline: int
+    fade_min_expected: float
+    fade_ratio: float
+    fade_min_each_window: int
+    jurisdictions: bool
+
+
+class RedundancyConfig(Strict):
+    min_corr: float
+    min_points: int
+
+
+class InjectionsConfig(Strict):
+    spike: float
+    shift: float
+    slope: float
+    structural: float
+    contextual: float
+    volume_jump: float
+    duplicated_period: float
+
+
+class BacktestConfig(Strict):
+    every_months: int
+    back_months: int
+    confirm_months: int
+
+
+class RetainConfig(Strict):
+    min_incremental: float
+    null_margin: float
+    max_null_rate: float
+    max_artefact_excess: float
+
+
+class EvaluationConfig(Strict):
+    """The proposal's item 4 (D-025): `moria eval detectors`, and the rules committed before its first run."""
+
+    seed: int
+    per_class: int
+    injections: InjectionsConfig
+    placebo_repeats: int
+    backtest: BacktestConfig
+    retain: RetainConfig
+
+
+NEW_DETECTORS = ("short_shift", "long_trend", "structural_shift", "contextual_anomaly", "decoupling",
+                 "fading_combination", "jurisdiction_shift")  # fmt: skip
+
+
 class DetectConfig(Strict):
     """config/detect.yaml: the detectors' windows, tests and thresholds, and the artefact checks' rules."""
 
@@ -521,6 +644,23 @@ class DetectConfig(Strict):
     series: SeriesDetectConfig
     documents: DocumentsDetectConfig
     artefacts: ArtefactsConfig
+    horizons: HorizonsConfig
+    context: ContextConfig
+    relationships: RelationshipsConfig
+    redundancy: RedundancyConfig
+    evaluation: EvaluationConfig
+    new_detectors: dict[str, bool]
+
+    @field_validator("new_detectors")
+    @classmethod
+    def _known(cls, v: dict[str, bool]) -> dict[str, bool]:
+        if set(v) != set(NEW_DETECTORS):
+            raise ValueError(f"new_detectors: exactly {', '.join(NEW_DETECTORS)}")
+        return v
+
+    def on(self, detector: str) -> bool:
+        """Whether a SignalBoost detector adds candidates (it is measured and evaluated either way)."""
+        return self.new_detectors.get(detector, False)
 
 
 def load_detect(config_dir: Path = CONFIG_DIR) -> DetectConfig:

@@ -24,6 +24,9 @@ The series (`ip_rapid_metrics|<metric>|<right>[|<split>]`), monthly from 2000:
 Co-classifications (`lake/ipr_metrics/class_pairs.parquet`, with `class_counts.parquet` for lift): pairs of IPC
 subclasses on a patent application and of Nice classes on a trade mark application, by the month the application's
 classes became observable, for the new-combination detector (design §8.2). A release's snapshot, not vintaged.
+`country_classes.parquet`: applications by founding applicants' country and class in the same schemes and months
+(each country of an application's founding applicants counted once; `*` for every class or every country), for the
+jurisdiction-by-class relationships (D-025). Countries only: no party is named.
 
 A series whose last month is more than 12 months before the release is left out and counted as discontinued: some
 event categories stopped when IP Australia's systems changed (trade mark renewals and examination requests end in
@@ -208,6 +211,18 @@ CLASS_PAIRS = pa.schema(
         ("applicant_max", pa.string()),  # pair's applications come from at least two applicants, over any months
     ]
 )
+COUNTRY_CLASSES = pa.schema(
+    [
+        ("right", pa.string()),
+        ("scheme", pa.string()),
+        ("country", pa.string()),  # a founding applicant's country (ISO, lower case); '*': every country
+        ("class", pa.string()),  # '*': every class
+        ("period", pa.string()),
+        ("applications", pa.int32()),
+        ("applicant_min", pa.string()),  # as in class_pairs: two differ when at least two applicants
+        ("applicant_max", pa.string()),
+    ]
+)
 CLASS_COUNTS = pa.schema(
     [
         ("right", pa.string()),
@@ -219,11 +234,17 @@ CLASS_COUNTS = pa.schema(
 )
 
 
-def class_pair_rows(con: duckdb.DuckDBPyConnection, release: date) -> tuple[list[dict], list[dict]]:
+def class_pair_rows(con: duckdb.DuckDBPyConnection, release: date) -> tuple[list[dict], list[dict], list[dict]]:
     """Co-classification counts for new combinations (design §8.2): per scheme, each application's current classes
     (at most MAX_PAIR_CLASSES), dated by the month its last class was assigned (when the whole set was observable;
-    the filing date where a class has no date). Returns (pair rows, class count rows), both by that month."""
-    pairs, counts = [], []
+    the filing date where a class has no date). Returns (pair rows, class count rows, country-by-class rows), all
+    by that month."""
+    pairs, counts, countries = [], [], []
+    con.execute(
+        "CREATE OR REPLACE TEMP TABLE ctry AS SELECT DISTINCT application_number AS n, ip_right_type AS r, "
+        "lower(country_code) AS c, party_id AS p FROM party_activity WHERE is_founding AND party_role_category = "
+        "'applicant' AND country_code IS NOT NULL AND trim(country_code) <> ''"
+    )
     for system, (scheme, code) in sorted(PAIR_SCHEMES.items()):
         con.execute(
             f"CREATE OR REPLACE TEMP TABLE cls AS SELECT c.ip_right_type AS r, c.application_number AS n, {code} AS k, "
@@ -249,7 +270,19 @@ def class_pair_rows(con: duckdb.DuckDBPyConnection, release: date) -> tuple[list
                "UNION ALL SELECT r, '*', m, count(*) FROM app GROUP BY ALL")  # fmt: skip
         for r, k, m, n in con.execute(sql).fetchall():
             counts.append({"right": r, "scheme": scheme, "class": k, "period": m, "applications": n})
-    return pairs, counts
+        # applications with a known founding applicant country, by country and class, by country, by class, in all
+        sql = (
+            "WITH a AS (SELECT DISTINCT app.r, app.n, app.m, ctry.c, ctry.p FROM app JOIN ctry ON ctry.n = app.n "
+            "AND ctry.r = app.r), k AS (SELECT DISTINCT r, n, k FROM cls) "
+            "SELECT a.r, a.c, k.k, a.m, count(DISTINCT a.n), min(a.p), max(a.p) FROM a JOIN k USING (r, n) "
+            "GROUP BY ALL UNION ALL SELECT r, c, '*', m, count(DISTINCT n), min(p), max(p) FROM a GROUP BY ALL "
+            "UNION ALL SELECT a.r, '*', k.k, a.m, count(DISTINCT a.n), NULL, NULL FROM a JOIN k USING (r, n) "
+            "GROUP BY ALL UNION ALL SELECT r, '*', '*', m, count(DISTINCT n), NULL, NULL FROM a GROUP BY ALL"
+        )
+        for r, c, k, m, n, lo, hi in con.execute(sql).fetchall():
+            countries.append({"right": r, "scheme": scheme, "country": c, "class": k, "period": m,
+                              "applications": n, "applicant_min": lo, "applicant_max": hi})  # fmt: skip
+    return pairs, counts, countries
 
 
 def drop_discontinued(rows: list[tuple[str, str, str, float]], release: date, months: int = 12):
@@ -307,12 +340,15 @@ def metrics(store: Store, card: SourceCard, config_hash: str | None = None, thre
             counts = {"series": write_rows(series, SERIES, Path(tmp) / "series.parquet", ("series_id",)),
                       "observations": write_rows(obs, OBSERVATIONS, Path(tmp) / "observations.parquet",
                                                  ("series_id", "period", "vintage_at"))}  # fmt: skip
-            pairs, class_counts = class_pair_rows(con, release)
+            pairs, class_counts, country_classes = class_pair_rows(con, release)
             counts["class_pairs"] = write_rows(pairs, CLASS_PAIRS, Path(tmp) / "class_pairs.parquet",
                                                ("right", "scheme", "class_a", "class_b", "period"))  # fmt: skip
             counts["class_counts"] = write_rows(class_counts, CLASS_COUNTS, Path(tmp) / "class_counts.parquet",
                                                 ("right", "scheme", "class", "period"))  # fmt: skip
-            for name in ("class_counts", "class_pairs", "observations", "series"):
+            counts["country_classes"] = write_rows(country_classes, COUNTRY_CLASSES,
+                                                   Path(tmp) / "country_classes.parquet",
+                                                   ("right", "scheme", "country", "class", "period"))  # fmt: skip
+            for name in ("class_counts", "class_pairs", "country_classes", "observations", "series"):
                 upload(store, manifest, f"lake/ipr_metrics/{name}.parquet", Path(tmp) / f"{name}.parquet")
         counts["discontinued_series"] = len(discontinued)
         manifest.params["discontinued"] = discontinued

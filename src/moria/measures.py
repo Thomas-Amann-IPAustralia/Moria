@@ -24,8 +24,18 @@ Per series:
 - **divergence** (design §8.5): Australia's share against the world's (or the OECD's) for the same topic, subclass,
   query group or indicator, tested for a trend like any series.
 
-Writes `measures/series/as_of=<D>/measures.parquet` (one row per series tested) and `divergence.parquet` (one row per
-pair). Labels stay in the private bucket; nothing here is text from a source.
+The SignalBoost detectors (D-025), measured at every scan and added to the candidates only when switched on:
+- **horizons** (`horizons.py`): 3 and 6 months as short-term shifts, 12 and 36 months as trends, 60, 120 and 180
+  months as long-run trends and structural breaks, each where the series' history allows;
+- **context** (`context.py`): the latest value against a model of its peers, its international counterpart, its
+  source's volume and its own trend; and the coupling of an Australian series with its counterpart;
+- **redundancy**: flagged series whose changes move together share a group, so that correlated indicators are not
+  counted as independent corroboration.
+
+Writes `measures/series/as_of=<D>/measures.parquet` (one row per series tested), `divergence.parquet` (one row per
+pair), `horizons.parquet` (one row per series and horizon tested), `context.parquet` (one row per series modelled)
+and `redundancy.parquet` (one row per flagged series). Labels stay in the private bucket; nothing here is text from a
+source.
 """
 
 from __future__ import annotations
@@ -42,6 +52,8 @@ import duckdb
 import numpy as np
 import pyarrow as pa
 
+from . import context as ctx
+from . import horizons as hz
 from . import stats
 from .config import DetectConfig
 from .iprmetrics import COMMAND as IPRM
@@ -120,6 +132,22 @@ MEASURES = pa.schema(
         ("surge", pa.bool_()),
         ("volume_change", F32),  # the source volume over the shortest window against the window before it, minus 1
         ("surge_volume_change", F32),  # the volume per period in the surge window against its baseline, minus 1
+        ("horizon_profile", pa.string()),  # structural_shift, reversal, sustained, long_run, transient (D-025)
+        ("horizons_fired", STRS),  # e.g. 3m+, 36m+, 120m break-
+        ("contextual", pa.bool_()),  # off what its context predicts (context.parquet)
+        ("context_explained", pa.bool_()),  # a band anomaly that its context predicts
+        ("coupling", pa.string()),  # decoupled or coupled from its international counterpart
+        ("redundancy_group", pa.string()),  # flagged series that move together (redundancy.parquet)
+    ]
+)
+REDUNDANCY = pa.schema(
+    [
+        ("series_id", pa.string()),
+        ("frequency", pa.string()),
+        ("group", pa.string()),  # rg- and 10 hex digits, from the group's first series id
+        ("group_size", pa.int32()),
+        ("max_corr", F32),  # the strongest correlation with another member (absolute, of first differences)
+        ("n_points", pa.int16()),
     ]
 )
 _DTREND = [(f"w{k}_{c}", t) for k in (1, 2, 3) for c, t in
@@ -338,6 +366,7 @@ class Group:
     denominators: list[str | None]
     groups: list[str]
     excluded: np.ndarray  # columns of excluded calendar months
+    valid: np.ndarray | None = None  # rows day 4 tests (data, not stale, enough volume)
 
 
 def build_group(source: str, kind: str, members: list[Series], all_series: dict[str, Series], cfg: DetectConfig,
@@ -437,6 +466,7 @@ def _measure(g: Group, cfg: DetectConfig, as_of: date, counts: dict) -> list[dic
     mean_count = _nanmean(c1)
     volume_ok = ~is_count | (np.nan_to_num(mean_count) >= sc.min_mean_count)
     valid = has_data & ~stale & volume_ok
+    g.valid = valid
     counts[f"stale_{g.source}"] += int((stale & has_data).sum())
     wins = trend_windows(mats, widths, sc.min_coverage, sc.alpha, valid)
     rows = []
@@ -850,12 +880,15 @@ def measure(store: Store, cfg: DetectConfig, as_of: date, config_hash: str | Non
         runs, files = inputs(store, cfg)
         manifest.params = {"as_of": as_of.isoformat(), **runs}
         series = load_series(files, cfg, as_of)
-        rows, div, counts = _run(series, cfg, as_of)
+        rows, div, counts, hrows, crows, red = _run(series, cfg, as_of)
         prefix = f"measures/series/as_of={as_of.isoformat()}/"
         with tempfile.TemporaryDirectory(prefix="moria-measure-") as tmp:
             write_rows(rows, MEASURES, Path(tmp) / "measures.parquet", ("series_id",))
             write_rows(div, DIVERGENCE, Path(tmp) / "divergence.parquet", ("pair_id",))
-            for name in ("divergence", "measures"):
+            write_rows(hrows, hz.HORIZONS, Path(tmp) / "horizons.parquet", ("series_id", "horizon_months"))
+            write_rows(crows, ctx.CONTEXT, Path(tmp) / "context.parquet", ("series_id",))
+            write_rows(red, REDUNDANCY, Path(tmp) / "redundancy.parquet", ("series_id",))
+            for name in ("context", "divergence", "horizons", "measures", "redundancy"):
                 upload(store, manifest, f"{prefix}{name}.parquet", Path(tmp) / f"{name}.parquet")
         manifest.counts = counts
         return "passed", manifest.finish(store, "passed"), counts
@@ -866,7 +899,7 @@ def measure(store: Store, cfg: DetectConfig, as_of: date, config_hash: str | Non
         return "failed", manifest.finish(store, "failed", cause), {"error": cause}
 
 
-def _run(series: dict[str, Series], cfg: DetectConfig, as_of: date) -> tuple[list[dict], list[dict], dict]:
+def _run(series: dict[str, Series], cfg: DetectConfig, as_of: date) -> tuple:
     synthetic_totals(series)
     by: dict[tuple[str, str], list[Series]] = defaultdict(list)
     for s in sorted(series.values(), key=lambda s: s.series_id):
@@ -888,6 +921,8 @@ def _run(series: dict[str, Series], cfg: DetectConfig, as_of: date) -> tuple[lis
     for row in rows:
         _decide(row, cfg)
     div = divergence(groups, rows, cfg, as_of)
+    hrows, crows = boost(groups, rows, cfg, as_of)
+    red = redundancy(groups, rows, cfg)
     counts["series"] = len(rows)
     counts["series_trend_windows_2plus"] = sum(1 for r in rows if (r["trend_windows"] or 0) >= 2)
     counts["trends"] = sum(1 for r in rows if r["trend_dir"])
@@ -896,7 +931,112 @@ def _run(series: dict[str, Series], cfg: DetectConfig, as_of: date) -> tuple[lis
         counts[key] = sum(1 for r in rows if r.get(key))
     counts["divergence_pairs"] = len(div)
     counts["divergences"] = sum(1 for d in div if d["direction"])
-    return rows, div, dict(sorted(counts.items()))
+    for m in ("short", "medium", "long"):
+        counts[f"horizon_{m}_tested"] = sum(1 for h in hrows if h["method"] == m)
+        counts[f"horizon_{m}_sig"] = sum(1 for h in hrows if h["method"] == m and h["sig"])
+    counts["horizon_structural"] = len({h["series_id"] for h in hrows if h.get("structural")})
+    counts["context_modelled"] = len(crows)
+    counts["contextual"] = sum(1 for c in crows if c["contextual"])
+    counts["context_explained"] = sum(1 for c in crows if c["explained"])
+    counts["coupling_tested"] = sum(1 for c in crows if c.get("coupling_p") is not None)
+    for k in ("decoupled", "coupled"):
+        counts[k] = sum(1 for c in crows if c.get("coupling") == k)
+    counts["redundancy_flagged"] = len(red)
+    counts["redundancy_groups"] = len({r["group"] for r in red})
+    return rows, div, dict(sorted(counts.items())), hrows, crows, red
+
+
+def boost(groups: dict[tuple[str, str], Group], rows: list[dict], cfg: DetectConfig,
+          as_of: date) -> tuple[list[dict], list[dict]]:  # fmt: skip
+    """The horizons and the contextual model over every group (D-025); their summaries onto the measures rows."""
+    by_id = {r["series_id"]: r for r in rows}
+    hrows: list[dict] = []
+    crows: list[dict] = []
+    for (_, _), g in sorted(groups.items()):
+        valid = g.valid if g.valid is not None else np.zeros(len(g.ids), dtype=bool)
+        valid = valid & np.array([i in by_id for i in g.ids])
+        hrows += hz.measure_group(g, cfg, as_of, valid, index_label, aligned, PER_YEAR)
+        crows += ctx.measure_group(g, cfg, as_of, valid, by_id, _family, aligned, index_label, pair_key)
+    hz.adjust(hrows, cfg)
+    ctx.adjust(crows, cfg, index_label)
+    prof = hz.profile(hrows)
+    cby = {c["series_id"]: c for c in crows}
+    for r in rows:
+        p, fired = prof.get(r["series_id"], (None, []))
+        c = cby.get(r["series_id"]) or {}
+        r.update(horizon_profile=p, horizons_fired=fired, contextual=c.get("contextual"),
+                 context_explained=c.get("explained"), coupling=c.get("coupling"))  # fmt: skip
+    return hrows, crows
+
+
+def flagged(r: dict) -> bool:
+    """Any detector fired on a series, day 4's or the SignalBoost ones (shadow or not)."""
+    return bool(r.get("trend_dir") or r.get("accel") or r.get("cp_steeper") or r.get("anomaly")
+                or r.get("cp_level_recent") or r.get("surge") or r.get("contextual") or r.get("coupling")
+                or any(("break" in f) or f.startswith(("3m", "6m", "60m", "120m", "180m"))
+                       for f in r.get("horizons_fired") or []))  # fmt: skip
+
+
+def redundancy(groups: dict[tuple[str, str], Group], rows: list[dict], cfg: DetectConfig) -> list[dict]:
+    """Flagged series of one frequency whose first differences correlate at least `min_corr` (absolute, over the
+    common periods of the longest trend window, at least `min_points` of them) share a group (average linkage).
+    Sets each row's `redundancy_group`; returns one row per flagged series."""
+    from scipy.cluster.hierarchy import fcluster, linkage
+
+    rc = cfg.redundancy
+    by_id = {r["series_id"]: r for r in rows}
+    want = {r["series_id"] for r in rows if flagged(r)}
+    per_kind: dict[str, list[tuple[str, int, np.ndarray]]] = defaultdict(list)
+    for (_, kind), g in groups.items():
+        for k, sid in enumerate(g.ids):
+            if sid in want:
+                per_kind[kind].append((sid, g.base, g.y[k]))
+    out = []
+    for kind, members in sorted(per_kind.items()):
+        members.sort(key=lambda m: m[0])
+        w = cfg.series.windows[kind][-1] + 1
+        end = max(base + len(y) for _, base, y in members)
+        mat = np.full((len(members), w), np.nan)
+        for n, (_, base, y) in enumerate(members):
+            idx = np.arange(end - w, end) - base
+            inside = (idx >= 0) & (idx < len(y))
+            mat[n, inside] = y[idx[inside]]
+        d = np.diff(mat, axis=1)
+        m = (~np.isnan(d)).astype(float)
+        x = np.nan_to_num(d)
+        npair = m @ m.T
+        sx, sxx = x @ m.T, (x * x) @ m.T
+        sxy = x @ x.T
+        with np.errstate(all="ignore"):
+            num = npair * sxy - sx * sx.T
+            den = np.sqrt((npair * sxx - sx * sx) * (npair * sxx.T - sx.T * sx.T))
+            r = np.where((npair >= rc.min_points) & (den > 0), num / den, 0.0)
+        r = np.nan_to_num(np.abs(r))
+        np.fill_diagonal(r, 1.0)
+        if len(members) > 1:
+            dist = 1 - r[np.triu_indices(len(members), 1)]
+            labels = fcluster(linkage(np.clip(dist, 0, 1), "average"), t=1 - rc.min_corr, criterion="distance")
+        else:
+            labels = np.array([1])
+        sizes = defaultdict(list)
+        for n, lab in enumerate(labels):
+            sizes[lab].append(n)
+        np.fill_diagonal(r, 0.0)
+        for n, (sid, _, _) in enumerate(members):
+            mates = sizes[labels[n]]
+            gid = "rg-" + stats_hash(members[mates[0]][0])
+            others = [j for j in mates if j != n]
+            out.append({"series_id": sid, "frequency": kind, "group": gid, "group_size": len(mates),
+                        "max_corr": float(r[n, others].max()) if others else None,
+                        "n_points": int(m[n].sum())})  # fmt: skip
+            by_id[sid]["redundancy_group"] = gid
+    return out
+
+
+def stats_hash(text: str) -> str:
+    from .records import sha256_hex
+
+    return sha256_hex(text)[:10]
 
 
 def _bh_trend(r: dict, cfg: DetectConfig) -> bool:

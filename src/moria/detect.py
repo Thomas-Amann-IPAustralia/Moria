@@ -9,6 +9,18 @@ detector that fired on it, and its type:
   micro-cluster of novel items, each with at least 3 items (one per de-duplication group) from at least 2 sources;
 - **anomaly**: outside the 99% band, or a recent change in level. It triggers investigation; it is not yet a signal.
 
+The SignalBoost detectors (D-025) join only when switched on in `config/detect.yaml` (`new_detectors`): a long-run
+trend or a structural break (trend), a short-term shift, a contextual anomaly or a change in coupling (anomaly), a
+fading pair (weak signal), and a jurisdiction entering, rising in or leaving a class (weak signal). Their numbers
+carry the explanation (the expected value and each covariate's contribution, the horizon and its window) and their
+evidence the series behind it (peers and counterpart as `peer` and `reference`).
+
+**Corroboration.** Correlated evidence is not independent (D-025): one series is one line of evidence however many
+windows, horizons or detectors fire on it (`corroboration` 1); flagged series that move together share a
+`redundancy_group` (an AU/world pair takes its Australian series' group), and `redundancy_size` counts the
+candidates in it; a document candidate's corroboration is its sources, each counted once per de-duplication group
+(the source of the group's earliest item), so syndication adds nothing.
+
 A candidate's id comes from its subject alone (`sig-` and 12 hex digits), so the same subject keeps its id across
 scans and the register can follow it. Each candidate keeps its detectors' numbers (canonical JSON) and its evidence:
 the series behind it, or the window items with their sources, families, rings and groups.
@@ -18,6 +30,7 @@ Writes `candidates/as_of=<D>/candidates.parquet` and `evidence.parquet`. Ranking
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import tempfile
@@ -64,6 +77,9 @@ CANDIDATES = pa.schema(
         ("window_start", pa.string()),
         ("window_end", pa.string()),
         ("views", STRS),
+        ("corroboration", pa.int16()),  # independent lines of evidence (D-025)
+        ("redundancy_group", pa.string()),  # candidates whose series move together (measures' redundancy.parquet)
+        ("redundancy_size", pa.int32()),  # candidates in the group (1 when alone)
     ]
 )
 EVIDENCE = pa.schema(
@@ -76,9 +92,25 @@ EVIDENCE = pa.schema(
         ("ring", pa.string()),
         ("dedup_group", pa.string()),
         ("observable_at", TS),
-        ("role", pa.string()),  # subject, denominator, reference, window
+        ("role", pa.string()),  # subject, denominator, reference, peer, window, baseline
     ]
 )
+
+
+def corroboration(c: dict) -> int:
+    """Independent lines of evidence: 1 for a series or a pair (its windows, horizons and detectors read the same
+    numbers); for document evidence, the sources of its de-duplication groups, each group counted once by its
+    earliest item; 1 for IP RAPID's applications (one source)."""
+    items = c.get("_items") or []
+    if not items:
+        return 1
+    first: dict[str, tuple] = {}
+    for e in items:
+        at = e["observable_at"]
+        key = (at is None, at.timestamp() if at else 0.0, e["source"])
+        if e["dedup_group"] not in first or key < first[e["dedup_group"]]:
+            first[e["dedup_group"]] = key
+    return len({k[2] for k in first.values()})
 
 
 def candidate_id(subject: str) -> str:
@@ -100,7 +132,73 @@ def _r(v, n=4):
 # ------------------------------------------------------------------------------------------------------- series
 
 
-def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig) -> list[dict]:
+def boost_numbers(r: dict, hz: list[dict], cx: dict | None, cfg: DetectConfig) -> tuple[list[str], dict, dict]:
+    """The SignalBoost detectors switched on that fired on a series: (detectors, numbers, extra) where extra holds
+    the window, strength and direction each would give the candidate."""
+    fired, numbers, extra = [], {}, {}
+    short = [h for h in hz if h["method"] == "short" and h["sig"]]
+    long = [h for h in hz if h["method"] == "long" and h["sig"]]
+    broken = [h for h in hz if h.get("structural")]
+
+    def hnum(h):
+        return {"horizon_months": h["horizon_months"], "window": f"{h['window_start']}/{h['window_end']}",
+                "effect": _r(h["effect"]), "lo": _r(h.get("lo")), "hi": _r(h.get("hi")), "z": _r(h.get("z")),
+                "p_holm": _r(h.get("p_holm"), 8)}  # fmt: skip
+
+    if cfg.on("short_shift") and short:
+        fired.append("short_shift")
+        numbers["short_shift"] = [hnum(h) for h in short]
+        h = max(short, key=lambda h: h["horizon_months"])
+        extra["short_shift"] = (h["window_start"], abs(h["effect"] or 0), h["direction"])
+    if cfg.on("long_trend") and long:
+        fired.append("long_trend")
+        numbers["long_trend"] = [hnum(h) for h in long]
+        h = max(long, key=lambda h: h["horizon_months"])
+        extra["long_trend"] = (h["window_start"], abs(h["effect"] or 0), h["direction"])
+    if cfg.on("structural_shift") and broken:
+        fired.append("structural_shift")
+        numbers["structural_shift"] = [{**hnum(h), "slope_break": h.get("break_slope_period"),
+                                        "slope_change": _r(h.get("break_slope_change")),
+                                        "level_break": h.get("break_level_period"),
+                                        "level_change": _r(h.get("break_level_change"))} for h in broken]  # fmt: skip
+        h = max(broken, key=lambda h: h["horizon_months"])
+        size = abs(h.get("break_slope_change") or h.get("break_level_change") or 0)
+        extra["structural_shift"] = (h.get("break_slope_period") or h.get("break_level_period"), size,
+                                     h["structural_direction"])  # fmt: skip
+    if any(cfg.on(d) for d in ("short_shift", "long_trend", "structural_shift")) and r.get("horizon_profile"):
+        numbers["horizons"] = {"profile": r["horizon_profile"], "fired": r.get("horizons_fired") or []}
+    if cx:
+        cnum = {"period": cx["period"], "observed": _r(cx["observed"]), "expected": _r(cx["expected"]),
+                "expected_trend": _r(cx["expected_trend"]), "z": _r(cx["z"]), "change": _r(cx["change"]),
+                "p_holm": _r(cx["p_holm"], 8), "contributions": json.loads(cx["contributions"] or "{}"),
+                "peers": len(cx["peers"] or []), "reference": cx["reference"], "r2": _r(cx["r2"]),
+                "scale": cx["transform"]}  # fmt: skip
+        if cfg.on("contextual_anomaly") and cx["contextual"]:
+            fired.append("contextual_anomaly")
+            numbers["contextual_anomaly"] = cnum
+            extra["contextual_anomaly"] = (cx["period"], abs(cx["change"] or 0),
+                                           1 if (cx["observed"] or 0) > (cx["expected"] or 0) else -1)  # fmt: skip
+        elif cfg.on("contextual_anomaly") and cx["explained"]:
+            numbers["context_explains"] = {**cnum, "share": _r(cx["explained_share"])}
+        if cfg.on("decoupling") and cx.get("coupling"):
+            fired.append("decoupling")
+            numbers["decoupling"] = {"change": cx["coupling"], "r_early": _r(cx["coupling_r_early"]),
+                                     "r_recent": _r(cx["coupling_r_recent"]), "n_early": cx["coupling_n_early"],
+                                     "n_recent": cx["coupling_n_recent"], "p_holm": _r(cx["coupling_p_holm"], 8),
+                                     "since": cx["coupling_start"], "reference": cx["reference"]}  # fmt: skip
+            extra["decoupling"] = (cx["coupling_start"], abs((cx["coupling_r_early"] or 0)
+                                                             - (cx["coupling_r_recent"] or 0)),
+                                   -1 if cx["coupling"] == "decoupled" else 1)  # fmt: skip
+    return fired, numbers, extra
+
+
+def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig, horizons: list[dict] | None = None,
+                      context: list[dict] | None = None) -> list[dict]:  # fmt: skip
+    hz_by: dict[str, list[dict]] = defaultdict(list)
+    for h in horizons or []:
+        hz_by[h["series_id"]].append(h)
+    cx_by = {c["series_id"]: c for c in context or []}
+    groups = {r["series_id"]: r.get("redundancy_group") for r in rows}
     out = []
     for r in rows:
         fired, numbers = [], {}
@@ -135,10 +233,25 @@ def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig) -> l
                                   "band": bool(r["anomaly"]),
                                   "level_change_point": r.get("cp_level_period") if r.get("cp_level_recent") else None,
                                   "level_change": _r(r.get("cp_level_change"))}  # fmt: skip
+        new, new_numbers, extra = boost_numbers(r, hz_by.get(r["series_id"], []), cx_by.get(r["series_id"]), cfg)
+        numbers.update(new_numbers)
+        old = list(fired)
+        fired += new
         if not fired:
             continue
-        kind = ("acceleration" if "acceleration" in fired else "trend" if "trend" in fired
-                else "weak_signal" if "low_base_surge" in fired else "anomaly")  # fmt: skip
+        kind = ("acceleration" if "acceleration" in fired else "trend" if {"trend", "long_trend", "structural_shift"}
+                & set(fired) else "weak_signal" if "low_base_surge" in fired else "anomaly")  # fmt: skip
+        if not old:  # only SignalBoost detectors fired: the first of them gives the window, strength and direction
+            first = next(d for d in ("structural_shift", "long_trend", "short_shift", "contextual_anomaly",
+                                     "decoupling") if d in extra)  # fmt: skip
+            start, strength, direction = extra[first]
+            out.append({"subject_kind": "series", "subject": r["series_id"], "label": r["label"], "type": kind,
+                        "detectors": fired, "numbers": numbers, "strength": strength, "direction": direction or 1,
+                        "sources": [r["source"]], "families": [r["family"]] if r["family"] else [],
+                        "rings": r["rings"], "scope": r["scope"], "n_items": 0, "window_start": start,
+                        "window_end": r["last_period"], "redundancy_group": r.get("redundancy_group"),
+                        "_evidence": _series_evidence(r, cx_by.get(r["series_id"]), new)})  # fmt: skip
+            continue
         if kind == "acceleration":
             strength, direction = (
                 abs(r.get("accel_change") or r.get("cp_slope_change") or 0),
@@ -157,9 +270,8 @@ def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig) -> l
                     "detectors": fired, "numbers": numbers, "strength": strength, "direction": direction,
                     "sources": [r["source"]], "families": [r["family"]] if r["family"] else [], "rings": r["rings"],
                     "scope": r["scope"], "n_items": 0, "window_start": start, "window_end": r["last_period"],
-                    "_evidence": [("series", r["series_id"], r["source"], r["family"], "subject")]
-                    + ([("series", r["denominator"], r["source"], r["family"], "denominator")] if r["denominator"]
-                       else [])})  # fmt: skip
+                    "redundancy_group": r.get("redundancy_group"),
+                    "_evidence": _series_evidence(r, cx_by.get(r["series_id"]), new)})  # fmt: skip
     for d in div:
         if not d["direction"]:
             continue
@@ -176,10 +288,23 @@ def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig) -> l
                     "detectors": ["divergence"], "numbers": numbers, "strength": abs(d["growth"] or 0),
                     "direction": d["direction"], "sources": [d["source"]], "families": [], "rings": [],
                     "scope": f"AU vs {d['ref_scope']}", "n_items": 0, "window_start": start,
-                    "window_end": d["last_period"],
+                    "window_end": d["last_period"], "redundancy_group": groups.get(d["au_series"]),
                     "_evidence": [("series", d["au_series"], d["source"], None, "subject"),
                                   ("series", d["ref_series"], d["source"], None, "reference")]})  # fmt: skip
     return out
+
+
+def _series_evidence(r: dict, cx: dict | None, new: list[str]) -> list[tuple]:
+    """The series behind a series candidate: itself, its denominator, and the context a contextual detector read."""
+    ev = [("series", r["series_id"], r["source"], r["family"], "subject")]
+    if r["denominator"]:
+        ev.append(("series", r["denominator"], r["source"], r["family"], "denominator"))
+    if cx and {"contextual_anomaly", "decoupling"} & set(new):
+        if cx.get("reference"):
+            ev.append(("series", cx["reference"], r["source"], r["family"], "reference"))
+        if "contextual_anomaly" in new:
+            ev += [("series", p, r["source"], r["family"], "peer") for p in cx.get("peers") or []]
+    return ev
 
 
 def _window_start(r: dict, kind: str) -> str | None:
@@ -250,26 +375,51 @@ def document_candidates(
         out.append(_doc_candidate("concept", key, c["label"], slot["fired"], slot["numbers"], evidence.get(key, []),
                                   cfg, as_of))  # fmt: skip
     for r in combos:
-        if not (r["new"] or r["rising"]):
+        country = r["scheme"].endswith("_country")
+        fading = bool(r.get("fading"))
+        if country:
+            if not cfg.on("jurisdiction_shift") or not (r["new"] or r["rising"] or fading):
+                continue
+            fired = ["jurisdiction_shift"]
+        elif r["new"] or r["rising"]:
+            fired = ["new_combination"]
+        elif fading and cfg.on("fading_combination"):
+            fired = ["fading_combination"]
+        else:
             continue
-        fired = ["new_combination"]
-        numbers = {"new_combination": {"scheme": r["scheme"], "new": r["new"], "rising": r["rising"],
-                                       "window": r["window"], "baseline": r["baseline"], "a_baseline": r["a_baseline"],
-                                       "b_baseline": r["b_baseline"], "lift_ratio": _r(r["ratio"]),
-                                       "p_holm": _r(r["p_holm"], 8)}}  # fmt: skip
+        rising = r["new"] or r["rising"]
+        numbers = {fired[0]: {"scheme": r["scheme"], "new": r["new"], "rising": r["rising"],
+                              "window": r["window"], "baseline": r["baseline"], "a_baseline": r["a_baseline"],
+                              "b_baseline": r["b_baseline"], "lift_ratio": _r(r["ratio"]),
+                              "p_holm": _r(r["p_holm"], 8)}}  # fmt: skip
+        if fading and not rising:
+            numbers[fired[0]].update(fading=True, expected_window=_r(r.get("expected_window")),
+                                     a_window=r.get("a_window"), b_window=r.get("b_window"),
+                                     p_fade_holm=_r(r.get("p_fade_holm"), 8))  # fmt: skip
         label = f"{r['a']} + {r['b']}"
+        direction = 1 if rising else -1
         if r["scheme"] == "kp":
-            out.append(_doc_candidate("combination", r["combination"], label, fired, numbers,
-                                      evidence.get(r["combination"], []), cfg, as_of))  # fmt: skip
+            c = _doc_candidate("combination", r["combination"], label, fired, numbers,
+                               evidence.get(r["combination"], []), cfg, as_of)  # fmt: skip
+            c["direction"] = direction
+            if not rising:
+                c["strength"] = -math.log(max(r["ratio"] or 0.01, 0.01))
+            out.append(c)
         else:  # IP RAPID applications: no items in the lake; at least 3 applications from at least 2 applicants
-            if r["window"] < dc.min_items or r["window_sources"] < dc.min_sources:
+            size, applicants = (
+                (r["window"], r["window_sources"]) if rising else (r["baseline"], r.get("baseline_sources") or 0)
+            )
+            if size < dc.min_items or applicants < dc.min_sources:
                 dropped["weak_signal_minimum"] += 1
                 continue
-            out.append({"subject_kind": "combination", "subject": r["combination"],
-                        "label": f"{r['scheme'].upper()} {label}", "type": "weak_signal", "detectors": fired,
-                        "numbers": numbers, "strength": math.log(max(r["ratio"] or 2.0, 1.0) + 1),
-                        "direction": 1, "sources": ["ip_rapid"], "families": ["patent"], "rings": ["core"],
-                        "scope": "AUS", "n_items": int(r["window"]), "window_start": None,
+            strength = (math.log(max(r["ratio"] or 2.0, 1.0) + 1) if rising
+                        else -math.log(max(r["ratio"] or 0.01, 0.01)))  # fmt: skip
+            name = (f"Applicants from {r['a']} in {r['scheme'].split('_')[0].upper()} {r['b']}" if country
+                    else f"{r['scheme'].upper()} {label}")  # fmt: skip
+            out.append({"subject_kind": "combination", "subject": r["combination"], "label": name,
+                        "type": "weak_signal", "detectors": fired, "numbers": numbers, "strength": strength,
+                        "direction": direction, "sources": ["ip_rapid"], "families": ["patent"], "rings": ["core"],
+                        "scope": "AUS", "n_items": int(size), "window_start": None,
                         "window_end": as_of.isoformat(), "_evidence": [], "_items": [],
                         "_checked": True})  # fmt: skip
     for n in novelty:
@@ -334,6 +484,8 @@ def detect(store: Store, cfg: DetectConfig, as_of: date, config_hash: str | None
 def build(sp: dict[str, Path], dp: dict[str, Path], cfg: DetectConfig, as_of: date) -> tuple[list, list, dict]:
     rows = read_rows(sp["measures.parquet"])
     div = read_rows(sp["divergence.parquet"])
+    horizons = read_rows(sp["horizons.parquet"]) if "horizons.parquet" in sp else []
+    context = read_rows(sp["context.parquet"]) if "context.parquet" in sp else []
     ev_rows: dict[str, list[dict]] = defaultdict(list)
     for e in read_rows(dp["evidence.parquet"]):
         ev_rows[e["key"]].append(e)
@@ -341,24 +493,34 @@ def build(sp: dict[str, Path], dp: dict[str, Path], cfg: DetectConfig, as_of: da
                                         read_rows(dp["combinations.parquet"]), read_rows(dp["novelty.parquet"]),
                                         ev_rows, cfg, as_of)  # fmt: skip
     cands, evidence = [], []
-    for c in series_candidates(rows, div, cfg) + docs:
+    for c in series_candidates(rows, div, cfg, horizons, context) + docs:
         cid = candidate_id(c["subject"])
+        c["corroboration"] = corroboration(c)
         for kind, ref, source, family, role in c.pop("_evidence"):
             evidence.append({"candidate_id": cid, "kind": kind, "ref": ref, "source": source, "family": family,
                              "ring": None, "dedup_group": None, "observable_at": None, "role": role})  # fmt: skip
         for e in c.pop("_items", []) or []:
             evidence.append({"candidate_id": cid, "kind": "item", "ref": e["item_id"], "source": e["source"],
                              "family": e["family"], "ring": e["ring"], "dedup_group": e["dedup_group"],
-                             "observable_at": e["observable_at"], "role": "window"})  # fmt: skip
+                             "observable_at": e["observable_at"], "role": e.get("role") or "window"})  # fmt: skip
         c.setdefault("n_sources", len(c["sources"]))
         c.update(candidate_id=cid, as_of=as_of, numbers=canonical_json(c["numbers"]), views=VIEWS[c["type"]])
         cands.append(c)
+    sizes: dict[str, int] = defaultdict(int)
+    for c in cands:
+        c.setdefault("redundancy_group", None)
+        if c["redundancy_group"]:
+            sizes[c["redundancy_group"]] += 1
+    for c in cands:
+        c["redundancy_size"] = sizes[c["redundancy_group"]] if c["redundancy_group"] else 1
     counts: dict[str, int] = defaultdict(int)
     for c in cands:
         counts[f"type_{c['type']}"] += 1
         for d in c["detectors"]:
             counts[f"detector_{d}"] += 1
     counts["candidates"] = len(cands)
+    counts["redundancy_groups"] = len(sizes)
+    counts["redundant_candidates"] = sum(n - 1 for n in sizes.values())
     counts["evidence_rows"] = len(evidence)
     for k, v in dropped.items():
         counts[f"dropped_{k}"] = v
