@@ -22,7 +22,7 @@ Use exactly these names in every place.
 
 | Name | Where you get it | Used by |
 |---|---|---|
-| `OPENALEX_API_KEY` | Your OpenAlex account (free) | The OpenAlex collector |
+| `OPENALEX_API_KEY` | Your OpenAlex account (free) | The OpenAlex collector; the dossiers' sample works (`moria dossier`, in the weekly prepare) |
 | `R2_ACCOUNT_ID` | Cloudflare dashboard: your account ID, also shown in the R2 S3 endpoint `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` | Every job that reads or writes the bucket |
 | `R2_ACCESS_KEY_ID` | The R2 API token you create below | The same |
 | `R2_SECRET_ACCESS_KEY` | The same token. It is shown **once**, so copy it straight into the secret stores. | The same |
