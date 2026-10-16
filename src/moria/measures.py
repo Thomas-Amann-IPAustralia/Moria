@@ -234,9 +234,11 @@ def as_of_end(as_of: date) -> datetime:
     return datetime(as_of.year, as_of.month, as_of.day, tzinfo=UTC) + timedelta(days=1)
 
 
-def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date) -> dict[str, Series]:
+def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date,
+                only: set[str] | None = None) -> dict[str, Series]:  # fmt: skip
     """Every tested series at as_of (the configured sources, scopes and units): each period's latest vintage
-    observable by then (else the earliest), periods ending after as_of left out, values marked incomplete left out."""
+    observable by then (else the earliest), periods ending after as_of left out, values marked incomplete left out.
+    `only` keeps just these series ids (a dossier's charts)."""
     sources = set(cfg.series.sources)
     end = as_of_end(as_of).strftime("%Y-%m-%d %H:%M:%S+00")
     out: dict[str, Series] = {}
@@ -246,7 +248,8 @@ def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date) 
             "SELECT series_id, source, label, unit, scope, dimensions, family, rings FROM read_parquet(?)",
             [series_path.as_posix()],
         ).fetchall()
-        metas = {r[0]: r for r in meta_rows if r[1] in sources and cfg.series.tested(r[1], r[4], _dims(r[5]))}
+        metas = {r[0]: r for r in meta_rows if r[1] in sources and cfg.series.tested(r[1], r[4], _dims(r[5]))
+                 and (only is None or r[0] in only)}  # fmt: skip
         if not metas:
             continue
         rows = con.execute(
@@ -255,10 +258,11 @@ def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date) 
                     (vintage_at <= TIMESTAMPTZ '{end}') DESC,
                     CASE WHEN vintage_at <= TIMESTAMPTZ '{end}' THEN vintage_at END DESC NULLS LAST,
                     vintage_at ASC) AS rn
-                  FROM read_parquet(?) WHERE period_kind IN ('year', 'quarter', 'month', 'day'))
+                  FROM read_parquet(?) WHERE period_kind IN ('year', 'quarter', 'month', 'day')
+                  {"AND series_id IN (SELECT unnest(?))" if only is not None else ""})
                 WHERE rn = 1 AND value IS NOT NULL AND isfinite(value) AND coalesce(status, '') <> 'incomplete'
                 ORDER BY series_id, period_start""",
-            [obs_path.as_posix()],
+            [obs_path.as_posix(), *([sorted(metas)] if only is not None else [])],
         ).fetchall()
         for sid, pk, start, value in rows:
             m = metas.get(sid)

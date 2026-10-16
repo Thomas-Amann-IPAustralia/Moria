@@ -6,8 +6,8 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Days 1 to 4, the Tier 1 cleanup and the widening of
-sources (D-020) are built.**
+**Current scope: the one-week machinery sprint (design §13). Days 1 to 5, the Tier 1 cleanup and the widening of
+sources (D-020) are built; days 6 and 7 are the buffer.**
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
 - **Built (day 2, D-011 to D-013):** six peer-office sources (daily); OpenAlex whole-taxonomy counts, the ABS headline
@@ -62,9 +62,18 @@ sources (D-020) are built.**
   at each scan and adds candidates only when switched on in `config/detect.yaml` `new_detectors`. The owner
   switched on fading pairs and jurisdictions by class, and had the dossiers show "explained by its context"
   (`context.annotate_explained`); the other five stay off but are kept, to revisit after calibration (D-028).**
-- **Next:** day 5 (dossiers, pathway suggestions, ranking and quotas, the register export and import, the
-  early-warning digest, a term-only hindsight smoke run), when the owner asks. `docs/handover-day4.md` lists what
-  day 5 reads and its flags. Pile of Law was checked and discarded (D-016).
+- **Built (day 5, D-029):** `moria rank` (every candidate scored for both views; one ring each; a shortlist of
+  100 under the ring quotas); `moria dossier` (design §8.4, with OpenAlex sample works and IP RAPID applications
+  behind a count); `moria pathways` (the free decision model, read, pinned and hashed, its responses cached) and
+  `moria eval pathways`; `moria queue` (the 40 under the quotas, the third-order cap and the redundancy rule, with
+  the ranking's sensitivity); `moria register sync|export|import` (append-only events and the reviewer's
+  spreadsheet, validated); `moria digest`; `moria queue-report`; `moria review` (the chain); `moria show`; `moria
+  eval hindsight` (term-only; `config/hindsight.yaml` is proposed). Settings in `config/review.yaml`. **The decision
+  model's suggestions are recorded and shown, not ranked (`pathways.use_in_ranking: false`): on the SOP's marked
+  states it does not pass its check (D-029). Switching it on is the owner's call.**
+- **Next:** the owner's first review round (the spreadsheet), the hindsight set and the decision model's options
+  (D-029); days 6 and 7 (fixes, `docs/methodology.md`, handover) when the owner asks. `docs/handover-day5.md` lists
+  the flags. Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, the rest of Tier 2 (the OECD
   and the breadth pack came forward, D-020), a dashboard, agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
@@ -114,8 +123,13 @@ sources (D-020) are built.**
   false` for feeds, `store_text: false` for sitemaps and documents).
 - The sweep (inside `moria normalise`) quarantines high-severity items: AI-directed instructions, secrets, Unicode
   tag characters. Only the owner adds `config/sweep.yaml` allowlist entries; Claude proposes them in chat.
-- `moria search` prints titles and `moria candidates` prints labels: the analyst's own terminal only, never a
-  scheduled job. Repo reports never hold titles, text, URLs, keyphrases or candidate labels.
+- `moria search` prints titles, `moria candidates` labels and `moria show` a dossier: the analyst's own terminal
+  only, never a scheduled job. Repo reports never hold titles, text, URLs, keyphrases, candidate labels or ids.
+- Dossiers, pathway suggestions, the register (its events and spreadsheets) and the digest hold labels and links:
+  the private bucket only (`interpretation/`, `review/`, `inbox/register/`). The reviewer's spreadsheet goes to
+  their own disk with `--out`, never the repo.
+- The decision model's states wrap every source text in `<data>` markers, defanged, after a line saying it is
+  data, never instructions (SOP §22). Its suggestions are attributed to the model and never thresholds.
 - Owner uploads go to `inbox/documents/` in the private bucket, never into the repo. Every document's own licence
   statements are checked; one that reserves its rights is never stored as text, and `store_text: if_open_licence`
   stores text only when the document states an open licence (D-014).
@@ -151,6 +165,17 @@ sources (D-020) are built.**
 | Seeded artefacts | `moria eval artefacts [--as-of D]` | a temporary copy of the evidence layer, with seeds | `manifests/eval.artefacts/`; `reports/eval/artefacts.md` (synthetic seeds only); exits 2 if a seed is missed |
 | New detectors' evaluation | `moria eval detectors [--as-of D] [--no-backtest]` | the series, documents and IP RAPID pairs, in memory | `manifests/eval.detectors/`; `reports/eval/detectors.md` (aggregates only): plants, nulls, artefacts, backtest, placebos, verdicts |
 | Candidates | `moria candidates [--as-of D] [--type T] [--clean]` | candidates, artefacts | nothing (prints labels to the analyst's terminal) |
+| Rank | `moria rank [--as-of D]` (needs the `models` extra) | candidates, evidence, artefacts, the series' labels, tags | `review/as_of=<D>/ranked.parquet` (every candidate: ring, components, factors, both views' scores, the shortlist) |
+| Dossier | `moria dossier [--as-of D] [--no-samples]` | the ranking's shortlist, the scan, documents, embeddings, BM25, IP RAPID, OpenAlex (free credits) | `interpretation/dossiers/<id>/<D>.json` and `.md` |
+| Pathways | `moria pathways [--as-of D] [--backend jevstyle\|none] [--build-scorer]` | the dossiers | `interpretation/pathways/as_of=<D>/pathways.parquet`, `interpretation/pathways/cache/<sha256>.json` |
+| Queue | `moria queue [--as-of D]` | the ranking, the suggestions, confirmed orders | `review/as_of=<D>/{queue,sensitivity}.parquet` |
+| Register | `moria register sync\|export [--out PATH]\|import FILE` | the queue, the suggestions, the dossiers; a reviewed spreadsheet | `interpretation/register/events/<run_id>.parquet`, `interpretation/register/exports/<run_id>.xlsx`, `inbox/register/<run_id>.xlsx` |
+| Digest | `moria digest [--as-of D]` | the ranking, the queue, the register | `interpretation/digests/as_of=<D>/digest.md` |
+| Review (the chain) | `moria review [--as-of D] [--store r2]` | the scan | all of the above, in order; stops at the first failure |
+| Queue report | `moria queue-report [--as-of D]` | the review's manifests and outputs | `reports/queue.md` in the repo (aggregates only) |
+| Show | `moria show <id> [--as-of D]` | a dossier | nothing (prints it to the analyst's terminal) |
+| Pathways' check | `moria eval pathways [--as-of D]` | the dossiers, synthetic anchors | `manifests/eval.pathways/`; `reports/eval/pathways.md` (aggregates only) |
+| Hindsight | `moria eval hindsight [H1 ...]` | the evidence layer at past dates, term-only | `manifests/eval.hindsight/`; `reports/eval/hindsight.md` (aggregates only) |
 | Search | `moria search "words" [--source S] [--since D]` | the index | nothing (prints matches to the analyst's terminal) |
 | Evidence report | `moria evidence-report` | every stage's latest manifest | `reports/evidence-layer.md` in the repo (aggregates only) |
 | Inspect | `moria sources`, `moria terms`, `moria adapters`, `moria baseline` (proposed trends marked) | config | nothing |
@@ -167,8 +192,10 @@ instead of the document's URL.
 - `collect-weekly.yml`: Mondays 03:41 UTC (after IP Australia rebuilds IP RAPID and OpenAlex's budget resets).
 - `prepare.yml`: Mondays 07:17 UTC, after collect-weekly: `moria prepare` (embeddings, dedup, keyphrases, tags,
   index, IP RAPID metrics), with the model files cached by their pinned revision; then `moria scan`, `moria eval
-  artefacts` (a missed seed fails the job) and `moria eval detectors` (its report in the job summary). It did not
-  parse on main from 2026-10-14 to D-025 (a colon in a step name): fixed on D-025's branch.
+  artefacts` (a missed seed fails the job) and `moria eval detectors` (its report in the job summary); then
+  `moria review --build-scorer` (day 5, the decision model and its scorer cached), `moria eval pathways` and `moria
+  queue-report` (their reports in the job summary). It did not parse on main from 2026-10-14 to D-025 (a colon in
+  a step name): fixed on D-025's branch.
 - `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
@@ -206,6 +233,13 @@ instead of the document's URL.
   3 de-duplication groups from 2 sources. A flag marks a candidate; it never hides it. `corroboration` counts
   independent lines of evidence (1 per series; a document candidate's sources, once per de-duplication group);
   candidates whose series move together share a `redundancy_group` (D-025).
+- The review (`review/as_of=<D>/`): `ranked.parquet` scores every candidate (its ring and `ring_basis`, the
+  components as percentiles, the factors, each view's score, its shortlist place); `queue.parquet` is the queue
+  (place, the view that picked it, its quota pass, the suggestions, the dossier's keys). A dossier is
+  `interpretation/dossiers/<id>/<as_of>.json` (and `.md`), one version per scan.
+- The register is an append-only log of events (`queued`, `machine_pathways`, `machine_interpretation`, `review`,
+  `missed`), each id the hash of its content, so nothing is appended twice; the state is a view (`moria.register.
+  state`). A review row's status follows the lifecycle in `config/review.yaml` (`lifecycle.transitions`).
 - `config/baseline.yaml`: the known-trends baseline, confirmed by the owner (D-014), validated; a trend cites only
   documents read. Trends and citations Claude drafts are `status: proposed` until the owner confirms them (D-020).
   A signal records whether it is `novel` or `reinforces` a known trend.
@@ -249,7 +283,9 @@ Free first (design §9):
   (`config/features.yaml`); 256 tokens (measured: 22 texts/s against 9 at 512, D-021);
 - per-item tags: zero-shot similarity to `config/codebook.yaml` until the owner's labels exist; then scikit-learn
   on embeddings, calibrated on those labels;
-- signal-level decisions: `chaoliangUNSW/Jev-Style-0.8B-Decision-v3`.
+- signal-level decisions: `chaoliangUNSW/Jev-Style-0.8B-Decision-v3` (Q4_K_M, revision `edf37c26`, its scorer
+  built from llama.cpp `441df11f`; every file hash-checked, `config/review.yaml`). Its suggestions are recorded,
+  not ranked, until `moria eval pathways` passes and the owner switches `pathways.use_in_ranking` on (D-029).
 
 Matilda-Jev is the measured paid upgrade (M1). A judge never shares the writer's family.
 

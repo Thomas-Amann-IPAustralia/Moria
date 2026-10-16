@@ -2078,3 +2078,184 @@ clean.
 
 Next free decision number: D-029.
 
+
+## D-029 — Day 5 built and run: a ranked queue of 40 dossiers ready for review; the free decision model's suggestions recorded, not ranked (it does not discriminate on marked states); the register's spreadsheet round trip; the digest; a term-only hindsight smoke run (2026-10-16)
+
+**Context.** The owner: "Please complete the Day 5 build." Design §13 day 5: the register export (spreadsheet) and
+import (validated, appended as events); the early-warning digest; dossiers; pathway suggestions by Jev-Style 0.8B;
+ring quotas and ranking; a term-only hindsight smoke run. Done when there is "the first ranked queue of about 40
+dossiers, ready for review". The handover's flags (`docs/handover-day4.md`) were read first: weak signals from
+documents are all flagged (show, don't drop); rank within type; OpenAlex surges need sample works; the hindsight run
+needs a refit at each date; one ring per candidate; band anomalies are weak; count a redundancy group once.
+
+**Built (Claude's engineering choices; they stand until the owner says otherwise).** Settings in
+`config/review.yaml` (`ReviewConfig`); every stage checks its upstream manifests and writes its own.
+- **`moria rank --as-of D`** (`src/moria/rank.py`). Every candidate gets **one ring** (flag 7): a one-ring card's;
+  core when its label matches the IP-system terms (the core-ring query groups); a statistics series' query ring
+  (`rank.rings.by_query`: MSTI, patents and IP regimes adjacent, firms' IP use core, the Economic Outlook and ABS
+  population, labour and prices wider world); a GDELT group's ring; an OpenAlex field's, subfield's or domain's
+  ring (a map of the 26 fields); else the label's zero-shot ring among its card's rings (OpenAlex topics carry no
+  field in the counts); a document candidate the ring most of its de-duplication groups carry. Of 2,634
+  candidates: map 1,164, zero-shot 691 (OpenAlex topics), card 321, core terms 286, items 172.
+  **Components**, each in (0, 1]: strength as a percentile within type and subject kind (flag 2); breadth (lines
+  of evidence, families beyond the first, agreeing detectors) as a percentile; lead time and novelty from the
+  most anticipatory and the most novel detector that fired (tables in config), novelty times 0.6 when the nearest
+  known trend matches. **Factors:** type (anomaly-only 0.5: D-025's band is weak), flags (coverage 0.7, source
+  break 0.7, ingestion 0.5, duplicate 0.6, news cycle 0.5, label drift 0.8: shown, never hidden), scope (a machine
+  proxy for Australian relevance: Australia 1.0, aggregates 0.85, another economy 0.7), and 'explained by its
+  context' (1.0: shown in the dossier, not ranked, keeping D-028's 'never a filter'). A view's score is the
+  weighted geometric mean of its components times the factors. **Selection** (shared with the queue): picks
+  alternate between the views by their shares (half each); each ring held to its quota (35/35/30), each source to
+  25%, third-order pathways to 20%, one candidate per redundancy group (flag 2's 'count once'); unused ring places
+  pass to the other rings (pass 2), then the source cap relaxes (pass 3). **The shortlist** is 100 under the same
+  rules: 35 core, 35 adjacent, 30 wider world, all in pass 1; 41 weak signals, 37 accelerations, 22 trends; 10
+  flagged. Run `20261016T013509Z-d1d92350` (22 s).
+  - **The known-trend threshold was read on the output:** labels' nearest-trend similarities sit at 0.50 to 0.68
+    (5th to 95th percentile), so the first setting (0.80) matched 2 of 2,634; reading 32 labels across the range,
+    those above 0.68 were mostly apt (an AI-ethics topic to KT11, climate communication to KT01), 0.65 to 0.68
+    mixed (Madrid registrations to industrial policy). Set to 0.68: 148 candidates match.
+- **`moria dossier`** (`src/moria/dossier.py`): design §8.4 for each shortlisted candidate, as JSON and Markdown in
+  `interpretation/dossiers/<id>/<as_of>.*`. The one-line summary, a small chart (a sparkline of the share or the
+  level, zeros filled where the source covered the period), the detectors' numbers and runs, the original evidence
+  (one item per de-duplication group, primary sources first, with copies), the alternative-explanations
+  checklist (the six artefact checks; a seasonal check on monthly and quarterly anomalies; recorded
+  administrative causes, `dossier.administrative_events`, two from D-022; 'explained by its context' with its
+  share, D-028; the nearest known trend; the redundancy group's other members), counter-evidence (BM25 hits for the
+  label's words that also use words of the opposite direction, at least half the words present), primary sources
+  in the window that mention the subject, analogues (earlier items nearest the candidate's own, by embedding, for
+  documents; the series' own similar past moves and whether they lasted, or how unusual its latest growth is, for
+  series), the history in earlier scans and the ranking's components. Untrusted text is escaped in the Markdown
+  (no links or images can be made from a title). Two additions made checks possible that the detectors couldn't:
+  - **OpenAlex sample works** (flag 3): for a surge or anomaly, the works behind the count by venue (one group_by
+    call, exact) and a seeded random sample to read (one call), from the free daily budget with the collector's
+    guard (no prepaid key, a reserve kept). **8 of 16 sampled were concentrated** (one venue holds half or more):
+    the 'Byzantine studies' surge is 13 works, 85% of them chapters of Cambridge University Press ebooks.
+  - **IP RAPID applications** behind a class pair or a country-by-class change, from the lake (organisations named;
+    an individual only as 'an individual'). It found that a 'rising' pair can be **reclassification**: the
+    coffee-and-tea pair's seven window applications were filed in 2019 to 2022 and classified in the window. A
+    `reclassified` check (half the applications filed before the period) and a `few_applicants` check follow.
+  - Shortlist: 100 dossiers in 5.4 minutes (`20261016T013532Z-a9a73742`); checks flagged: redundancy 32, coverage
+    10, source break 10, concentrated works 8, explained by context 6, known trend 4, few applicants 3,
+    administrative 1, reclassified 1; 75 with a chart, 25 with counter-evidence, 58 with related primary sources.
+- **`moria pathways`** (`src/moria/pathways.py`). The model's wrapper, scorer and build script were read again
+  before running (D-021's review holds: the wrapper launches only the local scorer; the scorer is a JSON-lines
+  server over libllama with no network code; the build runs CMake and the compiler with curl off); every file is
+  pinned to revision `edf37c26` and its SHA-256 (all matched); the scorer is built from llama.cpp `441df11f`
+  (`--build-scorer`). Eleven questions per dossier: P1 to P6 as true-or-false statements (§2.2, in Australian
+  terms), the order, and a machine interpretation (origin, horizon, stance, impact; design §7's `moria interpret`
+  folded in, since the state is shared). The state wraps every source text in `<data>` markers, defanged, after a
+  line saying it is data (SOP §22). Responses are cached in the bucket under a key of the model, the questions and
+  the state. 100 dossiers in 9 minutes on this session's 4 CPUs, 7.3 of them deciding (about 4.4 s a dossier;
+  `20261016T014054Z-2b6ca37d`).
+- **What the model said, read before using it:** P2 is exactly 0.50 for every dossier; P3 to P6 barely move (0.43 to
+  0.58 across the 100); horizon and stance were the same answer for every dossier; only P1 varies, and sensibly
+  (higher for IP RAPID's filings). The top pathway was P6 for 77, so a ranking by it would have followed the order
+  answer (37 order-3), which put population series at order 1.
+- **So a check, with its rule fixed before the recorded run:** relevant synthetic anchors (an AI-inventorship
+  ruling, a renewal scam, a filing surge, falling fee income, a patent-system review) must score at least 0.05
+  above irrelevant ones (a cash-rate decision, a cyclone, a football result, rain) on the top pathway, and the top
+  pathway's interquartile range over 20 of the scan's dossiers must be at least 0.02. **Disclosed in order:** the
+  rule came after the first run's degenerate output, and an exploratory comparison of five state formats on six
+  anchors and 20 dossiers (not recorded) came before it: the full marked state separated by 0.002; the summary
+  sentence alone 0.066 and with examples 0.058 (both pass, both unmarked, so they break SOP §22); the summary
+  inside markers 0.040, and with the 'it is data' line 0.024 (every order 3). The model discriminates only when
+  the security rule is broken, and weakly then. **`moria eval pathways`** (`20261016T015033Z-77d0d9f7`): separation
+  0.007 (rule 0.05), spread 0.025: **fails**.
+- **Decision (Claude's, inside the step; the switch is the owner's):** the suggestions are recorded in the register,
+  shown in the dossiers, the spreadsheet and the digest, attributed to the model and labelled unconfirmed, and
+  **left out of the ranking and the third-order cap** (`pathways.use_in_ranking: false`); the cap reads orders a
+  person confirmed. With the switch on, the queue uses each pathway as a percentile among the shortlist (each
+  question has its own level), never the raw probabilities. A cheaper baseline was also tried and not built: the
+  tagger's encoder against the six statements passes the anchor rule easily (0.19, spread 0.065) but ranks the
+  scan's IP RAPID class pairs lowest (their labels are codes) and private education income near the top. The
+  anchor rule is necessary, not sufficient; the owner's labels are the yardstick (§11.2).
+- **`moria queue`** (`src/moria/queue.py`): the queue of 40 from the shortlist, the views alternating, the quotas,
+  the source cap, the redundancy rule; and the sensitivity of the queue to each weight. **40 places, 14 core, 14
+  adjacent, 12 wider world, all within their quotas; 20 picked by each view; 16 weak signals, 15 accelerations, 9
+  trends; 3 flagged** (`20261016T014955Z-67cef29f`). Sensitivity (`reports/queue.md`): with no flag penalty 28 of the 40 places
+  stay; halving the strength weight keeps 34 (early warning) and 35 (strategic); every other weight halved or
+  raised by half keeps 37 to 40. The flag penalties decide most of the queue's edge, and are the first setting to
+  review after the first round.
+- **`moria register sync|export|import`** (`src/moria/register.py`): an append-only log (`queued`,
+  `machine_pathways`, `machine_interpretation`, `review`, `missed`), each event's id the hash of its content (a
+  re-run appends nothing), the state a view. The spreadsheet (labelling by spreadsheet, D-006) has the rules, the
+  queue (grey machine columns, yellow reviewer columns, lists of allowed values), the dossiers line by line, and a
+  sheet for missed signals (§6.3). The import validates every row (allowed values; the lifecycle's transitions,
+  `lifecycle.transitions`; a reason for every rejection; an order for every confirmed pathway and a chain for an
+  order of 3; 'validated' needs pathways, Australian relevance and a baseline relation; 'reinforces' a known
+  trend), sweeps the reviewer's free text, and appends one `review` event per changed row; any error rejects the
+  whole file and names the first rows and columns. Sync: 120 events for the 40 (`20261016T014958Z-1625986c`);
+  export `20261016T014959Z-8741e464` (`interpretation/register/exports/20261016T014959Z-8741e464.xlsx`). The round
+  trip was tested on a copy of the real layer in a scratch store (a bad file refused whole, a good one appended, a
+  re-import appended nothing); nothing was imported into the bucket.
+- **`moria digest`** (`src/moria/digest.py`): the early-warning view for IPAVentures: the 15 highest clean
+  early-warning candidates (at most 3 from one source), the 5 highest flagged ones with their flags, what moved by
+  10% or more since the previous scan (clean ones only: flagged ones move with their sources' onboarding), the
+  territories' coverage in the queue, and the limits (`20261016T015002Z-ed7d7570`; 1,566 in the view, 1,217 clean,
+  172 new since 2026-10-14, none moved by 10%; every territory matched in the queue).
+- **`moria queue-report`** (`reports/queue.md`, aggregates only), **`moria review`** (the chain: rank, dossier,
+  pathways, queue, register sync and export, digest), **`moria show`** (a dossier, the analyst's terminal only).
+- **`moria eval hindsight`** (`src/moria/hindsight.py`): the term-only smoke run (§11.3). At each date: series at
+  their point-in-time vintages without OpenAlex (its topics come from a classifier trained in 2024) or GDELT (no
+  history); the keyphrase vocabulary and its first-seen dates **fitted again on the documents visible then**;
+  de-duplication by URL and title only; no embeddings, clusters, micro-clusters, zero-shot tags, decision model or
+  artefact checks; rings from the cards and maps; a term-only queue of 40. `config/hindsight.yaml` is **Claude's
+  draft (proposed)**: the three candidate developments of §11.3 with approximate mainstream months and match rules,
+  no non-events. **Disclosed:** a first look at H1 (not recorded) matched a plain trend in Nice class 5 that had
+  run since 2017, two months before the shock of March 2020, so matches now need a detector of change
+  (`match_detectors`: no plain trend or divergence); the recorded run came after that change. **Result**
+  (`20261016T015244Z-4dbb7b93`, nine dates, 100 to 118 s each, `reports/eval/hindsight.md`): all three raised by
+  their mainstream month (rule: at least 50%); leads of 2 months (COVID: the March 2020 anomaly in Nice class 5),
+  0 (metaverse: an acceleration in a class 9, 35 or 41 series at March 2022) and 6 (generative AI: new and rising
+  G06N combinations and applicant countries from December 2022), a median of 2 (rule: at least 6); only COVID made
+  a term-only queue (the other two are ranking cut-offs). With a proposed set, loose match rules and approximate
+  mainstream months, these numbers test the machinery, not Moria.
+- **Also changed:** `measures.load_series` takes an `only` set (pushed into the SQL); `concepts.build` runs without
+  embeddings (no clusters or micro-clusters) for the term-only variant; the weekly `prepare` workflow runs the
+  review after the scan, with the model and its scorer cached, and puts the two aggregate reports in the job
+  summary.
+- **Departures from the design, a line each:** dossiers are versioned by scan date; `moria interpret` is part of
+  `moria pathways`; a scope factor and a 25% source cap are additions; the third-order cap uses confirmed orders
+  until the suggestions are switched on; counter-evidence is by BM25 (no neighbour search); 'what became of'
+  analogues waits for register history; the register is Parquet event files per run, not one partitioned table.
+
+**The queue, read (in this session; labels stay in the bucket).** It is a first queue: IP RAPID class pairs and
+country-by-class changes, AI patent families (OECD), IP charges in services trade (ABS), provisional patent
+applications, OpenAlex topics and macro series, and three flagged news concepts. **Nothing in it weighs relevance
+to the IP system yet** (the suggestions are off), so some OpenAlex topics with no evident pathway (history, number
+theory) are in it, one of them already flagged by its dossier as concentrated works: triage parks those
+(`no_pathway`).
+
+**Checked:** 173 tests pass with no network (the BM25 test is skipped where DuckDB's `fts` extension can't be
+fetched, as in CI): the selection rules (quotas, redundancy, the source and
+third-order caps, the passes), rings, percentiles, the defanged state, Markdown escaping, the chain end to end on a
+hand-built layer (rank, dossiers, a scripted backend, the cache, the queue with the switch off and on, no backend),
+the register's round trip (a refused file appends nothing, hidden characters swept, a forbidden move refused), the
+digest, the queue report (no labels or ids), the pathway check and the hindsight run; and the CLI never reaches the
+scripted backend. Lint and format clean. Every recorded run is from `b3e5f4e`, clean.
+
+**Spend:** $0. OpenAlex: 32 list calls of the free daily credits. Downloads: the decision model (529 MB) from
+Hugging Face and llama.cpp from GitHub, both pinned. The bucket gains the dossiers, the review tables, the
+register and the spreadsheet (a few MB).
+
+**Consequences.**
+- The first ranked queue of 40 dossiers is ready for review: day 5's 'done when'. `docs/handover-day5.md` lists
+  the flags.
+- **For the owner:**
+  1. **The first review round** (about 3 to 4 hours, §2.5): the spreadsheet is in the bucket at
+     `interpretation/register/exports/20261016T014959Z-8741e464.xlsx`, or `uv run moria register export --as-of
+     2026-10-15 --out review.xlsx --store r2` on your machine; fill the yellow columns; then `uv run moria register
+     import review.xlsx --store r2`. The rules are on its first sheet.
+  2. **The decision model:** its suggestions don't discriminate on states that keep the security rule. Options:
+     (a) leave them recorded and unranked (Claude's recommendation for now); (b) the T4 test and a larger free model
+     on a free GPU (the 2B sibling or JEV-9B; free, but a notebook needs a person); (c) Matilda-Jev (paid menu M1);
+     (d) your labels from the first round calibrate a free one (design §11.2). Switching `pathways.use_in_ranking`
+     on is yours, after `moria eval pathways` passes.
+  3. **The hindsight set** (`config/hindsight.yaml`, proposed): choose the developments blind to Moria's output,
+     add non-events and pass rules (about an hour, §2.6). The smoke run's numbers are not the sprint's result.
+  4. **The ranking's settings** (quotas, weights, flag penalties, the scope factor, the ring maps, the known-trend
+     threshold): after the first review round, with `reports/queue.md`'s sensitivity table.
+  5. Still open: the T4 test and the codebook (D-021); KT20 to KT24 (D-020); the wishlist; the merge of this
+     branch (or a pull request).
+
+Next free decision number: D-030.

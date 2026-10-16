@@ -1,0 +1,280 @@
+# Day 5 (design §2.5, §8.2, §8.4, §8.5, §13): the review queue, the dossiers, the pathway suggestions, the register
+# and the early-warning digest. Validated by moria.config.ReviewConfig; unknown keys are errors.
+# Claude's engineering settings (D-029); the owner adopts the quotas and weights after the first review round
+# (design §2.5, §14). A change here changes the stages' config hash.
+version: 1
+
+rank:
+  # Wide and shallow, then narrow and deep (§2.5): every candidate is scored; dossiers and pathway suggestions are
+  # built for a shortlist chosen under the same quotas; the queue is chosen from the shortlist with the pathways.
+  shortlist: 100
+  floor: 0.05                # a component below this counts as this, so one weak component never zeroes a score
+  # Each view's score is a weighted geometric mean of its components, each a percentile in (0, 1) (§1, §8.2, §8.5):
+  # early warning: pathway x novelty x lead time (with the detector's strength); strategic: pathway x breadth x
+  # impact (with strength). Before the pathway suggestions exist, pathway and impact are left out.
+  weights:
+    early_warning: {strength: 1.0, novelty: 1.0, lead: 1.0, pathway: 1.0}
+    strategic: {strength: 1.0, breadth: 1.0, impact: 1.0, pathway: 1.0}   # pathway and impact: while
+    # pathways.use_in_ranking is on; each a percentile within the shortlist (uncalibrated probabilities, §9.1)
+  # Day 4's band anomaly is weak evidence (D-025: 53% of doubled spikes caught, 2.5-3.8% of null series flagged,
+  # 7.8% of its onsets confirmed a year later), so a candidate whose only detectors are anomalies ranks lower.
+  type_weight: {acceleration: 1.0, trend: 1.0, weak_signal: 1.0, anomaly: 0.5}
+  # 'Explained by its context' (D-028) is shown in the dossier; 1.0 leaves it out of the ranking (never a filter).
+  context_explained: 1.0
+  # A flag is shown, never hidden (§8.3); it lowers the rank by these factors (multiplied when several apply)
+  flag_penalty: {coverage: 0.7, ingestion: 0.5, duplicate: 0.6, news_cycle: 0.5, source_break: 0.7, label_drift: 0.8}
+  # A machine proxy for Australian relevance (§2.6 item 4: the analyst assesses it): Australia, aggregates, others
+  scope:
+    australia: [au, AUS]
+    aggregates: [world, W, OECD, EU27_2020, G7]
+    factor_australia: 1.0
+    factor_aggregate: 0.85
+    factor_other: 0.7
+  # Lead time (early warning): the most anticipatory detector that fired. New, sparse and low-base evidence comes
+  # earliest; sustained trends latest.
+  lead:
+    new_term: 1.0
+    novel_items: 1.0
+    new_combination: 0.9
+    cross_ring: 0.9
+    low_base_surge: 0.9
+    cross_family: 0.8
+    jurisdiction_shift: 0.8
+    acceleration: 0.7
+    short_shift: 0.6
+    anomaly: 0.6
+    contextual_anomaly: 0.6
+    fading_combination: 0.6
+    decoupling: 0.5
+    divergence: 0.5
+    structural_shift: 0.5
+    trend: 0.4
+    long_trend: 0.2
+  # Novelty (early warning): the most novel detector that fired, lowered when the candidate's nearest known trend
+  # (config/baseline.yaml) is close. A known trend is a tag, never a reason to reject (D-014).
+  novelty:
+    new_term: 1.0
+    novel_items: 1.0
+    new_combination: 0.9
+    cross_ring: 0.9
+    cross_family: 0.8
+    jurisdiction_shift: 0.8
+    low_base_surge: 0.7
+    fading_combination: 0.6
+    divergence: 0.6
+    acceleration: 0.6
+    anomaly: 0.5
+    short_shift: 0.5
+    contextual_anomaly: 0.5
+    decoupling: 0.5
+    structural_shift: 0.5
+    trend: 0.4
+    long_trend: 0.3
+  # bge-small cosine at which the nearest known trend counts as a match. Read on the 2026-10-15 scan (D-029): labels
+  # sit at 0.50-0.68 (5th to 95th percentile); above 0.68 the nearest trend was mostly apt, 0.65-0.68 mixed. A
+  # machine tag for ranking only: the person judges whether a signal reinforces a trend.
+  known_trend_sim: 0.68
+  known_trend_factor: 0.6    # novelty times this when it matches
+  # One ring per candidate, for the quotas (handover flag 7). A one-ring card gives its ring; a label matching the
+  # IP-system terms is core; then these maps; then the label's zero-shot ring among the card's other rings.
+  rings:
+    by_query:                # the query a statistics series came from (its `query_id` dimension)
+      oecd_headline:
+        msti: adjacent
+        patents_selected_technologies: adjacent
+        innovation_ip_use: core          # firms' use of IP rights: the IP system's customers (D4)
+        rd_tax_support: adjacent
+        ip_income_tax_support: adjacent
+        ip_tax_regimes: adjacent
+        ict_business: adjacent
+        services_trade_ip: adjacent
+        leading_indicators: wider_world
+        economic_outlook: wider_world
+        fdi_restrictiveness: adjacent
+        business_dynamics: adjacent
+        environmental_policy_stringency: wider_world
+      abs_headline:
+        population_by_age: wider_world
+        population_change: wider_world
+        labour_force: wider_world
+        job_vacancies: wider_world
+        wages: wider_world
+        consumer_prices: wider_world
+        national_accounts: wider_world
+        output_by_industry: adjacent
+        industry_structure: adjacent
+        trade_in_ip_and_knowledge_services: adjacent
+        business_innovation: adjacent
+    # OpenAlex's fields (ASJC codes) and domains. Topics carry no field in the counts, so they take the label's
+    # zero-shot ring (a field map for topics needs OpenAlex's topic list: a choice for later).
+    openalex_fields:
+      "11": adjacent         # agricultural and biological sciences (plant varieties, agritech)
+      "12": wider_world      # arts and humanities
+      "13": adjacent         # biochemistry, genetics and molecular biology
+      "14": adjacent         # business, management and accounting
+      "15": adjacent         # chemical engineering
+      "16": adjacent         # chemistry
+      "17": adjacent         # computer science
+      "18": adjacent         # decision sciences
+      "19": wider_world      # earth and planetary sciences
+      "20": adjacent         # economics, econometrics and finance
+      "21": wider_world      # energy (the ring table puts climate, energy and resources in the wider world)
+      "22": adjacent         # engineering
+      "23": wider_world      # environmental science
+      "24": adjacent         # immunology and microbiology
+      "25": adjacent         # materials science
+      "26": adjacent         # mathematics
+      "27": wider_world      # medicine
+      "28": wider_world      # neuroscience
+      "29": wider_world      # nursing
+      "30": adjacent         # pharmacology, toxicology and pharmaceutics
+      "31": adjacent         # physics and astronomy
+      "32": wider_world      # psychology
+      "33": wider_world      # social sciences
+      "34": wider_world      # veterinary
+      "35": wider_world      # dentistry
+      "36": wider_world      # health professions
+    openalex_domains: {"1": adjacent, "2": wider_world, "3": adjacent, "4": wider_world}
+
+queue:
+  size: 40                   # §2.5: triage of up to 40 a round
+  views: {early_warning: 0.5, strategic: 0.5}   # picks alternate between the two views' rankings in this ratio
+  rings: {core: 0.35, adjacent: 0.35, wider_world: 0.30}   # §2.5 ring quotas; unused slots pass to the other rings
+  third_order_max: 0.20      # §2.5: third-order pathways at most 20% of the queue (the machine's suggested order)
+  source_max: 0.25           # no source fills more than this share (breadth across sources, §8.2)
+  sensitivity: [0.5, 1.5]    # the report re-ranks with each weight times these and counts the queue's changes
+
+dossier:
+  version: dossier-v1
+  evidence_items: 10         # the original evidence: de-duplicated, one item per group
+  examples: 3                # triage shows three examples (§2.5)
+  chart_points: 36           # the latest periods drawn in the small chart
+  related_items: 5           # primary sources in the window that mention the subject (administrative causes)
+  counter_items: 5           # BM25 hits that use words of the opposite direction
+  analogues: 3               # earlier items nearest the candidate's (documents); similar past moves (series)
+  analogue_follow: 12        # periods after a past move to see whether it persisted
+  history_scans: 8           # earlier scans whose candidates are compared with this one
+  # Words that suggest the opposite direction, for the counter-evidence search (BM25 hits are shown to read; a hit
+  # is not established contradiction)
+  falling_words: [decline, declines, declining, fall, falls, falling, drop, drops, decrease, decreases, fewer, slump,
+                  slowdown, slows, slowing, shrink, shrinks, contraction, plunge, down]
+  rising_words: [rise, rises, rising, increase, increases, growth, grows, growing, surge, surges, boom, record, jump,
+                 jumps, expands, expansion, more, up]
+  # Known administrative or recording causes, from the decisions; the owner may add (a fee change, a law's start)
+  administrative_events:
+    - {date: "2026-03-01", sources: [ip_rapid, ip_rapid_metrics], pattern: "trade_mark",
+       note: "IP RAPID's trade mark 'granted' event all but stops being recorded from March 2026 (D-022)"}
+    - {date: "2025-01-01", sources: [ip_rapid, ip_rapid_metrics, patent_cpc_counts], pattern: "H10[DFH]",
+       note: "IPC 2025 introduces subclasses H10D, H10F and H10H (D-022): a new class, not new activity"}
+  openalex_samples:          # handover flag 3: a surge of 5 works may be one book or one journal issue
+    enabled: true
+    max_calls: 80            # two list calls a candidate (venues, then a sample), 1 credit each; the card's filters
+    concentrated: 0.5        # works whose largest venue holds this share or more are flagged as concentrated
+    sample: 10               # works listed to read (a random sample, seeded); the venues are counted over all
+
+pathways:
+  version: pathways-v1       # the questions below; a change makes a new cache key
+  backend: jevstyle          # the free decision model (design §9.1); `none` records that no suggestions were made
+  model:
+    repo: chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF
+    revision: edf37c26a1098f83cf4264b8adbe0dca2d2ebb0c
+    quant: Q4_K_M
+    llama_cpp_commit: 441df11f65ea0b6d0c72965aaf70c8241070ddcb
+    files:                   # read on 2026-10-13 and 2026-10-16 before running (D-021, D-029); every file hash-checked
+      Jev-Style-0.8B-Decision-v3-Q4_K_M.gguf: 0a19bc29bacc33e0d871146c8612b24dd14c2ed2e61cedeb7a928b0852628bac
+      tokenizer/tokenizer.json: 06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523
+      tokenizer/tokenizer_config.json: 66e427c470fe580fe8c7b5725d857af23d8417e37fae62667ec698306a19987b
+      jev_style_decision_gguf.py: e6b028f043d943b5e33d63368070405c5f038b6ee6f71a11b44e93caa562f5ed
+      jev_score.cpp: 90d848a61546286c74e484f61126f572b79c6f77f835450d8fc970b8547ce603
+      build_jev_score.sh: 5789a1585c51fbc4a03b423099a451e05cb66b9db49bc6c9361f326aca170fda
+      manifest.json: e370c55aa62c6b47154e72e56608bde79c691cc857c10b9adf1339306ece3473
+      readout_config.json: 01de9bcce7effbfd1ae0a3fa13e52d7fa9aa4dd1cd1e47977d6bbdcd5e63054a
+      release_config.json: c2651284fec1e877a19641063e36d0f3c1f367ccdcfc7a325657dc7bedd01d8f
+      LICENSE: bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a
+      NOTICE: 5b20e266b5b9b9c12df4cb53db6801bc08fe8f1471355aaec15c1a9f9aa0b201
+    cache_dir: data/models   # git-ignored; the scorer binary is built here (or JEV_SCORE_BIN names it)
+  # Measured on the 2026-10-15 shortlist (D-029): on states that wrap source text in data markers and say it is data
+  # (the SOP's rule, §22), the model barely separates relevant from irrelevant anchors, P2 is 0.50 for every item,
+  # and horizon and stance never vary. Its suggestions are recorded and shown to the reviewer, attributed to it,
+  # and left out of the ranking and the third-order cap until `moria eval pathways` passes and the owner switches
+  # this on (the third-order cap then uses the model's order; until then, orders a person confirmed).
+  use_in_ranking: false
+  evaluation:                # `moria eval pathways`: the rule, fixed before the recorded run (D-029)
+    sample: 20               # dossiers of the shortlist, every fifth by place
+    min_separation: 0.05     # relevant anchors' top pathway, on average, at least this above irrelevant anchors'
+    min_spread: 0.02         # and the top pathway's interquartile range over the sample at least this
+    anchors:                 # synthetic sentences, written for the check; not evidence
+      relevant:
+        - A court held that an artificial intelligence system cannot be named as an inventor on a patent application.
+        - Scammers are sending fake renewal invoices to trade mark owners, imitating the IP office's branding.
+        - Patent applications for sodium-ion batteries filed in Australia doubled in a year.
+        - The patent office's fee income fell as applications declined for a third year.
+        - The government will review how the patent system treats software and business methods.
+      irrelevant:
+        - The central bank left the cash rate unchanged at its October meeting.
+        - A cyclone forced the closure of three ports for a week, disrupting exports.
+        - A football club won the national championship after a penalty shoot-out.
+        - Heavy rain is expected across the east coast this weekend.
+  threads: 4
+  many_mode: batched         # all questions about one state in one decode (the mode of the published latencies)
+  max_state_tokens: 6000     # a state beyond this drops its later evidence lines (the model takes 25,600)
+  order_weight: {"1": 1.0, "2": 0.8, "3": 0.6}   # a pathway's strength: its probability times its order's weight
+  impact_value: {low: 0.2, medium: 0.5, high: 0.9}
+  # The six pathways (§2.2), each a true-or-false statement about the candidate
+  statements:
+    P1: >-
+      This development could change how many patents, trade marks, designs or plant breeder's rights are sought in
+      Australia, of what kinds, or by whom.
+    P2: >-
+      This development could make IP rights more or less valuable to Australian businesses and creators, against
+      substitutes such as speed, secrecy, open models or control of data and platforms.
+    P3: This development could change how IP rights are examined, granted, administered or enforced.
+    P4: This development could affect public trust in, or the perceived fairness of, the IP system.
+    P5: This development could affect IP Australia's fee income, workforce, technology, security or mandate.
+    P6: >-
+      This development could change Australia's ability to benefit from new ideas: their commercialisation, their
+      use and their contribution to productivity.
+  order:
+    question: How directly could this development reach Australia's IP system?
+    options:
+      "1": directly; the development itself changes the IP system
+      "2": through one intermediate change
+      "3": only through a chain of several changes
+  origin:
+    question: Where does this change mainly originate?
+    options:
+      political: government, geopolitics, security
+      economic: markets, trade, finance, industry
+      social: population, values, health, education, work
+      technological: science and technology
+      legal: laws, courts, regulation
+      environmental: climate, energy, resources, nature
+  horizon:
+    question: When could its main effects on Australia's IP system arrive?
+    options: {h1: within 2 years, h2: in 2 to 5 years, h3: in 5 to 10 years or later}
+  stance:
+    question: For Australia's IP system, is this development mainly an opportunity or a threat?
+    options: {opportunity: mainly an opportunity, threat: mainly a threat, both: both an opportunity and a threat}
+  impact:
+    question: How much could this development change Australia's IP system or IP Australia by 2036?
+    options: {low: a small change, medium: a noticeable change, high: a large change}
+
+lifecycle:
+  reviewer: owner            # the default author of a reviewed row (the reviewer's name may be given per row)
+  # The lifecycle (design §6.3). Triage: keep -> investigating; park -> rejected with reason no_pathway (revisited
+  # if it grows); reject -> rejected with another reason.
+  transitions:
+    candidate: [investigating, validated, rejected]
+    investigating: [validated, rejected]
+    validated: [tracked, rejected]
+    rejected: [investigating, candidate]
+    tracked: [strengthened, weakened, disproved, mainstream]
+    strengthened: [tracked, weakened, disproved, mainstream]
+    weakened: [tracked, strengthened, disproved, mainstream]
+    disproved: [investigating]
+    mainstream: [tracked]
+
+digest:
+  top: 15                    # early-warning signals listed, past the artefact checks
+  flagged: 5                 # high-ranked early-warning candidates with flags, shown with their flags
+  changes: 10                # candidates that strengthened or weakened since the last scan

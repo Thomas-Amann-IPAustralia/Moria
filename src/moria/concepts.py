@@ -747,7 +747,10 @@ def build(files: dict, cards: dict[str, SourceCard], cfg: DetectConfig, dim: int
                 kp_rows[r["item_id"]].append(r["phrase"])
     vocab_path = next(p for k, p in files["kp"].items() if k.endswith("vocabulary.parquet"))
     vocab = {r["phrase"]: r for r in read_rows(vocab_path, ["phrase", "first_observable_at", "first_item_id"])}
-    assign, cluster_rows, vectors = fit_clusters(items, _by_source(files["emb"]), cfg, dim, kp_rows)
+    if files.get("emb") is None:  # term-only (a hindsight run, design §11.3): no embeddings, no clusters
+        assign, cluster_rows, vectors = {}, [], {}
+    else:
+        assign, cluster_rows, vectors = fit_clusters(items, _by_source(files["emb"]), cfg, dim, kp_rows)
     log.info("documents: %d clusters", len(cluster_rows))
     labels = {r["cluster"]: r["label"] for r in cluster_rows}
     occ: list[tuple[str, str]] = []
@@ -763,7 +766,7 @@ def build(files: dict, cards: dict[str, SourceCard], cfg: DetectConfig, dim: int
     combos += _lengths(class_pairs(files, as_of, cfg), dc.ipr_window_months, dc.ipr_baseline_months)
     combos += _lengths(country_pairs(files, as_of, cfg), dc.ipr_window_months, dc.ipr_baseline_months)
     decide_combinations(combos, cfg)
-    novelty, members = novel_items(items, vectors, kp_rows, cfg)
+    novelty, members = novel_items(items, vectors, kp_rows, cfg) if vectors else ([], {})
     # evidence: the window items behind each concept, combination or micro-cluster that fired
     fired = {c["concept"] for c in concepts if c["new_term"] or c["cross_family"] or c["cross_ring"]}
     fired |= {s["concept"] for s in surges if s.get("surge")}
