@@ -125,6 +125,7 @@ context:
   alpha: 0.01                # Holm within each test family
   min_change: 0.25           # as anomaly_min_change
   explained_share: 0.5       # a band anomaly is 'explained by context' when the context predicts this share of it
+  annotate_explained: true   # the owner (D-028): the dossiers show it, while contextual_anomaly stays off
   coupling:                  # an Australian series' changes against its counterpart's: early half against recent
     min_points: 24
     max_points: 72
@@ -174,11 +175,11 @@ evaluation:
     max_null_rate: 0.05      # and never more than this
     max_artefact_excess: 0.02  # flags per quiet series under an artefact, beyond day 4's rate on the same
 
-new_detectors:               # off until the evaluation and the owner say otherwise (D-025)
-  short_shift: false
-  long_trend: false
-  structural_shift: false
-  contextual_anomaly: false
-  decoupling: false
-  fading_combination: false
-  jurisdiction_shift: false
+new_detectors:               # the owner's switches (D-028): on where the evaluation passed; the others stay measured
+  short_shift: false         # off: no incremental value (D-025); kept, to revisit with calibration later
+  long_trend: false          # off: no incremental value
+  structural_shift: false    # off: false positives above day 4's
+  contextual_anomaly: false  # off as a detector (no incremental value); shown as an explanation (annotate_explained)
+  decoupling: false          # off: little power
+  fading_combination: true   # on (D-028): 39 of 40 planted class-pair breakdowns caught, placebo 0.0%
+  jurisdiction_shift: true   # on (D-028): 73 of 80 planted country-class changes caught, placebo 0.2%

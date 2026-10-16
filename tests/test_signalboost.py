@@ -257,3 +257,31 @@ def test_relationship_experiment_runs_on_a_minimal_layer(store):
     rel = evaldetect.relationship_experiment(store, cfg, {}, AS_OF)
     assert len(rel["placebo"]) == 2 and {"kp", "class", "country"} <= set(rel["placebo"][0])
     assert set(rel["synthetic"]) == {"kp_fading", "class_fading", "country_fading", "country_rising"}
+
+
+def test_explained_by_context_is_shown_while_the_detector_stays_off():
+    cx = {
+        "period": "2026-09",
+        "observed": -6.7,
+        "expected": -6.75,
+        "expected_trend": -7.3,
+        "z": 0.8,
+        "change": 0.05,
+        "p_holm": 1.0,
+        "contributions": '{"peers":0.5,"trend":0.05}',
+        "peers": ["p1", "p2"],
+        "reference": "ref",
+        "r2": 0.9,
+        "transform": "log_share",
+        "contextual": False,
+        "explained": True,
+        "explained_share": 0.9,
+    }
+    r = {"series_id": "s", "source": "openalex_counts", "family": "research", "denominator": None}
+    assert not CFG.on("contextual_anomaly") and CFG.context.annotate_explained
+    fired, numbers, _ = detect.boost_numbers(r, [], cx, CFG)
+    assert "contextual_anomaly" not in fired and numbers["context_explains"]["share"] == 0.9
+    ev = detect._series_evidence(r, cx, ["context_explains"])
+    assert {(e[1], e[4]) for e in ev} >= {("ref", "reference"), ("p1", "peer"), ("p2", "peer")}
+    off = CFG.model_copy(update={"context": CFG.context.model_copy(update={"annotate_explained": False})})
+    assert "context_explains" not in detect.boost_numbers(r, [], cx, off)[1]

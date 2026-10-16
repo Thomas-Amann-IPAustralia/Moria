@@ -581,6 +581,7 @@ class ContextConfig(Strict):
     alpha: float
     min_change: float
     explained_share: float
+    annotate_explained: bool  # show 'explained by its context' on candidates, whether or not the detector is on
     coupling: CouplingConfig
 
 

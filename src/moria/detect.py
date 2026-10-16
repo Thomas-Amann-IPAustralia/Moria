@@ -13,7 +13,9 @@ The SignalBoost detectors (D-025) join only when switched on in `config/detect.y
 trend or a structural break (trend), a short-term shift, a contextual anomaly or a change in coupling (anomaly), a
 fading pair (weak signal), and a jurisdiction entering, rising in or leaving a class (weak signal). Their numbers
 carry the explanation (the expected value and each covariate's contribution, the horizon and its window) and their
-evidence the series behind it (peers and counterpart as `peer` and `reference`).
+evidence the series behind it (peers and counterpart as `peer` and `reference`). A band anomaly whose move its
+context predicts carries `context_explains` in its numbers, with that context as evidence, when
+`context.annotate_explained` is on (the owner, D-028): an alternative explanation for the dossier, never a filter.
 
 **Corroboration.** Correlated evidence is not independent (D-025): one series is one line of evidence however many
 windows, horizons or detectors fire on it (`corroboration` 1); flagged series that move together share a
@@ -178,7 +180,7 @@ def boost_numbers(r: dict, hz: list[dict], cx: dict | None, cfg: DetectConfig) -
             numbers["contextual_anomaly"] = cnum
             extra["contextual_anomaly"] = (cx["period"], abs(cx["change"] or 0),
                                            1 if (cx["observed"] or 0) > (cx["expected"] or 0) else -1)  # fmt: skip
-        elif cfg.on("contextual_anomaly") and cx["explained"]:
+        elif (cfg.on("contextual_anomaly") or cfg.context.annotate_explained) and cx["explained"]:
             numbers["context_explains"] = {**cnum, "share": _r(cx["explained_share"])}
         if cfg.on("decoupling") and cx.get("coupling"):
             fired.append("decoupling")
@@ -235,6 +237,7 @@ def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig, hori
                                   "level_change": _r(r.get("cp_level_change"))}  # fmt: skip
         new, new_numbers, extra = boost_numbers(r, hz_by.get(r["series_id"], []), cx_by.get(r["series_id"]), cfg)
         numbers.update(new_numbers)
+        shown = new + (["context_explains"] if "context_explains" in new_numbers else [])  # its context's evidence
         old = list(fired)
         fired += new
         if not fired:
@@ -250,7 +253,7 @@ def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig, hori
                         "sources": [r["source"]], "families": [r["family"]] if r["family"] else [],
                         "rings": r["rings"], "scope": r["scope"], "n_items": 0, "window_start": start,
                         "window_end": r["last_period"], "redundancy_group": r.get("redundancy_group"),
-                        "_evidence": _series_evidence(r, cx_by.get(r["series_id"]), new)})  # fmt: skip
+                        "_evidence": _series_evidence(r, cx_by.get(r["series_id"]), shown)})  # fmt: skip
             continue
         if kind == "acceleration":
             strength, direction = (
@@ -271,7 +274,7 @@ def series_candidates(rows: list[dict], div: list[dict], cfg: DetectConfig, hori
                     "sources": [r["source"]], "families": [r["family"]] if r["family"] else [], "rings": r["rings"],
                     "scope": r["scope"], "n_items": 0, "window_start": start, "window_end": r["last_period"],
                     "redundancy_group": r.get("redundancy_group"),
-                    "_evidence": _series_evidence(r, cx_by.get(r["series_id"]), new)})  # fmt: skip
+                    "_evidence": _series_evidence(r, cx_by.get(r["series_id"]), shown)})  # fmt: skip
     for d in div:
         if not d["direction"]:
             continue
@@ -299,10 +302,10 @@ def _series_evidence(r: dict, cx: dict | None, new: list[str]) -> list[tuple]:
     ev = [("series", r["series_id"], r["source"], r["family"], "subject")]
     if r["denominator"]:
         ev.append(("series", r["denominator"], r["source"], r["family"], "denominator"))
-    if cx and {"contextual_anomaly", "decoupling"} & set(new):
+    if cx and {"contextual_anomaly", "decoupling", "context_explains"} & set(new):
         if cx.get("reference"):
             ev.append(("series", cx["reference"], r["source"], r["family"], "reference"))
-        if "contextual_anomaly" in new:
+        if {"contextual_anomaly", "context_explains"} & set(new):
             ev += [("series", p, r["source"], r["family"], "peer") for p in cx.get("peers") or []]
     return ev
 
