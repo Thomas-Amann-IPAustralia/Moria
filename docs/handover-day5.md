@@ -11,7 +11,9 @@ the decision model's suggestions; **a queue of 40 ready for review** (14 core, 1
 view; 3 flagged); 120 register events; the reviewer's spreadsheet and the early-warning digest in the bucket
 (`reports/queue.md`). The suggestions failed their check (`reports/eval/pathways.md`) and are recorded, not ranked.
 The term-only hindsight smoke run raised all three proposed developments, with a median lead of 2 months
-(`reports/eval/hindsight.md`). Next free decision number: D-030.
+(`reports/eval/hindsight.md`). **After day 5, the dashboard (D-030):** `dashboard/`, published by GitHub Pages once
+the owner switches it on; `moria dashboard` writes its public, private and practice bundles (`docs/dashboard.md`).
+Next free decision number: D-031.
 
 ## What day 5 built
 - **`moria rank --as-of D`** (`src/moria/rank.py`): every candidate scored for the early-warning and strategic views.
@@ -94,4 +96,6 @@ The term-only hindsight smoke run raised all three proposed developments, with a
   this session's tooling turned a typed escape into a literal character again (fixed before commit).
 - Stubs and scripted models stay in tests (`tests/test_review.py`'s `ScriptedBackend`); a test checks the CLI never
   reaches them.
-- Next free decision number: D-030.
+- Rebuild the dashboard's data with the reports: `uv run moria dashboard --store r2`, then commit
+  `dashboard/data/` (aggregates and invented data only; the private bundle stays in the bucket).
+- Next free decision number: D-031.
