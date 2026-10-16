@@ -2259,3 +2259,91 @@ register and the spreadsheet (a few MB).
      branch (or a pull request).
 
 Next free decision number: D-030.
+
+## D-030 — The dashboard: public counts on GitHub Pages, the signals from a private file read in the browser, practice data to learn on; every statistic explained (2026-10-16)
+
+**Context.** The owner: "Information is only useful if it is interpretable. Right now, the findings of Moria are
+difficult to interpret and understand." They asked for a dashboard that visualises the findings of day 5 (and later
+work) for exploratory analysis; accessible via the GitHub webpage; for a reader of low technical sophistication; that
+never influences or reshapes the data; intuitive charts (lines over time, error bands on predictions), interactive
+and overlayable; a hover explainer for every statistical number and method; fun and colourful, with progressive
+disclosure and small touches of whimsy; that educates about what the data represents, its shortcomings and how it
+was sourced; with small references to Khazad-dûm. CLAUDE.md listed a dashboard under "not to build yet"; the owner's
+request supersedes that line, which is updated.
+
+**The constraint that shaped it.** The repo is public and GitHub Pages serves it publicly, while labels, titles,
+links and dossiers live only in the private bucket (CLAUDE.md's security rules). So the page has three modes:
+- **public**, the default: aggregates only (`dashboard/data/public.json`), the same rule as `reports/`;
+- **private**: the analyst opens a file from the bucket (`interpretation/dashboard/as_of=<D>/dashboard.json.gz`,
+  downloadable from Cloudflare's R2 console) and the browser reads it. Nothing is uploaded: the page's content
+  security policy allows no outbound connection and no third-party script, font or tracker (ECharts 5.6.0 and three
+  OFL fonts are vendored in `dashboard/assets/`); the file isn't stored; closing the tab forgets it;
+- **practice**: invented Middle-earth data (`dashboard/data/practice.json`) so the private views can be seen and
+  learnt without the file.
+No new security exception: nothing private is published, and `--out` refuses a path in the repo outside `data/`.
+
+**Built (Claude's engineering choices; they stand until the owner says otherwise).**
+- **`moria dashboard [--as-of D] [--out PATH] [--practice-only]`** (`src/moria/dashboard.py`): one read of the scan
+  and the review; the public bundle (funnel, candidates by type, detector, origin and ring, flags, series tested,
+  p-value histograms with Holm and Benjamini-Hochberg counts, score histograms, the flow from source to type to
+  outcome, the queue's make-up and quotas, the sensitivity table, the dossiers' checks, the suggestions'
+  distributions, document volumes, collection days, the evaluations, the scans' history, the public config); the
+  private bundle (every candidate with its numbers, components, factors and checks; each series candidate's series as
+  tested, with each trend window's Theil-Sen line and interval, the anomaly's expected band, the acceleration's halves,
+  change points and surge windows; the window items behind document candidates; the dossiers, suggestions and the
+  register's state). **The data is not reshaped:** values are copied; the two things the outputs don't store (each
+  fit's intercept, each anomaly's band) are recomputed with the detectors' own functions on the same matrices
+  (`measures.build_group`, `stats.theil_sen`) and checked against the stored slopes and z-scores, a mismatch left
+  out and counted. On the scan of 15 October: 2,634 candidates, 2,386 series, **6,980 fits, every one matching**,
+  7,076 items, 100 dossiers; private bundle 2.8 MB (gzip), public 133 KB. Run `20261016T055322Z-c0959d05`, from
+  `4859a91`, clean.
+- **The practice bundle** (`src/moria/dashboard_practice.py`): 228 invented series (Middle-earth labels) through the
+  real detectors (`measures._run`, `detect.series_candidates`), 30 invented document concepts and 6 IP pairings, and
+  every candidate through the real ranking and selection (`rank.score_candidates`, `rank.select`, `queue.rescore`,
+  `queue.sensitivity`): 192 candidates, 97 shortlisted, 40 queued. Deterministic; built from the public bundle
+  alone (`--practice-only`, no store). What is about Moria itself (sources, settings, evaluations, volumes,
+  collection days) stays real, and the page says so.
+- **The page** (`dashboard/index.html`, ES modules in `dashboard/assets/js/`, no build step): eight levels of the
+  mine, each starting simple: Start here (the West-gate: the journey of a signal as a clickable cross-section of the
+  mine, the four types as gems, the rings, the Doors of Durin); the review queue (mithril: cards, and a drawer per
+  candidate: the evidence drawn, the numbers with plain readings and a forest plot, the alternative explanations, the
+  documents, why it ranked here as an equation, the model's suggestions with their caveat, history); all candidates (a
+  Sankey from source to outcome, a flags heat table, a candidate map with selectable axes, a searchable table); change
+  over time (the Mirrormere: up to eight series overlaid, as published, indexed or as tested, with trend lines and
+  bow-tie intervals, expected bands, accelerations, change points, surge windows; one axis only); how ranking works
+  (the forge: a what-if that re-runs the ranking under the reader's settings); statistics explained (playgrounds that
+  run Moria's own tests, ported: dig a series; Durin's Bane, multiple testing with the real p-values; rare finds);
+  sources and limits (the Chamber of Mazarbul); a glossary. About 80 explainers; hovering a number reads that value.
+  Colours validated (the four types adjacent-safe in both modes, with a shape per type in the scatter; the rings an
+  ordinal ramp); light and dark ("light a lantern"); every chart with a table view; reduced motion respected.
+- **The forge proves itself:** its ranking is a line-for-line port of `rank.geomean`, `view_scores` and `select`
+  (the weights' configured order is exported so the sums match to the bit). At Moria's settings it reproduces the
+  real shortlist (100) and queue (40) in order, shown on the page; the tests run it under Node on the hand-built
+  layer and the practice bundle.
+- **Elsewhere:** `prepare.yml` runs `moria dashboard` after the review; `.nojekyll`; the visual index links to the
+  dashboard; `dashboard/data/` is git-ignored but for the two public files; `docs/dashboard.md` is the owner's
+  guide; the hygiene test now covers `.js` and `.css`.
+
+**Checked:** 179 tests pass with no network (one skip as before): the public bundle holds no candidate id, label,
+title or link; the private bundle's fits match; `--out` refuses the repo; the practice bundle is deterministic and
+invented, and the committed copy is current; the JavaScript what-if reproduces both queues. Lint and format clean.
+The page was driven in Chromium (Playwright) in all three modes, both themes: no console errors, no request outside
+the site. An audit of every place the page builds markup: source text reaches it only as text, or escaped in chart
+tooltips; counts are coerced to numbers before any SVG; links open only when they are plain http(s) addresses; a
+CSV download neutralises spreadsheet formulas.
+
+**Spend:** $0. Downloads: ECharts and three fonts from npm's CDN, pinned and vendored (licences beside them).
+
+**Consequences.**
+- The findings can be read by anyone with the page, and in full by anyone with the private file.
+- **For the owner:**
+  1. **Switch on GitHub Pages** (Settings, Pages: deploy from the branch `main`, folder `/ (root)`), after merging
+     this branch; then the dashboard is at https://thomas-amann-ipaustralia.github.io/Moria/dashboard/
+     (`docs/dashboard.md`).
+  2. **The private file** for this scan is in the bucket at `interpretation/dashboard/as_of=2026-10-15/
+     dashboard.json.gz`; the weekly workflow writes a new one each Monday.
+  3. The public page's counts change when a build session commits `dashboard/data/` (as with `reports/`). If you
+     would rather the weekly workflow publish them, that needs the workflow to commit to `main`, or a Pages
+     deployment from the workflow: your call.
+
+Next free decision number: D-031.

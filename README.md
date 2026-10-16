@@ -21,7 +21,10 @@ over the documents, and six artefact checks on every candidate, themselves teste
 builds an evidence dossier for each of a shortlist of 100, asks a free decision model for pathway suggestions
 (recorded, not yet ranked: they did not pass their check), and picks a queue of 40 for review, with the reviewer's
 spreadsheet, the register's events and the early-warning digest in the private bucket (`reports/queue.md`,
-`reports/eval/pathways.md`, and a term-only hindsight smoke run, `reports/eval/hindsight.md`). Read
+`reports/eval/pathways.md`, and a term-only hindsight smoke run, `reports/eval/hindsight.md`). **The dashboard**
+(`dashboard/`, D-030; published by GitHub Pages, [`docs/dashboard.md`](docs/dashboard.md)) explains and explores the
+scan: counts for everyone, the signals themselves for anyone with the private file, invented practice data to learn
+it on. Read
 [`CLAUDE.md`](CLAUDE.md) for the rules and commands, and
 [`docs/design.md`](docs/design.md) for the design. The decisions are in [`docs/decisions.md`](docs/decisions.md);
 what's next is in [`docs/handover-day5.md`](docs/handover-day5.md) and
@@ -58,10 +61,14 @@ uv run moria show sig-0123456789ab --store r2  # a dossier (your own terminal on
 uv run moria queue-report --store r2         # reports/queue.md (aggregates only)
 uv run moria eval pathways --store r2        # does the decision model discriminate? (reports/eval/pathways.md)
 uv run moria eval hindsight --store r2       # the term-only hindsight smoke run (reports/eval/hindsight.md)
+uv run moria dashboard --store r2 --out ~/moria-dashboard.json.gz   # the dashboard's data: public, practice and
+                                               # private bundles (the private one to the bucket and your own disk)
+python3 -m http.server 8000                  # then http://localhost:8000/dashboard/ (or GitHub Pages)
 ```
 
 | Path | What it is |
 |---|---|
+| `dashboard/` | The dashboard (GitHub Pages): the scan, the queue, every candidate, series over time, the ranking's what-if, the statistics explained, sources and limits. Public counts, private detail from a file read in the browser, invented practice data (`docs/dashboard.md`) |
 | `index.html` | A visual index (open it in a browser): purpose, the questions and their expected sources, the three rings, what is stored and what is not, what is built and what is still to come |
 | `CLAUDE.md` | The rulebook for build sessions: scope, rules, commands |
 | `docs/design.md` | The system design (v0.3) |

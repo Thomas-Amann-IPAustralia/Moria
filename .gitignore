@@ -7,7 +7,7 @@ config/territories.context.yaml
 !.env.example
 
 # Local data, caches and build outputs (the system of record is the private R2 bucket)
-data/
+/data/
 .venv/
 __pycache__/
 *.pyc
@@ -16,3 +16,8 @@ __pycache__/
 dist/
 build/
 *.egg-info/
+
+# The dashboard's private bundle never goes in the repo: only the public and practice bundles do (D-030)
+dashboard/data/*
+!dashboard/data/public.json
+!dashboard/data/practice.json
