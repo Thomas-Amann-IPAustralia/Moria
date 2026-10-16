@@ -112,6 +112,11 @@ def test_metrics_from_a_base_then_a_delta(tmp_path, store):
     assert jan["applications"] == 1 and jan["applicant_min"] == jan["applicant_max"] == "p1"
     counts = pq.read_table(store.root / "lake/ipr_metrics/class_counts.parquet").to_pylist()
     assert {(c["scheme"], c["class"], c["period"]): c["applications"] for c in counts}[("nice", "*", "2026-01")] == 1
+    cc = pq.read_table(store.root / "lake/ipr_metrics/country_classes.parquet").to_pylist()
+    got_cc = {(c["scheme"], c["country"], c["class"], c["period"]): c["applications"] for c in cc}
+    assert got_cc[("nice", "au", "9", "2026-01")] == 1 and got_cc[("nice", "us", "9", "2026-02")] == 1
+    assert got_cc[("nice", "au", "*", "2026-01")] == 1 and got_cc[("nice", "*", "9", "2026-02")] == 1
+    assert got_cc[("ipc", "au", "G06N", "2026-06")] == 1 and got_cc[("nice", "*", "*", "2026-03")] == 1
     m = json.loads(store.get(mkey))
     assert "renewals|trade_mark" in m["params"]["discontinued"]  # its events stop in 2018
     # a delta: one more application in January; only the changed values become a new vintage

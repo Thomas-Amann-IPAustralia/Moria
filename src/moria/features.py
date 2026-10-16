@@ -15,6 +15,7 @@ Each stage checks its upstream manifest (status passed, hashes matching) before 
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import tempfile
@@ -41,7 +42,6 @@ from .tables import (
     cache_root,
     cached_get,
     fetch_outputs,
-    latest_manifest,
     read_rows,
     upload,
     upstream,
@@ -94,8 +94,15 @@ def embed_text(title: str, summary: str, text: str, limit: int) -> str:
 
 
 def _previous(store: Store, command: str) -> dict | None:
-    m = latest_manifest(store, command)
-    return m if m and m["status"] == "passed" else None
+    """The latest passed run of a command, past any failed runs after it (a failed run reuses nothing, and must not
+    stop the next run reusing the last good one)."""
+    keys = sorted((k for k in store.list(f"manifests/{command}/") if k.endswith(".json")), reverse=True)
+    passed = [m for m in (json.loads(store.get(k)) for k in keys) if m.get("status") == "passed"]
+    if not passed:
+        return None
+    second = passed[0]["run_id"][:16]
+    tied = [m for m in passed if m["run_id"][:16] == second]
+    return max(tied, key=lambda m: (m.get("started_ns") or 0, m["run_id"]))
 
 
 def _unchanged(store: Store, previous: dict | None, source: str, digest: str, prefix: str) -> list[dict] | None:

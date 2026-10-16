@@ -8,7 +8,10 @@ tested in a few array operations rather than a loop per series.
 - the exact conditional test of two Poisson rates (a binomial test given the total), for low-base surges;
 - change points by optimal partitioning: the exact minimum of PELT's penalised cost (PELT prunes the same search),
   for changes in level or in slope;
-- a bootstrap of the change in slope between the halves of a window, for accelerations.
+- a bootstrap of the change in slope between the halves of a window, for accelerations;
+- the lower tail of a Poisson count against its expectation, for associations that break down;
+- Fisher's test of a change in correlation between two spans, for relationships that couple or decouple;
+- ridge regressions fitted row by row in one batched solve, with prediction errors, for contextual anomalies.
 
 Everything here is deterministic: the bootstrap takes its seed from the caller.
 """
@@ -16,7 +19,7 @@ Everything here is deterministic: the bootstrap takes its seed from the caller.
 from __future__ import annotations
 
 import numpy as np
-from scipy.stats import binom, norm
+from scipy.stats import binom, norm, poisson
 
 
 def _pairs(n: int) -> tuple[np.ndarray, np.ndarray]:
@@ -251,3 +254,82 @@ def bootstrap_slope_change(x: np.ndarray, y: np.ndarray, reps: int, seed: int,
         z = np.where(se > 0, point / se, np.nan)
     p = 2 * norm.sf(np.abs(z))
     return {"diff": point, "se": se, "lo": lo, "hi": hi, "p": p}
+
+
+def poisson_lower(x, expected) -> np.ndarray:
+    """One-sided exact test that a count is below its expectation: P(X <= x) for X ~ Poisson(expected)."""
+    x, expected = np.asarray(x, dtype=float), np.asarray(expected, dtype=float)
+    with np.errstate(all="ignore"):
+        return np.where(expected > 0, poisson.cdf(x, expected), np.nan)
+
+
+def correlation_change(r1, n1, r2, n2) -> np.ndarray:
+    """Two-sided p of Fisher's z test that two correlations (from n1 and n2 pairs) differ; NaN under 4 pairs."""
+    r1, r2, n1, n2 = (np.asarray(a, dtype=float) for a in (r1, r2, n1, n2))
+    with np.errstate(all="ignore"):
+        z1 = np.arctanh(np.clip(r1, -0.9999, 0.9999))
+        z2 = np.arctanh(np.clip(r2, -0.9999, 0.9999))
+        se = np.sqrt(1 / (n1 - 3) + 1 / (n2 - 3))
+        p = 2 * norm.sf(np.abs(z2 - z1) / se)
+    return np.where((n1 >= 4) & (n2 >= 4) & np.isfinite(p), p, np.nan)
+
+
+def row_corr(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Pearson's correlation of each row of a with the same row of b, over the columns both have; NaN under 3."""
+    ok = ~np.isnan(a) & ~np.isnan(b)
+    n = ok.sum(axis=1)
+    a0, b0 = np.where(ok, a, 0.0), np.where(ok, b, 0.0)
+    with np.errstate(all="ignore"):
+        ma, mb = a0.sum(axis=1) / n, b0.sum(axis=1) / n
+        da, db = np.where(ok, a - ma[:, None], 0.0), np.where(ok, b - mb[:, None], 0.0)
+        r = (da * db).sum(axis=1) / np.sqrt((da * da).sum(axis=1) * (db * db).sum(axis=1))
+    return np.where(n >= 3, r, np.nan)
+
+
+def ridge_rows(x: np.ndarray, y: np.ndarray, w: np.ndarray, x0: np.ndarray, ridge: float) -> dict[str, np.ndarray]:
+    """Per row r, a weighted ridge regression of y[r] on the covariates x[r] (columns), with a free intercept and
+    the penalty `ridge` times the row's weighted length on standardised covariates; predicts at x0[r].
+
+    x: (R, T, K), y: (R, T), w: (R, T) weights (0 leaves a period out), x0: (R, K). Returns the prediction, its
+    standard error (a robust residual sigma, with the leverage of x0), the coefficients on the original scale, the
+    weighted means of y and x (so that the prediction is y_mean + sum(beta * (x0 - x_mean))), sigma, the fit's R^2
+    and the periods used."""
+    k = x.shape[2]
+    n = w.sum(axis=1)
+    with np.errstate(all="ignore"):
+        ym = (w * y).sum(axis=1) / n
+        xm = (w[:, :, None] * x).sum(axis=1) / n[:, None]
+        xc = x - xm[:, None, :]
+        sd = np.sqrt((w[:, :, None] * xc * xc).sum(axis=1) / n[:, None])
+        sd = np.where(sd > 1e-12, sd, np.inf)  # a constant covariate drops out (its standardised column is 0)
+        z = xc / sd[:, None, :]
+        yc = np.where(w > 0, y - ym[:, None], 0.0)
+        wz = w[:, :, None] * z
+        a = np.einsum("rtk,rtl->rkl", wz, z) + (ridge * n)[:, None, None] * np.eye(k)[None]
+        a = a + np.eye(k)[None] * (~np.isfinite(sd))[:, None, :]  # keeps a dropped covariate's row solvable
+        b = np.einsum("rtk,rt->rk", wz, yc)
+        beta_z = np.linalg.solve(a, b[:, :, None])[:, :, 0]
+        beta = beta_z / sd
+        fit = ym[:, None] + np.einsum("rtk,rk->rt", xc, beta)
+        resid = np.where(w > 0, y - fit, np.nan)
+        dof = np.maximum(n - k - 1, 1)
+        sigma = robust_sigma(resid) * np.sqrt(n / dof)
+        z0 = (x0 - xm) / sd
+        ainv = np.linalg.inv(a)
+        lev = np.einsum("rk,rkl,rl->r", z0, ainv, z0) + 1 / n
+        pred = ym + ((x0 - xm) * beta).sum(axis=1)
+        ss_tot = np.nansum(np.where(w > 0, (y - ym[:, None]) ** 2, np.nan), axis=1)
+        r2 = 1 - np.nansum(resid**2, axis=1) / ss_tot
+    return {"pred": pred, "se": sigma * np.sqrt(1 + lev), "beta": beta, "y_mean": ym, "x_mean": xm,
+            "sigma": sigma, "r2": r2, "n": n}  # fmt: skip
+
+
+def lag1_inflation(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+    """Per row, the factor by which positive lag-1 autocorrelation of the residuals about the Theil-Sen line inflates
+    Mann-Kendall's variance: 1 + 2 (1 - 1/n) rho1 (the effective sample size of Yue and Wang, 2004, lag 1 only);
+    1 when rho1 <= 0 or there are under 6 points. Missing values are skipped (their neighbours are not paired)."""
+    ts = theil_sen(x, y)
+    r = y - (ts["intercept"][:, None] + ts["slope"][:, None] * x[None, :])
+    n = np.sum(~np.isnan(r), axis=1)
+    rho = row_corr(r[:, :-1], r[:, 1:])
+    return np.where((n >= 6) & (rho > 0), 1 + 2 * (1 - 1 / np.maximum(n, 1)) * np.nan_to_num(rho), 1.0)

@@ -85,6 +85,12 @@ def test_embed_reuses_unchanged_texts(store):
     assert len(rows) == 3 and len(rows[0]["vector"]) == CFG.embed.dim * 2  # float16
     status, _, counts = F.embed(store, CFG, lambda: stub)
     assert status == "passed" and counts["sources_unchanged"] == 2 and stub.calls == 6
+    # a failed run after it (a download refused) must not stop the next run reusing the last passed one
+    from moria.manifest import Manifest
+
+    Manifest(command=F.EMBED).finish(store, "failed", "features.embed: refused")
+    status, _, counts = F.embed(store, CFG, lambda: stub)
+    assert status == "passed" and counts["sources_unchanged"] == 2 and stub.calls == 6
 
 
 def test_dedup_rules(store):

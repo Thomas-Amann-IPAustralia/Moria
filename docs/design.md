@@ -719,6 +719,23 @@ interpretation. A machine interpretation (§9) may be attached, and is labelled 
 - **Two rankings.** The early-warning view ranks by pathway × novelty × lead time; the strategic view by pathway ×
   breadth × impact. Both apply the ring quotas and the third-order cap (§2.5).
 
+### 8.6 Additions from the SignalBoost proposal (D-025)
+
+The owner's proposal (`docs/SignalBoost-Proposal.md`) added four things before day 5. Each new detector is measured
+at every scan and enters the candidates only when switched on, after `moria eval detectors` shows it adds value
+against day 4's detectors (the proposal's item 4); the switches are the owner's.
+- **Multi-horizon analysis.** Horizons of 3, 6, 12, 36, 60, 120 and 180 months, each converted to a series' own
+  periods and read by the method that suits it: short horizons as shifts in the recent mean; medium as trends; long
+  as long-run trends (autocorrelation-corrected) and structural breaks. A horizon is tested only where the series'
+  history reaches it.
+- **Contextual anomalies.** The latest value against a model of its peers, its international counterpart, its
+  source's volume and its own trend, with each covariate's contribution kept as the explanation. A band anomaly that
+  its context predicts is marked as explained (an alternative explanation, §8.4).
+- **Relationship change.** Established associations that break down (keyphrase, IPC and Nice pairs); applicant
+  countries entering, rising in or leaving a class; an Australian series decoupling from its counterpart.
+- **Corroboration.** Overlapping windows and horizons of one series are one line of evidence; flagged series that
+  move together share a redundancy group, so correlated indicators are not counted as independent support.
+
 ---
 
 ## 9. Models: free first

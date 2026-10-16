@@ -82,3 +82,104 @@ artefacts:
   duplicate_ratio: 2.0       # raw items over de-duplicated items
   news_cycle_days: 14        # a news-only burst inside this span, with no primary source
   primary_families: [research, patent, policy, legal, statistics, ipa_internal]
+
+# ---------------------------------------------------------------------------------------------------------------------
+# The SignalBoost proposal (docs/SignalBoost-Proposal.md; D-025). Every scan measures these; `moria eval detectors`
+# scores them against day 4's detectors; a new detector adds candidates only when switched on in `new_detectors`, the
+# owner's call once the evaluation shows it adds value (the proposal's item 4).
+
+horizons:
+  # Horizons in months, each read by the method that suits it. A horizon becomes each frequency's periods (6 months
+  # = 2 quarters = 182 days); one shorter than a period, or longer than a series' history, is not tested. Holm
+  # adjusts within each test family, horizon and method. Overlapping horizons are views of one series, never
+  # corroboration of each other.
+  short:    # a shift in the recent mean against the trailing baseline's line: short-term anomalies
+    months: [3, 6]
+    baseline_factor: 4       # the baseline is 4 times the horizon, and at least the series' anomaly_baseline
+    min_baseline: 0.75       # share of the baseline's periods present; the horizon's own periods all present
+    alpha: 0.01
+    min_change: 0.25
+  medium:   # Theil-Sen and Mann-Kendall: sustained trends
+    months: [12, 36]
+    min_points: 8            # 4 quarters or 3 years can never pass after Holm, so they are not tested
+  long:     # long-run trends and structural breaks (a change in the long-run slope or level)
+    months: [60, 120, 180]
+    min_points: 10
+    min_segment_months: 24   # the shortest segment either side of a break (and at least change_points.min_size)
+    penalty_factor: 6        # change points, times BIC's: on null series built from real noise (a separate seed),
+                             # 3 split 15% of nulls, 6 split 5-6% (day 4's band flags 4.4% of the same), 10 no fewer
+                             # and found half as many planted breaks (D-025)
+    autocorrelation: true    # Mann-Kendall's variance inflated by the residuals' lag-1 autocorrelation
+  by_source:                 # where a source's history allows fewer horizons (measured 2026-10-15, D-025)
+    gdelt_news: [3, 6]
+
+context:
+  # The latest value against a ridge regression on its context, fitted on the baseline before it: a time trend, the
+  # mean of its peers (the series of its own test family whose changes moved most like it over the baseline), the
+  # world or OECD counterpart for an Australian series, and the source's volume for a share.
+  baseline: {M: 24, Q: 16, A: 12, D: 56}
+  min_baseline: 0.9          # share of the baseline's periods present (excluded months aside)
+  peers: 5
+  peer_min_corr: 0.5         # a peer's first differences correlate at least this well with the series'
+  ridge: 0.1                 # times the baseline's length, on standardised covariates (the intercept is free)
+  alpha: 0.01                # Holm within each test family
+  min_change: 0.25           # as anomaly_min_change
+  explained_share: 0.5       # a band anomaly is 'explained by context' when the context predicts this share of it
+  annotate_explained: true   # the owner (D-028): the dossiers show it, while contextual_anomaly stays off
+  coupling:                  # an Australian series' changes against its counterpart's: early half against recent
+    min_points: 24
+    max_points: 72
+    alpha: 0.05
+    established: 0.5         # a correlation at least this strong is an established relationship
+    broken: 0.2              # and one this weak or weaker is none
+
+relationships:
+  # Breakdowns: an established pair (keyphrases, IPC subclasses, Nice classes, or an applicant country and a class)
+  # whose co-occurrence falls well below what its baseline lift predicts from each side's activity in the window.
+  fade_min_baseline: 10      # groups or applications holding both in the baseline
+  fade_min_expected: 5.0     # the window should have held at least this many at the baseline's lift
+  fade_ratio: 0.5            # and its lift at most halved
+  fade_min_each_window: 3    # each side still active in the window (otherwise one side faded, not the pair)
+  jurisdictions: true        # applicant countries by IPC subclass and Nice class (IP RAPID): new, rising, fading
+
+redundancy:
+  # Correlated indicators are not independent corroboration: flagged series whose first differences correlate at
+  # least this strongly over the longest trend window share a redundancy group (average linkage).
+  min_corr: 0.8
+  min_points: 12
+
+evaluation:
+  # `moria eval detectors`: injections into real series, null series built from their own noise, artefacts, and a
+  # backtest at past dates. The retention rules are committed here before the first run (design §11.1).
+  seed: 20261015
+  per_class: 40              # real series per injection and per class (source and frequency)
+  injections:
+    spike: 1.0               # the latest period doubled (day 4's band should catch it)
+    shift: 0.6               # the last 3 months 60% higher (short horizons)
+    slope: 0.25              # yearly growth 0.25 higher over the last 36 months (trends, accelerations)
+    structural: 0.15         # yearly growth 0.15 higher from 60 months back (long horizons)
+    contextual: 0.6          # the latest period 60% higher, its context not (context); the same with its peers
+                             # raised alike is the control that context should explain
+    volume_jump: 0.6         # artefact: the source's volume and every count 60% higher in the last 3 periods
+    duplicated_period: 1.0   # artefact: one recent period counted twice, volume and counts alike
+  placebo_repeats: 5         # relationships: window and baseline reassigned at random, repeats
+  backtest:
+    every_months: 3
+    back_months: 48
+    confirm_months: 12       # a flag is confirmed when day 4's trend or level detectors agree this much later
+  retain:                    # revised after the development run, before the recorded one (D-025)
+    min_incremental: 0.10    # plants it is for that it catches and no day-4 detector does (share of plants)
+    null_margin: 0.01        # false positives at most day 4's comparable detector's rate on the same nulls plus this
+                             # (the band anomaly; day 4's trend for a long-run trend; day 4's new combinations for
+                             # the relationship placebos)
+    max_null_rate: 0.05      # and never more than this
+    max_artefact_excess: 0.02  # flags per quiet series under an artefact, beyond day 4's rate on the same
+
+new_detectors:               # the owner's switches (D-028): on where the evaluation passed; the others stay measured
+  short_shift: false         # off: no incremental value (D-025); kept, to revisit with calibration later
+  long_trend: false          # off: no incremental value
+  structural_shift: false    # off: false positives above day 4's
+  contextual_anomaly: false  # off as a detector (no incremental value); shown as an explanation (annotate_explained)
+  decoupling: false          # off: little power
+  fading_combination: true   # on (D-028): 39 of 40 planted class-pair breakdowns caught, placebo 0.0%
+  jurisdiction_shift: true   # on (D-028): 73 of 80 planted country-class changes caught, placebo 0.2%
