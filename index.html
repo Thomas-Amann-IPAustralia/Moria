@@ -288,6 +288,7 @@ dl.gloss dt { font-weight: 600; }
 dl.gloss dd { margin: 0; min-width: 0; }
 @media (max-width: 640px) { dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px; } dl.gloss dd { margin-bottom: 10px; } }
 
+.dash-link { padding: 12px 16px; border-radius: 10px; background: var(--core-t); border-left: 4px solid var(--core); }
 footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 0.86rem; color: var(--muted); max-width: 86ch; }
 </style>
 </head>
@@ -300,6 +301,7 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
   <details open id="toc-details">
     <summary>Contents</summary>
     <ol>
+      <li><a href="dashboard/">The dashboard (findings) &rarr;</a></li>
       <li><a href="#purpose">Purpose</a></li>
       <li><a href="#questions">The questions</a></li>
       <li><a href="#rings">Three rings</a></li>
@@ -330,6 +332,8 @@ footer { margin-top: 64px; padding-top: 18px; border-top: 1px solid var(--line);
   trends, accelerations, anomalies and weak signals, checks each candidate for false alarms, and puts the survivors in
   front of a person, who decides what is real. Validated signals are then read through PESTLE, SWOT/TOWS and a Futures
   Cone, and every finding stays traceable to its evidence.</p>
+  <p class="dash-link"><a href="dashboard/"><strong>Open the dashboard</strong></a>: explore what the latest scan found,
+  how each candidate was ranked, the evidence behind it and how far to trust it, with every statistic explained.</p>
   <p>This page describes the system's intended end state and marks, everywhere, how much of it exists today.
   <strong>On 13 October 2026 the collection machinery is built and running</strong> (days 1 and 2 of a five-day
   sprint, a cleanup of the first source tier, and a widening of sources). The mining, review and lens stages are

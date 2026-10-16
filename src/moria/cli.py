@@ -944,6 +944,40 @@ def queue_report_command(
     typer.echo(f"wrote {path}")
 
 
+@app.command("dashboard")
+def dashboard_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option(None, help="Also write the private bundle here, on your own disk (never the repo)"),
+    public_out: str = typer.Option("dashboard/data/public.json", help="Where to write the public bundle"),
+    practice_only: bool = typer.Option(
+        False, "--practice-only", help="Only rebuild the practice data from the public bundle on disk (no store needed)"
+    ),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The dashboard's data (D-030): the public bundle (aggregates only, for the repo and GitHub Pages), the
+    private bundle (labels, series, items and dossiers: the private bucket, and your own disk with --out) and the
+    practice bundle (invented, for the public page). Load the private bundle into the dashboard in your browser;
+    nothing is uploaded."""
+    from .dashboard import COMMAND, dashboard
+    from .dashboard_practice import PRACTICE_PATH, write_practice
+
+    review, detect_cfg = load_review(), load_detect()
+    public = Path(public_out)
+    if not practice_only:
+        _, _, cards, st = _review_setup(store)
+        status, mkey, counts = dashboard(st, review, detect_cfg, cards, load_territories(), load_baseline(),
+                                         _as_of(as_of), Path(out) if out else None, public,
+                                         config_hash(review, detect_cfg))  # fmt: skip
+        _stage_line(COMMAND, status, mkey, counts)
+        if status != "passed":
+            return
+    got = write_practice(public, public.parent / Path(PRACTICE_PATH).name, review, detect_cfg)
+    typer.echo(
+        f"practice  {got['candidates']} invented candidates, {got['series']} series -> "
+        f"{public.parent / Path(PRACTICE_PATH).name}"
+    )
+
+
 @app.command()
 def show(
     candidate: str = typer.Argument(..., help="A candidate id (sig-...)"),

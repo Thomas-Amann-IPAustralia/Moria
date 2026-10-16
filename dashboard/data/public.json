@@ -1,0 +1,5072 @@
+{
+ "as_of": "2026-10-15",
+ "config": {
+  "detect": {
+   "accel_min_change": 0.1,
+   "alpha": 0.05,
+   "anomaly_alpha": 0.01,
+   "anomaly_baseline": {
+    "A": 8,
+    "D": 28,
+    "M": 24,
+    "Q": 12
+   },
+   "anomaly_min_change": 0.25,
+   "documents": {
+    "baseline_days": 730,
+    "min_items": 3,
+    "min_sources": 2,
+    "window_days": 91
+   },
+   "min_coverage": 0.9,
+   "min_mean_count": 5.0,
+   "surge": {
+    "baseline": {
+     "A": 5,
+     "D": 28,
+     "M": 12,
+     "Q": 8
+    },
+    "max_expected": 5.0,
+    "min_count": 5,
+    "min_ratio": 2.0,
+    "window": {
+     "A": 1,
+     "D": 7,
+     "M": 3,
+     "Q": 2
+    }
+   },
+   "trend_min_windows": 2,
+   "windows": {
+    "A": [
+     8,
+     12,
+     16
+    ],
+    "D": [
+     28,
+     56,
+     84
+    ],
+    "M": [
+     12,
+     24,
+     36
+    ],
+    "Q": [
+     8,
+     16,
+     24
+    ]
+   }
+  },
+  "known_trends": [
+   {
+    "id": "KT01",
+    "name": "Climate change and adaptation",
+    "pestle": [
+     "environmental",
+     "social",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Extreme and compound weather grows more frequent and costly, so adapting infrastructure, health systems, settlements and livelihoods becomes routine work for governments, businesses and communities.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT02",
+    "name": "The net zero transformation",
+    "pestle": [
+     "environmental",
+     "economic",
+     "technological"
+    ],
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "statement": "Economies decarbonise towards net zero: clean energy, electrification and low-emission industries grow, while demand for some traditional exports declines and new markets emerge.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT03",
+    "name": "Resource scarcity and efficiency",
+    "pestle": [
+     "environmental",
+     "economic",
+     "political"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Demand for food, water, energy and minerals strains supply, so efficiency, recycling, substitutes and the competition for critical resources all intensify.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT04",
+    "name": "Biodiversity loss and environmental degradation",
+    "pestle": [
+     "environmental"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Ecosystems and biodiversity keep declining, and protecting and restoring them becomes a policy and investment priority alongside emissions.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT05",
+    "name": "Population ageing",
+    "pestle": [
+     "social",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "People live longer and fertility stays low, so populations age: many more people over 65 and 85, with lasting economic and fiscal pressure.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT06",
+    "name": "Rising demand for health, care and support",
+    "pestle": [
+     "social",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Ageing, chronic and emerging diseases and rising expectations lift demand for health, care and support services, which grow as a share of the economy and the workforce.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT07",
+    "name": "Geopolitical competition and fragmentation",
+    "pestle": [
+     "political",
+     "economic"
+    ],
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "statement": "Strategic competition between powers grows, trade and investment fragment along security lines, and governments work harder to secure stability, supply and growth.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT08",
+    "name": "Economic weight shifting east and south",
+    "pestle": [
+     "political",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "The economic and political influence of Asia and the global south keeps growing relative to Europe and North America.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT09",
+    "name": "A changing security paradigm",
+    "pestle": [
+     "political",
+     "technological"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Security threats widen beyond conventional military ones, and defence and security spending and planning change with them.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT10",
+    "name": "The digital and data economy",
+    "pestle": [
+     "technological",
+     "economic"
+    ],
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "statement": "Digitisation of services, commerce, work and government keeps accelerating, and data becomes a core asset of organisations and economies.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT11",
+    "name": "Artificial intelligence and autonomous systems",
+    "pestle": [
+     "technological",
+     "economic",
+     "social"
+    ],
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "statement": "Artificial intelligence and autonomous systems spread across industries, raising productivity and changing which tasks people do.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT12",
+    "name": "The changing nature of work",
+    "pestle": [
+     "economic",
+     "social"
+    ],
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "statement": "Work changes in form and content: new skills are in demand, employment becomes more varied, and technology reshapes jobs.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT13",
+    "name": "Diversifying education and learning",
+    "pestle": [
+     "social"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Education and training diversify in form, provider and timing, towards learning throughout working life.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT14",
+    "name": "Diversifying inequalities",
+    "pestle": [
+     "social",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Inequalities of income, wealth and opportunity persist and take new forms, within and between countries.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT15",
+    "name": "Diversity, equity and transparency in decisions",
+    "pestle": [
+     "social",
+     "political"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Diversity, equity and transparency matter more in business, policy and community decisions, and trust depends on them.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT16",
+    "name": "Continuing urbanisation",
+    "pestle": [
+     "social",
+     "environmental",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "More of the world's people live in cities, which concentrates demand for housing, infrastructure and services.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT17",
+    "name": "Growing consumerism",
+    "pestle": [
+     "economic",
+     "social",
+     "environmental"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Consumption keeps growing with a rising global middle class, with consequences for resources, waste and markets.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT18",
+    "name": "The increasing significance of migration",
+    "pestle": [
+     "social",
+     "political",
+     "economic"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Migration grows in scale and political salience, shaping labour markets, skills and societies.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT19",
+    "name": "The increasing influence of new governing systems",
+    "pestle": [
+     "political"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Governance shifts beyond the nation state: networks, platforms, cities and other non-state actors gain influence over rules and decisions.",
+    "status": "confirmed"
+   },
+   {
+    "id": "KT20",
+    "name": "Indigenous knowledge, data sovereignty and cultural and intellectual property",
+    "pestle": [
+     "social",
+     "legal",
+     "political"
+    ],
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "statement": "Research and policy are expected to protect and elevate Aboriginal and Torres Strait Islander knowledge systems, with First Nations people leading research that affects them, and with traditional knowledge, language, data sovereignty, cultural expressions and other intellectual property respected and protected.",
+    "status": "proposed"
+   },
+   {
+    "id": "KT21",
+    "name": "Espionage, foreign interference and cyber threats to critical systems",
+    "pestle": [
+     "political",
+     "technological",
+     "legal"
+    ],
+    "rings": [
+     "wider_world",
+     "adjacent",
+     "core"
+    ],
+    "statement": "Espionage and foreign interference run at very high levels, and state and non-state actors grow more willing and able to intrude on networks and disrupt critical infrastructure, so the security of systems, data and research becomes a standing concern for every organisation that holds them.",
+    "status": "proposed"
+   },
+   {
+    "id": "KT22",
+    "name": "Mis- and disinformation and the contest for trust",
+    "pestle": [
+     "social",
+     "political",
+     "technological"
+    ],
+    "rings": [
+     "wider_world"
+    ],
+    "statement": "Misinformation, disinformation and polarisation test trust in democratic institutions, and governments and researchers look for ways to strengthen that trust and people's ability to judge information.",
+    "status": "proposed"
+   },
+   {
+    "id": "KT23",
+    "name": "Rearmament and a sovereign defence industrial base",
+    "pestle": [
+     "political",
+     "economic",
+     "technological"
+    ],
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "statement": "Defence spending rises worldwide and in Australia, and governments build domestic capacity to make, sustain and rapidly adapt military equipment, munitions and dual-use technology, with allies sharing advanced technology under arrangements such as AUKUS.",
+    "status": "proposed"
+   },
+   {
+    "id": "KT24",
+    "name": "The return of industrial policy",
+    "pestle": [
+     "economic",
+     "political"
+    ],
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "statement": "Governments use funds, tax incentives and guarantees to build strategic industries at home (clean energy, green metals, low-emission fuels, critical minerals and defence), under banners such as Future Made in Australia.",
+    "status": "proposed"
+   }
+  ],
+  "pathways": {
+   "P1": "This development could change how many patents, trade marks, designs or plant breeder's rights are sought in Australia, of what kinds, or by whom.",
+   "P2": "This development could make IP rights more or less valuable to Australian businesses and creators, against substitutes such as speed, secrecy, open models or control of data and platforms.",
+   "P3": "This development could change how IP rights are examined, granted, administered or enforced.",
+   "P4": "This development could affect public trust in, or the perceived fairness of, the IP system.",
+   "P5": "This development could affect IP Australia's fee income, workforce, technology, security or mandate.",
+   "P6": "This development could change Australia's ability to benefit from new ideas: their commercialisation, their use and their contribution to productivity."
+  },
+  "queue": {
+   "rings": {
+    "adjacent": 0.35,
+    "core": 0.35,
+    "wider_world": 0.3
+   },
+   "sensitivity": [
+    0.5,
+    1.5
+   ],
+   "size": 40,
+   "source_max": 0.25,
+   "third_order_max": 0.2,
+   "views": {
+    "early_warning": 0.5,
+    "strategic": 0.5
+   }
+  },
+  "rank": {
+   "context_explained": 1.0,
+   "flag_penalty": {
+    "coverage": 0.7,
+    "duplicate": 0.6,
+    "ingestion": 0.5,
+    "label_drift": 0.8,
+    "news_cycle": 0.5,
+    "source_break": 0.7
+   },
+   "floor": 0.05,
+   "known_trend_factor": 0.6,
+   "known_trend_sim": 0.68,
+   "lead": {
+    "acceleration": 0.7,
+    "anomaly": 0.6,
+    "contextual_anomaly": 0.6,
+    "cross_family": 0.8,
+    "cross_ring": 0.9,
+    "decoupling": 0.5,
+    "divergence": 0.5,
+    "fading_combination": 0.6,
+    "jurisdiction_shift": 0.8,
+    "long_trend": 0.2,
+    "low_base_surge": 0.9,
+    "new_combination": 0.9,
+    "new_term": 1.0,
+    "novel_items": 1.0,
+    "short_shift": 0.6,
+    "structural_shift": 0.5,
+    "trend": 0.4
+   },
+   "novelty": {
+    "acceleration": 0.6,
+    "anomaly": 0.5,
+    "contextual_anomaly": 0.5,
+    "cross_family": 0.8,
+    "cross_ring": 0.9,
+    "decoupling": 0.5,
+    "divergence": 0.6,
+    "fading_combination": 0.6,
+    "jurisdiction_shift": 0.8,
+    "long_trend": 0.3,
+    "low_base_surge": 0.7,
+    "new_combination": 0.9,
+    "new_term": 1.0,
+    "novel_items": 1.0,
+    "short_shift": 0.5,
+    "structural_shift": 0.5,
+    "trend": 0.4
+   },
+   "scope": {
+    "aggregates": [
+     "world",
+     "W",
+     "OECD",
+     "EU27_2020",
+     "G7"
+    ],
+    "australia": [
+     "au",
+     "AUS"
+    ],
+    "factor_aggregate": 0.85,
+    "factor_australia": 1.0,
+    "factor_other": 0.7
+   },
+   "shortlist": 100,
+   "type_weight": {
+    "acceleration": 1.0,
+    "anomaly": 0.5,
+    "trend": 1.0,
+    "weak_signal": 1.0
+   },
+   "weights": {
+    "early_warning": {
+     "lead": 1.0,
+     "novelty": 1.0,
+     "pathway": 1.0,
+     "strength": 1.0
+    },
+    "strategic": {
+     "breadth": 1.0,
+     "impact": 1.0,
+     "pathway": 1.0,
+     "strength": 1.0
+    }
+   },
+   "weights_order": {
+    "early_warning": [
+     "strength",
+     "novelty",
+     "lead",
+     "pathway"
+    ],
+    "strategic": [
+     "strength",
+     "breadth",
+     "impact",
+     "pathway"
+    ]
+   }
+  },
+  "sources": [
+   {
+    "adapter": "xlsx",
+    "breaks": [
+     "BERD moved to a two-yearly cycle; each release is one reference year"
+    ],
+    "cadence": "weekly",
+    "coverage": "Two ABS publications released as spreadsheet data cubes, not through the ABS Data API. Counts of Australian Businesses, including Entries and Exits (8165.0, CABEE): businesses operating, entering and exiting by industry, state, sector, turnover and employment size, with survival rates, for the four latest financial years. Research and Experimental Development, Businesses (8104.0, BERD): business R&D expenditure and human resources by industry, size, type of expenditure, source of funds, state and type of activity. Each table is one record.",
+    "family": "statistics",
+    "history_start": "CABEE: the four financial years in the current release (2022-23 to 2025-26); BERD: 2023-24 (older releases are separate workbooks)",
+    "id": "abs_datacubes",
+    "known_biases": [
+     "Only the latest release's workbooks are read; earlier releases are not backfilled",
+     "Tables are kept as published (headings, sections, labels); turning them into series is normalisation's job",
+     "Small cells are suppressed ('np') and kept as such"
+    ],
+    "licence": "ABS data are CC BY 4.0 (attribute the Australian Bureau of Statistics)",
+    "name": "ABS spreadsheet releases (business entries and exits, CABEE; business R&D, BERD)",
+    "publication_lag": "CABEE: yearly, about 7 weeks after June (2026-08-18 for June 2026); BERD: every two years, about 14 months after the year (2023-24 released 2025-08-22)",
+    "rings": [
+     "adjacent"
+    ],
+    "snapshot_rights": "tables stored in full"
+   },
+   {
+    "adapter": "abs_sdmx",
+    "breaks": [
+     "CPI: the complete monthly CPI begins 2024-04; the monthly indicator it replaced (CPI_M) ends 2025-09"
+    ],
+    "cadence": "weekly",
+    "coverage": "Curated headline series from the ABS Data API, Australia-wide: population by age and its components of change; labour force; job vacancies; wages; consumer prices; national accounts aggregates, productivity and output by industry; industry structure; trade in services, including charges for the use of intellectual property, by partner country; and business innovation. Each query keeps the whole history from its start period.",
+    "family": "statistics",
+    "history_start": "from 1959 to 2021 depending on the series (each query's start period)",
+    "id": "abs_headline",
+    "known_biases": [
+     "Figures are revised, sometimes for years; each run is kept as a vintage",
+     "Innovation (Business Characteristics Survey) has only three years in this API (2021 to 2023)",
+     "Business entries and exits (CABEE) and business R&D (BERD) are spreadsheet releases, not in this API; see abs_datacubes",
+     "The monthly business turnover indicator stops at 2025-09 and is left out"
+    ],
+    "licence": "ABS data are CC BY 4.0 (attribute the Australian Bureau of Statistics)",
+    "name": "ABS headline series (population and ageing, labour, prices, output, industry, trade in IP, innovation)",
+    "publication_lag": "about 1 to 3 months after the reference period (labour 2 to 3 weeks; national accounts about 2 months; trade in services by country and industry yearly)",
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "observations stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "New inquiries of House of Representatives committees, from the Department of the House's feed",
+    "family": "policy",
+    "history_start": "the feed was empty on 2026-10-12",
+    "id": "aph_house_inquiries",
+    "known_biases": [
+     "Empty when checked (2026-10-12): its expected volume is a placeholder until a week of runs is seen"
+    ],
+    "licence": "CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted text, embeddings, summaries) are for its own use and are not shared",
+    "name": "APH: new House of Representatives committee inquiries (RSS)",
+    "publication_lag": "same day to a few days",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with attribution, or link"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "New inquiries of joint committees of both Houses, from the Department of the House's feed",
+    "family": "policy",
+    "history_start": "the feed was empty on 2026-10-12",
+    "id": "aph_joint_inquiries",
+    "known_biases": [
+     "Empty when checked (2026-10-12): its expected volume is a placeholder until a week of runs is seen"
+    ],
+    "licence": "CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted text, embeddings, summaries) are for its own use and are not shared",
+    "name": "APH: new joint committee inquiries (RSS)",
+    "publication_lag": "same day to a few days",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with attribution, or link"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Upcoming public hearings of Senate committees, including Estimates, with the date and place in each item's summary",
+    "family": "policy",
+    "history_start": "the feed's current items (30 on 2026-10-12)",
+    "id": "aph_senate_hearings",
+    "known_biases": [
+     "No item carries a date: each is observable from the run that first sees it; the whole feed is kept every run",
+     "Several hearings of one inquiry share its link; each item's id adds a hash of its title and summary",
+     "The hearing's own date is text in the summary, read at normalisation"
+    ],
+    "licence": "CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted text, embeddings, summaries) are for its own use and are not shared",
+    "name": "APH: upcoming Senate committee hearings (RSS)",
+    "publication_lag": "days to weeks ahead of the hearing",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with attribution, or link"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "New inquiries referred to Senate committees (legislation and references committees), from the Department of the Senate's feed",
+    "family": "policy",
+    "history_start": "the feed's current items (34 on 2026-10-12, dated 2025-07-31 to 2026-09-15)",
+    "id": "aph_senate_new_inquiries",
+    "known_biases": [
+     "Senate committees only; House and joint committees have feeds of their own",
+     "Items are dated by their referral and may be added later; a 30-day lookback catches late additions"
+    ],
+    "licence": "CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted text, embeddings, summaries) are for its own use and are not shared",
+    "name": "APH: new Senate committee inquiries (RSS)",
+    "publication_lag": "same day to a few days; an item is dated by its referral",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with attribution, or link"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Reports tabled by Senate committees, interim and final, from the Department of the Senate's feed",
+    "family": "policy",
+    "history_start": "the feed's current items (134 on 2026-10-12, dated 2025-07-31 to 2026-09-16)",
+    "id": "aph_senate_reports",
+    "known_biases": [
+     "Senate committees only",
+     "Several reports of one inquiry share its link; each item's id adds a hash of its title, date and summary",
+     "Items are dated by their tabling and may be added to the feed later; a 30-day lookback catches late additions"
+    ],
+    "licence": "CC BY-NC-ND 4.0 (aph.gov.au's copyright notice: all content except the Commonwealth Coat of Arms and where otherwise noted). Moria's use is non-commercial research (the owner, D-017). NoDerivatives: Moria's adaptations (extracted text, embeddings, summaries) are for its own use and are not shared",
+    "name": "APH: Senate committee reports (RSS)",
+    "publication_lag": "same day to a few days; an item is dated by its tabling",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links, dates and the feed's summaries stored (the owner, D-017); shared outputs quote unaltered with attribution, or link"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The day's announcements in cs.AI (artificial intelligence), cs.CY (computers and society: AI policy, law and ethics), cs.DL (digital libraries, including scholarly and patent analytics) and econ.GN (general economics), with each paper's abstract: new papers, cross-lists and replacements (the abstract says which). Preprints come months before journals and OpenAlex's counts. Authors' names are not stored.",
+    "family": "research",
+    "history_start": "the feed holds only the latest announcement; a missed day is not recoverable from the feed",
+    "id": "arxiv_ai_society",
+    "known_biases": [
+     "Preprints, not peer reviewed; computer science and economics only",
+     "Replacements repeat earlier papers (the abstract starts with the announcement type)"
+    ],
+    "licence": "arXiv metadata, abstracts included, are CC0 1.0 (the Terms of Use for arXiv APIs, read 2026-10-13); at most one request every three seconds",
+    "name": "arXiv new listings in AI, computers and society, digital libraries, and general economics",
+    "publication_lag": "same day as the announcement (arXiv announces Sunday to Thursday evenings, US Eastern time)",
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "titles, links, dates and abstracts stored; no author names"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Commentary from ASPI and its contributors on strategy, defence, critical and emerging technology, cyber, economic security, research security and the Indo-Pacific, with each post's topic tags and opening lines. A few posts a day. ASPI also runs the Critical Technology Tracker (which added patent data in October 2026).",
+    "family": "policy",
+    "history_start": "the feed holds the newest 100 posts (about six weeks)",
+    "id": "aspi_strategist",
+    "known_biases": [
+     "A security lens, partly government- and industry-funded; Australian and Indo-Pacific focus"
+    ],
+    "licence": "CC BY-NC-ND 4.0, except material published with Project Syndicate (The Strategist's submissions page, through search results, 2026-10-13). Moria's use is non-commercial research (the owner, D-017): opening lines stored, never shared as adaptations",
+    "name": "ASPI's The Strategist (the Australian Strategic Policy Institute's commentary)",
+    "publication_lag": "same day",
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "titles, links, dates, opening lines and topic tags stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "CIPO's news releases and statements through the Government of Canada's news API (Atom). Low volume: 23 items on 2026-10-12, the newest dated 2025-11-26.",
+    "family": "policy",
+    "history_start": "the API's archive (23 items on 2026-10-12)",
+    "id": "cipo_news",
+    "known_biases": [
+     "Low volume; some CIPO notices are published on ISED's own site instead, which this feed misses"
+    ],
+    "licence": "Canada.ca terms of use: Government of Canada materials may be reproduced for non-commercial purposes without charge or further permission, crediting the source and not as an official version (from search results; CIPO's own 2023 strategy carries the same notice, read 2026-10-13). Moria's use is non-commercial research (the owner, D-017), so summaries are stored (D-020)",
+    "name": "Canadian Intellectual Property Office news (Canada News Centre)",
+    "publication_lag": "same day",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links, dates and summaries stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Articles by academics in The Conversation's Australian edition, on every field: health, climate and energy, science and technology, the economy, politics, education, culture. About a dozen a day; an early, expert-written view of what Australian researchers are noticing. Titles, links and dates only.",
+    "family": "news",
+    "history_start": "the feed holds the newest 50 articles (about four days)",
+    "id": "conversation_au",
+    "known_biases": [
+     "Australian academics' framing and interests; topics follow the news cycle"
+    ],
+    "licence": "CC BY-ND 4.0 for articles (its republishing guidelines, read 2026-10-13), images excluded. Titles, links and dates only, under Moria's news rule, although the licence would allow more",
+    "name": "The Conversation (Australian edition)",
+    "publication_lag": "same day",
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links and dates only"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The data collections CSIRO publishes on its Data Access Portal (DAP): research datasets, models and software, each listed under the ANZSRC 2020 fields of research (divisions) it is filed under. One source reads the portal's search feed once per division (22 feeds; the owner's request, 2026-10-15), newest first, 100 a feed; an item filed under several divisions is one record carrying each division in its `topics`. About 140 new collections a month across the divisions (2026-09-15 to 10-14, up to 12 a day); busy divisions fill their 100 in about five months (environmental sciences: 2026-04-30 to 10-08), small ones hold years (philosophy: 1 collection). Law and legal studies, the 23rd division, has no collections (2026-10-15) and is left out. Titles, links, dates, divisions and descriptions (D-024). CSIRO's research publications (publications.csiro.au) are a gap (D-023, D-024).",
+    "family": "research",
+    "history_start": "each feed reaches back 100 collections: months for busy divisions, years for small ones",
+    "id": "csiro_dap",
+    "known_biases": [
+     "CSIRO's own research only, and only what it chooses to deposit; strongest in environmental, earth, agricultural and physical sciences",
+     "A division is CSIRO's filing, not a judgment of the work; some collections are filed under none and never appear",
+     "Version updates of a collection may appear as new items"
+    ],
+    "licence": "Each collection's data carry their own licence (CC BY 4.0 by default under CSIRO's deposit terms); no licence for the portal's metadata was found, and csiro.au states CSIRO copyright without an open licence (2026-10-15, read through search results: CSIRO's sites refuse the build session). The owner approved storing the descriptions (D-024). robots.txt allows /dap/ws/v2/ (read with RFC 9309, D-023)",
+    "name": "CSIRO Data Access Portal (new data collections, by field of research)",
+    "publication_lag": "same day (a collection is listed when CSIRO publishes it)",
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "titles, links, dates, divisions and descriptions (the owner, D-024); never the data"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Everything the European Commission's press service publishes in English: press releases, statements, speeches, daily news and Q&As across every policy area, each with its opening lines and policy-area code. About seven a day. The EU's moves on AI, data, pharmaceuticals, standard-essential patents, design and geographical indications, and trade reach Australian businesses and IP Australia's peers.",
+    "family": "policy",
+    "history_start": "pageSize=50 reaches about a week back",
+    "id": "ec_presscorner",
+    "known_biases": [
+     "The Commission's own announcements; member states and the Parliament are not covered"
+    ],
+    "licence": "European Commission reuse policy (Decision 2011/833/EU): reuse is authorised provided the source is acknowledged; opening lines and policy areas stored",
+    "name": "European Commission press corner (press releases, speeches, statements)",
+    "publication_lag": "same day",
+    "rings": [
+     "wider_world",
+     "adjacent",
+     "core"
+    ],
+    "snapshot_rights": "titles, links, dates, opening lines and policy areas stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Communications of the EPO's Boards of Appeal: press communiqués on Enlarged Board decisions, referrals, and case law publications (113 items on 2026-10-12).",
+    "family": "legal",
+    "history_start": "the feed's archive (113 items on 2026-10-12)",
+    "id": "epo_boards_of_appeal",
+    "known_biases": [
+     "Announcements of decisions, not the decisions themselves"
+    ],
+    "licence": "EPO website: no general reuse licence found for its web text. Titles, links and dates are stored until the terms are confirmed",
+    "name": "EPO Boards of Appeal communications",
+    "publication_lag": "same day",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links and dates only (the summaries are dropped)"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The EPO's English news feed: announcements, co-operation, studies, statistics and events. The feed carries its whole archive (982 items on 2026-10-12), so a one-off backfill is possible.",
+    "family": "policy",
+    "history_start": "the feed's archive (982 items on 2026-10-12)",
+    "id": "epo_news",
+    "known_biases": [
+     "One office's own announcements; many items are meetings and events"
+    ],
+    "licence": "EPO website: no general reuse licence found for its web text (the press centre licenses its media only). Titles, links and dates are stored until the terms are confirmed",
+    "name": "European Patent Office news",
+    "publication_lag": "same day",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links and dates only (the summaries are dropped)"
+   },
+   {
+    "adapter": "documents",
+    "breaks": [],
+    "cadence": "once",
+    "coverage": "Megatrend and risk syntheses, and Australian national strategies, that together say what is already widely expected (design §2.5, §5.2). Read once to draft the known-trends baseline (config/baseline.yaml); re-read when a new edition appears. Fetching was checked from the build session on 2026-10-12: three documents answered, and the others' sites refused cloud addresses (industry.gov.au, dcceew.gov.au and defence.gov.au drop the connection; WEF and OECD answer 403). The owner downloads those (docs/wishlist.md) into the bucket's inbox/documents/; text is stored only where the document itself states an open licence (store_text: if_open_licence, D-014).",
+    "family": "policy",
+    "history_start": null,
+    "id": "foresight_syntheses",
+    "known_biases": [
+     "Syntheses of what experts already expect, by design; they define what is not novel",
+     "Australian and European framing; few non-English sources"
+    ],
+    "licence": "per document (see each entry); text stored only where the document's licence allows it",
+    "name": "Foresight syntheses and national strategies (read once; the known-trends baseline is drafted from them)",
+    "publication_lag": "not applicable: each document is read once, and again when a new edition appears",
+    "rings": [
+     "wider_world",
+     "adjacent",
+     "core"
+    ],
+    "snapshot_rights": "per document; otherwise the title, URL, hash, size and page count only"
+   },
+   {
+    "adapter": "gdelt_gkg",
+    "breaks": [
+     "2026-10-12: parser gdelt-gkg-v2 matches both spellings and a plural last word, and adds about and names-only counts per group (D-012); earlier volumes are not comparable",
+     "2026-10-12: parser gdelt-gkg-v3 counts a term's synonyms as the term, adds the ip_system theme (core ring) and a ring on each volume record (D-014); earlier volumes are not comparable"
+    ],
+    "cadence": "daily",
+    "coverage": "Worldwide online news monitored by GDELT, English-language web documents. Each document is matched against the territory terms and the broad themes in its title, URL, quotations and named entities. Volumes are counted worldwide and for .au domains, against every document that day.",
+    "family": "news",
+    "history_start": "GKG 2.1 bulk files run from 2015-02-19, so a backfill is possible",
+    "id": "gdelt_news",
+    "known_biases": [
+     "Over-weights English-language and large outlets",
+     "Matching uses the title, URL, quotations and names, not the full article text, so recall per article is lower than a full-text search",
+     "A names-only match means the phrase appears inside some proper name in the article, often incidentally; about_documents (title or URL) is the cleaner series (D-012)",
+     "Australian sources means .au domains; Australian outlets on .com domains count as worldwide only",
+     "Syndicated stories appear many times (collapsed by de-duplication)",
+     "GDELT's source list changes over time, so volumes are compared as shares, never raw counts alone"
+    ],
+    "licence": "GDELT data are open (attribute The GDELT Project). Article text belongs to publishers: titles, URLs and metadata only",
+    "name": "GDELT GKG 2.1 news titles, metadata and volumes (bulk files)",
+    "publication_lag": "15 minutes (one GKG file per quarter hour)",
+    "rings": [
+     "core",
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "titles, URLs and GDELT's derived metadata may be stored; article text (including quotations) may not"
+   },
+   {
+    "adapter": "ip_rapid",
+    "breaks": [],
+    "cadence": "weekly",
+    "coverage": "Every application for an Australian patent, trade mark, design or plant breeder's right since 1904 that is open to public inspection: the application, its parties (applicants, owners, agents, opponents), events, classifications, descriptions (titles, trade mark words) and links to other rights, including PCT and Madrid. Six tables, about 93M rows (2026-10-12). Applications not yet open to public inspection are cut down to their filing record.",
+    "family": "patent",
+    "history_start": "1904 (applications); events and parties as recorded by IP Australia's systems over time",
+    "id": "ip_rapid",
+    "known_biases": [
+     "Applications before publication show only filing events (non-OPI rows are removed by IP Australia)",
+     "Sentinel dates (1800-01-01, 1901-01-01) stand for unknown dates",
+     "The party grouping (party_id) is IP Australia's own name and address matching",
+     "Agents and attorneys are parties too; most analysis wants applicants (party_role_category)",
+     "Trade mark `granted` events all but stop from March 2026 (821 from April to September 2026, against 36,581 a year before) while registrations go on (publish_registered events, the application table's registration date): count registrations from the application table (D-022)",
+     "A release's last complete month of design applications holds no Locarno class or Australian applicant yet; the detectors lag design series by two months (D-022)"
+    ],
+    "licence": "CC BY 4.0 (data.gov.au; attribute IP Australia, IP RAPID)",
+    "name": "IP RAPID (IP Australia's open data on patents, trade marks, designs and plant breeder's rights)",
+    "publication_lag": "about a week: the zip is rebuilt weekly (Monday about 00:30 UTC), as of the previous day",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "all tables stored in the private bucket, with individuals' names hashed and their postcodes dropped"
+   },
+   {
+    "adapter": "documents",
+    "breaks": [],
+    "cadence": "once",
+    "coverage": "The PDFs linked from IP Australia's accountability pages, which the sitemap does not list (D-016, T3): the Strategic Corporate Plan 2026-27, the Annual Report 2024-25, the AI transparency statement, the Minister's statement of expectations and IP Australia's statement of intent, and the cost recovery implementation statement. The Australian IP Report 2026 is in territory_evidence.",
+    "family": "ipa_internal",
+    "history_start": null,
+    "id": "ipaustralia_publications",
+    "known_biases": [
+     "IP Australia's own statements of plans and results: strengths and weaknesses for SWOT, not external signals",
+     "Read once; a new edition is a new entry in this card"
+    ],
+    "licence": "per document (see each entry); text stored where the document's or IP Australia's licence allows it",
+    "name": "IP Australia's corporate publications (PDFs its pages link; read once a year, and with each new edition)",
+    "publication_lag": "yearly: the corporate plan by 31 August, the annual report when tabled (about November)",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "per document; otherwise the title, URL, hash, size and page count only"
+   },
+   {
+    "adapter": "sitemap",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Pages on ipaustralia.gov.au whose sitemap lastmod falls in the lookback and window: news, consultations, guidance, practice changes, corporate documents. The first full snapshot of all pages is a separate backfill run.",
+    "family": "ipa_internal",
+    "history_start": "the site's current sitemap (850 URLs on 2026-10-10)",
+    "id": "ipaustralia_site",
+    "known_biases": [
+     "lastmod reflects content edits, including minor ones",
+     "Pages behind search forms or PDFs linked from pages are not in the sitemap"
+    ],
+    "licence": "CC BY 4.0 for most website content (IP Australia's copyright page, checked 2026-10-12): \"Licensed from the Commonwealth of Australia under a Creative Commons Attribution 4.0 International Licence\". Listed third-party content is excluded",
+    "name": "IP Australia website",
+    "publication_lag": "same day (sitemap lastmod)",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "extracted text and metadata stored; the original HTML only as its hash and size"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "IPONZ news: practice and fee changes, Commissioner decisions (monthly lists), the Plant Variety Rights Journal, consultations and system notices. The feed holds the latest 80 items.",
+    "family": "policy",
+    "history_start": "the feed holds the latest 80 items",
+    "id": "iponz_news",
+    "known_biases": [
+     "Monthly lists (decisions, journals) recur and say little on their own"
+    ],
+    "licence": "IPONZ website copyright: may be reproduced for personal or in-house use free of charge, accurately, from the latest version, acknowledging IPONZ as the source. Moria's private store is in-house use",
+    "name": "Intellectual Property Office of New Zealand news",
+    "publication_lag": "same day",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links, dates and summaries stored (in-house use)"
+   },
+   {
+    "adapter": "sitemap",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Pages under /news/news-collection/ on ipos.gov.sg whose sitemap lastmod falls in the lookback and window: press releases, speeches and announcements (105 such pages on 2026-10-12).",
+    "family": "policy",
+    "history_start": "the site's current sitemap (105 news pages on 2026-10-12)",
+    "id": "ipos_news",
+    "known_biases": [
+     "lastmod reflects edits as well as new pages"
+    ],
+    "licence": "IPOS terms of use: website content may not be reproduced without the rights holder's authorisation. Titles, links and dates only",
+    "name": "Intellectual Property Office of Singapore news",
+    "publication_lag": "same day (sitemap lastmod)",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links, dates and the HTML's hash and size only (no page text)"
+   },
+   {
+    "adapter": "legislation",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "All Commonwealth legislation: Acts, legislative and notifiable instruments, and compilations. Every version registered in the window, and every new title. Not state or territory law.",
+    "family": "legal",
+    "history_start": "1901",
+    "id": "legislation_frl",
+    "known_biases": [
+     "Commonwealth only",
+     "Volumes follow parliamentary and administrative calendars (sitting weeks, end of financial year)",
+     "registeredAt carries no timezone; windows are contiguous in the API's own clock"
+    ],
+    "licence": "CC BY 4.0 for most Legislation Register content (its terms of use, checked 2026-10-12); attribute the Federal Register of Legislation",
+    "name": "Federal Register of Legislation",
+    "publication_lag": "same day as registration",
+    "rings": [
+     "core",
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "titles and metadata may be stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The Lowy Institute's daily commentary on international events, Australian foreign policy, the Indo-Pacific, China, the United States, trade and economic statecraft. A few posts a day. Titles, links and dates only.",
+    "family": "policy",
+    "history_start": "the feed holds the newest 50 posts (about three weeks)",
+    "id": "lowy_interpreter",
+    "known_biases": [
+     "A foreign-policy lens; Australian and Indo-Pacific focus"
+    ],
+    "licence": "The Lowy Institute's terms (read 2026-10-13) reserve its rights and bar storing its content in a retrieval system without permission: titles, links and dates only",
+    "name": "The Interpreter (the Lowy Institute's commentary)",
+    "publication_lag": "same day",
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links and dates only"
+   },
+   {
+    "adapter": "listpage",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The English news board of Korea's intellectual property office (KIPO, now the Ministry of Intellectual Property, MOIP): policy, enforcement (its trade mark police), statistics and international cooperation. The board's first page (its ten newest items) is read each day.",
+    "family": "policy",
+    "history_start": "the board's newest ten items each day (1,158 items in all on 2026-10-12; a backfill reads only the first page)",
+    "id": "moip_news",
+    "known_biases": [
+     "English releases only: a selection of the Korean-language news",
+     "The site has no feed; the list page's layout is read with a pattern, and a run warns if it stops matching"
+    ],
+    "licence": "The site's footer reads \"Copyright(c) MINISTRY OF INTELLECTUAL PROPERTY. All Rights Reserved.\" (read 2026-10-12); no reuse licence found, so titles, links and dates only",
+    "name": "Korea's Ministry of Intellectual Property (MOIP, formerly KIPO): English news",
+    "publication_lag": "same day to a few days",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links and dates only"
+   },
+   {
+    "adapter": "hf_corpus",
+    "breaks": [],
+    "cadence": "once",
+    "coverage": "The latest version of every in-force Commonwealth Act and legislative instrument (Federal Register of Legislation), and every decision of the Federal Court of Australia (with the Copyright Tribunal, the Australian Competition Tribunal and others) and of the High Court of Australia, as the corpus holds them. NSW Caselaw and the state legislation in the corpus are left out by default (D-016); the owner may widen the parts.",
+    "family": "legal",
+    "history_start": "judgments from the courts' first online decisions; legislation as in force at the scrape",
+    "id": "oalc",
+    "known_biases": [
+     "A snapshot, not a feed: nothing after each source's last scrape (10 March 2025 for the three parts taken)",
+     "Latest versions only: it can't show how a law changed over time; repealed laws are absent",
+     "Not all of AustLII: no IP Australia hearing decisions, no other tribunals, no Commonwealth bills",
+     "Text extracted by the corpus's own tools (HTML, OCR for PDFs); OCR errors are possible in older decisions"
+    ],
+    "licence": "The corpus as a collection: CC BY 4.0 (Isaacus). Each document keeps its source's terms (the corpus's LICENCE.md, read 2026-10-12): legislation CC BY 4.0 with set attribution wording; Federal Court and High Court decisions may be reproduced unaltered for personal, non-commercial use or use within an organisation (High Court: keep its copyright notice). Moria's use is non-commercial research (the owner, D-017); text is never republished",
+    "name": "Open Australian Legal Corpus (Isaacus), in parts",
+    "publication_lag": "a snapshot; release 7.1.0 is the state of each source at its last scrape (2024-09 to 2025-03-10)",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "full text stored in the private bucket's lake; the public repo holds counts by source, type and year"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Posts on OECD.AI's blog: AI policy, governance, compute, incidents, the Hiroshima AI Process and national AI strategies, by OECD staff and invited experts. Titles, links and dates only.",
+    "family": "policy",
+    "history_start": "the feed holds the newest 10 posts",
+    "id": "oecd_ai_blog",
+    "known_biases": [
+     "Posts are signed by their authors and say they don't necessarily represent the OECD",
+     "A few posts a month; English only"
+    ],
+    "licence": "OECD.AI's footer reads \"© OECD. All rights reserved\" (read 2026-10-13), and posts are by named authors: titles, links and dates only",
+    "name": "OECD.AI blog (The AI Wonk)",
+    "publication_lag": "same day",
+    "rings": [
+     "adjacent",
+     "core"
+    ],
+    "snapshot_rights": "titles, links and dates only"
+   },
+   {
+    "adapter": "json_list",
+    "breaks": [
+     "2026 Q1: the reporting framework's questionnaire moved to version 2"
+    ],
+    "cadence": "weekly",
+    "coverage": "The reports organisations publish under the G7 Hiroshima AI Process reporting framework, run by the OECD: which organisations report on their AI risk management, from which countries, for which period. 56 reports from 2025-02 to 2026-10 on 2026-10-13 (Q1 2025 to Q3 2026). Metadata only: organisation, country, website, reporting period, date and link. Read from the JSON endpoint OECD.AI's own page uses (api.oecd.ai), as the page offers no feed.",
+    "family": "policy",
+    "history_start": "2025-02 (the framework's first reports)",
+    "id": "oecd_ai_haip_reports",
+    "known_biases": [
+     "Voluntary and self-reported; large AI developers and a few countries dominate"
+    ],
+    "licence": "Each report is its organisation's own response, published in full on OECD.AI and attributed to it; OECD.AI's footer reads \"© OECD. All rights reserved\". Metadata only, never the reports' text",
+    "name": "OECD.AI transparency reports (the Hiroshima AI Process reporting framework)",
+    "publication_lag": "reports are published quarterly, by reporting period",
+    "rings": [
+     "adjacent",
+     "core"
+    ],
+    "snapshot_rights": "organisation, country, website, reporting period, date and link only"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The OECD's English data announcements from its search feed: statistical releases (GDP, inflation, employment, trade and the like), new or updated indicators, datasets and tools, each with an abstract and its policy areas. The figures themselves come from the OECD Data API (oecd_headline); this feed says when something moved.",
+    "family": "statistics",
+    "history_start": "the feed holds the newest items only; pageSize=50 reaches about two months back",
+    "id": "oecd_data_releases",
+    "known_biases": [
+     "OECD members and selected partners; English only"
+    ],
+    "licence": "OECD Terms and Conditions: OECD data and written content from 1 July 2024 are CC BY 4.0 (read through search results); the owner approved storing the abstracts (D-020). Attribute the OECD",
+    "name": "OECD data releases (statistical releases, indicators, datasets and tools)",
+    "publication_lag": "same day",
+    "rings": [
+     "wider_world",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links, abstracts, content types and policy areas stored"
+   },
+   {
+    "adapter": "oecd_sdmx",
+    "breaks": [
+     "A dataflow's new version may restructure it; each vintage records the version it came from"
+    ],
+    "cadence": "weekly",
+    "coverage": "Thirteen queries to the OECD Data API, for OECD members and partners (Australia among them): R&D, researchers, patents and high-tech trade (MSTI); PCT and IP5 patents in AI, biotechnology and other selected technologies; how firms protect what they make (innovation surveys); R&D tax incentives and IP-income tax support, and the IP tax regimes themselves; firms' use of AI, cloud and big data; trade in charges for the use of IP and in computer and R&D services; leading indicators; the Economic Outlook's projections; FDI restrictiveness; business entries, exits and bankruptcies; environmental policy stringency. Each query keeps the whole history from its start period. At most 18 data queries a run (the OECD's rate limit).",
+    "family": "statistics",
+    "history_start": "1981 to 2010 depending on the query (each query's start period)",
+    "id": "oecd_headline",
+    "known_biases": [
+     "OECD members and selected partners; small and developing economies are sparse",
+     "Patents by priority date fill in for about three years after the priority year",
+     "Figures are revised; each run is kept as a vintage",
+     "The Economic Outlook mixes outturns and projections; its edition is in each series' dataflow version"
+    ],
+    "licence": "OECD Terms and Conditions: OECD data are CC BY 4.0 under the OECD's open-access policy of July 2024 (read through search results and the owner's upload of the OECD Data API documentation, D-020). Cite \"OECD\" and the dataset",
+    "name": "OECD headline series (science, technology, IP and innovation; the economy and policy settings)",
+    "publication_lag": "most series once or twice a year, a year or two after the reference year; leading indicators monthly",
+    "rings": [
+     "adjacent",
+     "wider_world",
+     "core"
+    ],
+    "snapshot_rights": "observations stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The OECD's English publications across every policy area, from its search feed: reports, working papers, policy papers, policy briefs and case studies, each with a short abstract, its content type and policy areas. This one feed covers the owner's two publication feeds and the briefs page (D-020), which www.oecd.org itself refuses to cloud addresses. 50 items a request (about three weeks).",
+    "family": "policy",
+    "history_start": "the feed holds the newest items only; pageSize=50 reaches about three weeks back",
+    "id": "oecd_publications",
+    "known_biases": [
+     "The OECD's members' agenda; English only",
+     "Release dates can sit a day or two in the future; an item is kept by the run whose window holds its date"
+    ],
+    "licence": "OECD Terms and Conditions: OECD written content published from 1 July 2024, and OECD data, are CC BY 4.0 (the OECD's open-access announcement of July 2024, read through search results; www.oecd.org refuses cloud addresses). The owner approved storing the abstracts (D-020). Attribute the OECD",
+    "name": "OECD publications (reports, working papers, policy papers and briefs, case studies)",
+    "publication_lag": "same day (items are often dated a day or two ahead, on their release date)",
+    "rings": [
+     "wider_world",
+     "adjacent",
+     "core"
+    ],
+    "snapshot_rights": "titles, links, abstracts, content types and policy areas stored"
+   },
+   {
+    "adapter": "openalex_counts",
+    "breaks": [],
+    "cadence": "weekly",
+    "coverage": "Every work in OpenAlex's core corpus, counted by its primary topic at all four levels of the topic taxonomy (4 domains, 26 fields, 252 subfields, about 4,500 topics), for each publication year from 2010 and each of the last 36 months; worldwide, and for works with at least one author at an Australian institution. Research output types only (article, review, preprint, conference paper, book, book chapter, dissertation, report): datasets, paratext and other records are left out, because bulk ingests of them swamp the counts.",
+    "family": "research",
+    "history_start": "2010 here (configurable; OpenAlex reaches far earlier)",
+    "id": "openalex_counts",
+    "known_biases": [
+     "Recent periods fill in late, so a month's count keeps rising for months after it ends (each run is a vintage)",
+     "Bulk ingests change coverage (on 2026-10-12, 2026 held 18.9M datasets against 1.9M in 2025), which is why the counts are restricted to research output types",
+     "Works dated in the future (forthcoming issues) appear in the current and coming months",
+     "Works dated by year only are given 1 January, which inflates January",
+     "Topics come from OpenAlex's own classifier; a change to it is a break, not a trend",
+     "Australia means an author's affiliation, not the subject",
+     "Coverage of non-English and non-journal output is uneven"
+    ],
+    "licence": "OpenAlex data are CC0. The API's free budget is 10,000 credits a day with a key; the key has no prepaid balance, so it is never billed",
+    "name": "OpenAlex works counted over the whole topic taxonomy",
+    "publication_lag": "days to months: OpenAlex indexes new works continuously, and recent periods fill in late",
+    "rings": [
+     "adjacent",
+     "wider_world"
+    ],
+    "snapshot_rights": "counts stored"
+   },
+   {
+    "adapter": "bigquery_cpc",
+    "breaks": [],
+    "cadence": "monthly",
+    "coverage": "Every patent family in Google Patents Public Datasets (patents-public-data.patents.publications) with a priority date from 2000, counted once per CPC code's first four characters it carries (961 on the first run), by earliest priority year; and the families with at least one Australian publication. Counts only; the query is aggregate SQL.",
+    "family": "patent",
+    "history_start": "2000 here (configurable)",
+    "id": "patent_cpc_counts",
+    "known_biases": [
+     "The last two to three priority years are incomplete, because applications publish about 18 months after priority",
+     "CPC is applied unevenly by offices, and some older or non-EPO/USPTO documents lack CPC codes",
+     "A family counts once in each subclass it carries, so subclass counts don't add up to the total",
+     "The 961 codes of the first run (D-019) include subclasses no longer in use (290 have under 100 families), the Y section, and 17 malformed codes (Z..., C121): filter to the current scheme at normalisation",
+     "The share of families with an AU member falls from about 22% (2000) to 5% (2010) and 2% (2020) while world counts rise: check the dataset's AU coverage against IP RAPID before using the AU series"
+    ],
+    "licence": "Google Patents Public Datasets: CC BY 4.0 (attribute IFI CLAIMS Patent Services and Google)",
+    "name": "Patent families by CPC subclass and priority year, worldwide and with an Australian member (BigQuery)",
+    "publication_lag": "18 months from priority to publication, plus Google's refresh of the public dataset",
+    "rings": [
+     "adjacent"
+    ],
+    "snapshot_rights": "counts stored"
+   },
+   {
+    "adapter": "documents",
+    "breaks": [],
+    "cadence": "once",
+    "coverage": "What peer IP offices say they will invest in and change (design §2.3, sub-question 7): the UKIPO's corporate plan, the EPO's strategic plan and annual work plan, the USPTO's strategy page, the EUIPO's Strategic Plan 2030, the JPO's Status Report and CIPO's business strategy (the last two as owner uploads, docs/wishlist.md). IPONZ's newest published business plan is for 2021-22; IPOS forbids reproduction; KIPO is still to find.",
+    "family": "policy",
+    "history_start": null,
+    "id": "peer_office_strategies",
+    "known_biases": [
+     "Offices' own statements of intent, not outcomes; annual reports would add results"
+    ],
+    "licence": "per document (see each entry); text stored only where the document's licence allows it",
+    "name": "Peer IP offices' strategies and corporate plans (read once; again with each new edition)",
+    "publication_lag": "yearly plans, published around the start of each office's financial year",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "per document; otherwise the title, URL, hash, size and page count only"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Standards Australia's news: new and revised standards, consultations, its work in international standards bodies (ISO, IEC) on AI, cyber, hydrogen, critical minerals and the like. Standards and patents meet in standard-essential patents. About two items a week. Titles, links and dates only.",
+    "family": "policy",
+    "history_start": "the feed holds the newest 100 items (about a year)",
+    "id": "standards_australia_news",
+    "known_biases": [
+     "Its own announcements; standards bodies abroad (ETSI's patent declarations, for one) are not covered"
+    ],
+    "licence": "Standards Australia's site states no open licence (not found, 2026-10-13): titles, links and dates only",
+    "name": "Standards Australia news",
+    "publication_lag": "same day",
+    "rings": [
+     "adjacent",
+     "core"
+    ],
+    "snapshot_rights": "titles, links and dates only"
+   },
+   {
+    "adapter": "delimited_csv",
+    "breaks": [
+     "Each survey round can add, merge or retire themes and instrument facets; the column list is in each release manifest"
+    ],
+    "cadence": "weekly",
+    "coverage": "The whole STIP Compass database: about 8,800 policy initiatives and 12,700 instruments from 68 countries and the EU (Australia: about 200), as answered to the 2025 survey: each initiative's name, description, objectives, background, responsible body, start and end years, budget range, 56 policy themes (from IP rights in public research and research security to net-zero transitions and critical technologies), target groups, and each instrument's type and design. Read from the file the download page links; the pages themselves sit behind a Cloudflare challenge that refuses Moria (D-020), but the file does not.",
+    "family": "policy",
+    "history_start": "initiatives started from the 1980s on; the survey's current edition is 2025 (earlier editions are folded in)",
+    "id": "stip_compass",
+    "known_biases": [
+     "Self-reported by governments; coverage and detail vary by country (Portugal, Turkey and Poland report the most)",
+     "A policy is listed when a country reports it, not when it starts; the start year is the policy's own"
+    ],
+    "licence": "EC-OECD STIP Compass. OECD data are CC BY 4.0 under the OECD's open-access policy of July 2024 (read through search results; the portal says its data are freely accessible and reusable under the FAIR principles). The owner approved storing the text (D-020). Cite \"EC-OECD STIP Compass\"",
+    "name": "EC-OECD STIP Compass (national science, technology and innovation policy initiatives)",
+    "publication_lag": "countries answer the biennial EC-OECD STI policy survey; the file is rebuilt after each round and as answers are updated",
+    "rings": [
+     "adjacent",
+     "core",
+     "wider_world"
+    ],
+    "snapshot_rights": "every column stored, text included (D-020)"
+   },
+   {
+    "adapter": "documents",
+    "breaks": [],
+    "cadence": "once",
+    "coverage": "Public reports that the owner's private territory context cites as evidence, listed with the owner's approval (D-015): the AIC's estimates of the cost of serious and organised crime (counterfeit and pirated goods), the Productivity Commission's \"Innovation for the 98%\", the Patents Accessibility Review and IP Australia's Australian IP Report 2026. Each tests a claim the territories rest on (design §2.4, \"what changed since 2022\"). Sites that refuse cloud addresses (aic.gov.au, industry.gov.au) are owner uploads (docs/wishlist.md).",
+    "family": "policy",
+    "history_start": null,
+    "id": "territory_evidence",
+    "known_biases": [
+     "Government and agency estimates, with their own methods and revisions; editions are not always comparable"
+    ],
+    "licence": "per document (see each entry); text stored only where the document itself states an open licence",
+    "name": "Public documents that the Growth Territories' context cites (read once; again with each new edition)",
+    "publication_lag": "not applicable: each document is read once, and again when a new edition appears",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "per document; otherwise the title, URL, hash, size and page count only"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "GOV.UK news and communications from the UK IPO (the latest 20 items)",
+    "family": "policy",
+    "history_start": "the feed holds the latest 20 items; older items need GOV.UK search",
+    "id": "ukipo_news",
+    "known_biases": [
+     "One office's own announcements"
+    ],
+    "licence": "Open Government Licence v3.0",
+    "name": "UK Intellectual Property Office news and communications",
+    "publication_lag": "same day",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links and summaries stored"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "The United Nations' own news service, every topic: conflict and humanitarian crises, climate, health, development, human rights, migration, the UN's bodies and treaties. About six stories a day. Titles, links and dates only.",
+    "family": "news",
+    "history_start": "the feed holds the newest 30 stories (about five days)",
+    "id": "un_news",
+    "known_biases": [
+     "The UN system's agenda and framing; English edition only"
+    ],
+    "licence": "UN website terms (read 2026-10-13): materials may be downloaded and copied for personal, non-commercial use, without any right to redistribute or create derivative works. Titles, links and dates only (Moria's news rule)",
+    "name": "UN News (all topics)",
+    "publication_lag": "same day",
+    "rings": [
+     "wider_world"
+    ],
+    "snapshot_rights": "titles, links and dates only"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Rules, proposed rules and notices of the USPTO and the US Copyright Office in the Federal Register: fee changes, examination and procedure rules, requests for comment (on AI and copyright, for example) and information collections, with each document's abstract. A few a week.",
+    "family": "legal",
+    "history_start": "the feed holds the newest documents of the two agencies",
+    "id": "us_federal_register_ip",
+    "known_biases": [
+     "The United States only; notices of information collections are routine and frequent"
+    ],
+    "licence": "US federal government works, in the public domain; abstracts stored, citing the Federal Register",
+    "name": "US Federal Register, USPTO and Copyright Office documents",
+    "publication_lag": "same day (the Federal Register's publication date)",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "titles, links, dates and abstracts stored"
+   },
+   {
+    "adapter": "sitemap",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "Pages under /about-us/news-updates/ on uspto.gov whose sitemap lastmod falls in the lookback and window: press releases, notices and statements (1,751 such pages among 77,740 sitemap URLs on 2026-10-12).",
+    "family": "policy",
+    "history_start": "the site's current sitemap (1,751 news pages on 2026-10-12)",
+    "id": "uspto_news",
+    "known_biases": [
+     "lastmod reflects edits as well as new pages",
+     "Federal Register notices and the Official Gazette are separate publications, not covered here"
+    ],
+    "licence": "US federal government works are in the public domain (USPTO website terms); acknowledge the USPTO as the source. Third-party material on the site keeps its own copyright",
+    "name": "United States Patent and Trademark Office news and updates",
+    "publication_lag": "same day (sitemap lastmod)",
+    "rings": [
+     "core"
+    ],
+    "snapshot_rights": "extracted text and metadata stored; the original HTML only as its hash and size"
+   },
+   {
+    "adapter": "zip_csv",
+    "breaks": [],
+    "cadence": "once",
+    "coverage": "WIPO's bulk downloads of its IP statistics (the IP Statistics Data Center itself is disallowed by robots.txt): patent publications and grants by technology field (35 fields), trade mark applications and registrations by Nice class, and industrial design applications and registrations by Locarno class, each by office and by applicant's origin, yearly. Patents from 2000, trade marks from 2004, to 2022. Australia appears as an office and as an origin.",
+    "family": "statistics",
+    "history_start": "2000 (patents), 2004 (trade marks); designs to check in the census",
+    "id": "wipo_ipstats",
+    "known_biases": [
+     "Stale: the files end in 2022 and have not been rebuilt since 2024; WIPO's newer figures are only in its Data Center",
+     "Office '**' and origin codes follow WIPO's own conventions (regional offices, unknown origin); read the census",
+     "Counts as WIPO collected them from offices; offices report with different definitions and lags"
+    ],
+    "licence": "WIPO statistics: users agree not to republish or commercially re-sell WIPO's statistical datasets, and cite \"WIPO Statistics Database\" (WIPO's IP statistics page, read 2026-10-12). Moria stores them privately for non-commercial research (D-017) and publishes counts of the files only",
+    "name": "WIPO IP statistics, bulk indicator files (patents by technology, trade marks and designs by class)",
+    "publication_lag": "the files on WIPO's statistics page were last rebuilt in December 2023 (data to 2022); re-run when WIPO updates them",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "stored in the private bucket's lake; never republished; the public repo holds row counts and column names"
+   },
+   {
+    "adapter": "feed",
+    "breaks": [],
+    "cadence": "daily",
+    "coverage": "WIPO's English press-release feed (the latest items only)",
+    "family": "policy",
+    "history_start": "the feed holds the latest ~10 items; older releases need the press-room archive",
+    "id": "wipo_press",
+    "known_biases": [
+     "Official announcements only; no committee documents"
+    ],
+    "licence": "CC BY 4.0: WIPO's open access policy issues new online content under CC BY 4.0 (checked 2026-10-12); attribute WIPO as the source",
+    "name": "WIPO press releases",
+    "publication_lag": "same day",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, links and summaries stored"
+   },
+   {
+    "adapter": "listpage",
+    "breaks": [],
+    "cadence": "weekly",
+    "coverage": "The notifications of 26 WIPO-administered treaties (accessions, ratifications, declarations, entry into force, denunciations), from each treaty's notification list in WIPO Lex: the Paris and Berne Conventions, the PCT, the Madrid, Hague and Lisbon systems, the classification agreements, the WCT and WPPT, Marrakesh and Beijing, and the 2024 Riyadh Design Law Treaty and Treaty on Intellectual Property, Genetic Resources and Associated Traditional Knowledge (GRATK)",
+    "family": "policy",
+    "history_start": "each treaty's first notification (decades back for the older treaties; a backfill takes them all)",
+    "id": "wipo_treaty_notifications",
+    "known_biases": [
+     "Notifications only: membership itself is read from them, not from WIPO Lex's member tables",
+     "WIPO's treaty notification pages and its newsletter archive are disallowed by robots.txt; WIPO Lex is allowed",
+     "Titles, numbers, dates and links only; the notification's own text is not fetched",
+     "The Rome and Brussels Conventions have no notification list in WIPO Lex (the UN Secretary-General is their depositary)"
+    ],
+    "licence": "WIPO's online content is CC BY 4.0 (WIPO's open access policy, D-011); notifications are official acts, stored as titles, numbers, dates and links",
+    "name": "WIPO-administered treaties' notifications (WIPO Lex)",
+    "publication_lag": "days: a notification is dated when WIPO issues it; WIPO Lex lists it soon after",
+    "rings": [
+     "core",
+     "adjacent"
+    ],
+    "snapshot_rights": "titles, numbers, dates and links stored"
+   }
+  ],
+  "territories": [
+   {
+    "aim": "Uncover how we can strengthen the protection and enforcement of IP.",
+    "description": "How Australian rights holders, especially small businesses, protect and enforce their intellectual property at home and overseas: infringement, counterfeiting, piracy, scams and disputes, and the agencies, platforms and services that help or fail them, including the cost and stress of enforcement.",
+    "id": "T1",
+    "name": "Protect Australian IP",
+    "pathways": [
+     "P3",
+     "P2",
+     "P4"
+    ]
+   },
+   {
+    "aim": "Equip stakeholders with more ways to use the IP system.",
+    "description": "How innovators, especially small businesses and those under-served today, work out what is worth protecting and obtain suitable rights with confidence: awareness, cost, timing, complexity, AI and digital tools that simplify identification and application, and protection that fits iterative, collaborative development.",
+    "id": "T2",
+    "name": "Empower others",
+    "pathways": [
+     "P1",
+     "P2",
+     "P6"
+    ]
+   },
+   {
+    "aim": "Meaningfully extend the utility and value of IP.",
+    "description": "How businesses understand, demonstrate and use the commercial value of their intellectual property: valuation, IP-backed investment and finance, licensing and partnerships, commercialisation and growth, platforms that link registered rights to commercial services, and government priorities for manufacturing, critical minerals and emerging technology.",
+    "id": "T3",
+    "name": "Amplify Australian IP",
+    "pathways": [
+     "P2",
+     "P6",
+     "P1"
+    ]
+   },
+   {
+    "aim": "Work in new ways with ecosystem actors.",
+    "description": "How businesses reach IP support through organisations they already trust, and how partnerships extend an IP office's reach: attorneys, legal and IP service providers, advisers, accelerators, industry bodies, platforms and other government services, and the gaps between them.",
+    "id": "T4",
+    "name": "Cultivate our ecosystem",
+    "pathways": [
+     "P5",
+     "P1",
+     "P3"
+    ]
+   },
+   {
+    "aim": "Reconsider our raison d'etre in light of a changing world.",
+    "description": "Whether the purpose and role of an IP office should change: generative AI and inventorship, ownership and value; Indigenous knowledge and geographical indications; IP used to solve societal problems; protection that enables sharing and access; access as a right; government using IP to shape incentives; and the reach of post-registration responsibilities.",
+    "id": "T5",
+    "name": "Revisit our purpose",
+    "pathways": [
+     "P4",
+     "P2",
+     "P5",
+     "P6"
+    ]
+   }
+  ],
+  "use_in_ranking": false
+ },
+ "documents": {
+  "baseline_days": 730,
+  "indicators": {
+   "clusters": 200,
+   "combinations_new": 54,
+   "combinations_rising": 27,
+   "concepts": 15568,
+   "cross_family": 77,
+   "cross_ring": 13,
+   "low_base_surge": 135,
+   "new_term": 31,
+   "novel_micro_clusters": 16
+  },
+  "items_baseline": 37164,
+  "items_window": 15433,
+  "min_items": 3,
+  "min_sources": 2,
+  "sources": [
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-15",
+    "source": "aph_joint_inquiries",
+    "window_groups": 1,
+    "window_per_day": 0.01099
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-12",
+    "source": "aph_senate_hearings",
+    "window_groups": 30,
+    "window_per_day": 0.3297
+   },
+   {
+    "baseline_groups": 21,
+    "baseline_per_day": 0.05976,
+    "change": 1.391,
+    "family": "policy",
+    "history_from": 2025,
+    "onboarded": "2026-10-12",
+    "source": "aph_senate_new_inquiries",
+    "window_groups": 13,
+    "window_per_day": 0.1429
+   },
+   {
+    "baseline_groups": 99,
+    "baseline_per_day": 0.2817,
+    "change": 0.3653,
+    "family": "policy",
+    "history_from": 2025,
+    "onboarded": "2026-10-12",
+    "source": "aph_senate_reports",
+    "window_groups": 35,
+    "window_per_day": 0.3846
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "aspi_strategist",
+    "window_groups": 104,
+    "window_per_day": 1.143
+   },
+   {
+    "baseline_groups": 4,
+    "baseline_per_day": 0.005479,
+    "change": -1.0,
+    "family": "policy",
+    "history_from": 2019,
+    "onboarded": "2026-10-13",
+    "source": "cipo_news",
+    "window_groups": 0,
+    "window_per_day": 0.0
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "news",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "conversation_au",
+    "window_groups": 82,
+    "window_per_day": 0.9011
+   },
+   {
+    "baseline_groups": 406,
+    "baseline_per_day": 0.5562,
+    "change": 3.406,
+    "family": "research",
+    "history_from": 2012,
+    "onboarded": "2026-10-15",
+    "source": "csiro_dap",
+    "window_groups": 223,
+    "window_per_day": 2.451
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "ec_presscorner",
+    "window_groups": 71,
+    "window_per_day": 0.7802
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "epo_news",
+    "window_groups": 4,
+    "window_per_day": 0.04396
+   },
+   {
+    "baseline_groups": 4,
+    "baseline_per_day": 0.005479,
+    "change": -1.0,
+    "family": "policy",
+    "history_from": 2018,
+    "onboarded": "2026-10-12",
+    "source": "foresight_syntheses",
+    "window_groups": 0,
+    "window_per_day": 0.0
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "news",
+    "history_from": 2026,
+    "onboarded": "2026-10-11",
+    "source": "gdelt_news",
+    "window_groups": 7457,
+    "window_per_day": 81.95
+   },
+   {
+    "baseline_groups": 3,
+    "baseline_per_day": 0.01181,
+    "change": 1.791,
+    "family": "ipa_internal",
+    "history_from": 2025,
+    "onboarded": "2026-10-12",
+    "source": "ipaustralia_publications",
+    "window_groups": 3,
+    "window_per_day": 0.03297
+   },
+   {
+    "baseline_groups": 549,
+    "baseline_per_day": 0.7521,
+    "change": 2.448,
+    "family": "ipa_internal",
+    "history_from": 2022,
+    "onboarded": "2026-10-12",
+    "source": "ipaustralia_site",
+    "window_groups": 236,
+    "window_per_day": 2.593
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "legal",
+    "history_from": 2026,
+    "onboarded": "2026-10-12",
+    "source": "legislation_frl",
+    "window_groups": 112,
+    "window_per_day": 1.231
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "lowy_interpreter",
+    "window_groups": 58,
+    "window_per_day": 0.6374
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-12",
+    "source": "moip_news",
+    "window_groups": 12,
+    "window_per_day": 0.1319
+   },
+   {
+    "baseline_groups": 33375,
+    "baseline_per_day": 45.72,
+    "change": -1.0,
+    "family": "legal",
+    "history_from": 1903,
+    "onboarded": "2026-10-12",
+    "source": "oalc",
+    "window_groups": 0,
+    "window_per_day": 0.0
+   },
+   {
+    "baseline_groups": 4,
+    "baseline_per_day": 0.09663,
+    "change": -0.3177,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "oecd_ai_blog",
+    "window_groups": 6,
+    "window_per_day": 0.06593
+   },
+   {
+    "baseline_groups": 25,
+    "baseline_per_day": 0.04843,
+    "change": 6.033,
+    "family": "policy",
+    "history_from": 2025,
+    "onboarded": "2026-10-13",
+    "source": "oecd_ai_haip_reports",
+    "window_groups": 31,
+    "window_per_day": 0.3407
+   },
+   {
+    "baseline_groups": 31,
+    "baseline_per_day": 0.2398,
+    "change": -0.1293,
+    "family": "statistics",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "oecd_data_releases",
+    "window_groups": 19,
+    "window_per_day": 0.2088
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "oecd_publications",
+    "window_groups": 50,
+    "window_per_day": 0.5495
+   },
+   {
+    "baseline_groups": 3,
+    "baseline_per_day": 0.00411,
+    "change": 1.674,
+    "family": "policy",
+    "history_from": 2023,
+    "onboarded": "2026-10-12",
+    "source": "peer_office_strategies",
+    "window_groups": 1,
+    "window_per_day": 0.01099
+   },
+   {
+    "baseline_groups": 44,
+    "baseline_per_day": 0.1636,
+    "change": 2.762,
+    "family": "policy",
+    "history_from": 2025,
+    "onboarded": "2026-10-13",
+    "source": "standards_australia_news",
+    "window_groups": 56,
+    "window_per_day": 0.6154
+   },
+   {
+    "baseline_groups": 2514,
+    "baseline_per_day": 3.444,
+    "change": -0.9298,
+    "family": "policy",
+    "history_from": 2016,
+    "onboarded": "2026-10-13",
+    "source": "stip_compass",
+    "window_groups": 22,
+    "window_per_day": 0.2418
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": 0.0,
+    "change": null,
+    "family": "policy",
+    "history_from": 2021,
+    "onboarded": "2026-10-12",
+    "source": "territory_evidence",
+    "window_groups": 2,
+    "window_per_day": 0.02198
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-14",
+    "source": "ukipo_news",
+    "window_groups": 1,
+    "window_per_day": 0.01099
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "news",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "un_news",
+    "window_groups": 45,
+    "window_per_day": 0.4945
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "legal",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "us_federal_register_ip",
+    "window_groups": 5,
+    "window_per_day": 0.05495
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "policy",
+    "history_from": 2026,
+    "onboarded": "2026-10-13",
+    "source": "wipo_press",
+    "window_groups": 2,
+    "window_per_day": 0.02198
+   },
+   {
+    "baseline_groups": 82,
+    "baseline_per_day": 0.1123,
+    "change": -0.6087,
+    "family": "policy",
+    "history_from": 1967,
+    "onboarded": "2026-10-12",
+    "source": "wipo_treaty_notifications",
+    "window_groups": 4,
+    "window_per_day": 0.04396
+   }
+  ],
+  "undated": 4360,
+  "window_days": 91
+ },
+ "evals": {
+  "artefacts": {
+   "as_of": "2026-10-15",
+   "caught": 6,
+   "controls_ok": 6,
+   "run_id": "20261016T001608Z-7bb555df",
+   "seeds": [
+    {
+     "caught": true,
+     "check": "coverage",
+     "control_ok": true,
+     "seed": "volume_spike_series"
+    },
+    {
+     "caught": true,
+     "check": "coverage",
+     "control_ok": true,
+     "seed": "volume_spike_documents"
+    },
+    {
+     "caught": true,
+     "check": "duplicate",
+     "control_ok": true,
+     "seed": "duplicated_syndication"
+    },
+    {
+     "caught": true,
+     "check": "source_break",
+     "control_ok": true,
+     "seed": "source_onboarding"
+    },
+    {
+     "caught": true,
+     "check": "ingestion",
+     "control_ok": true,
+     "seed": "ingestion_failure"
+    },
+    {
+     "caught": true,
+     "check": "news_cycle",
+     "control_ok": true,
+     "seed": "news_cycle"
+    }
+   ]
+  },
+  "detectors": {
+   "as_of": "2026-10-15",
+   "run_id": "20261015T232643Z-c9954ebf",
+   "verdicts": [
+    {
+     "artefact_excess": -0.004071,
+     "detector": "contextual_anomaly",
+     "failed": [
+      "incremental"
+     ],
+     "incremental": 0.0,
+     "null_rate": 0.006494,
+     "null_reference": 0.0375,
+     "recall": 0.25,
+     "retain": false
+    },
+    {
+     "artefact_excess": -0.00471,
+     "detector": "decoupling",
+     "failed": [
+      "incremental"
+     ],
+     "incremental": 0.03409,
+     "null_rate": 0.0,
+     "null_reference": 0.0375,
+     "recall": 0.04651,
+     "retain": false
+    },
+    {
+     "artefact_excess": null,
+     "detector": "fading_combination",
+     "failed": [],
+     "incremental": 0.8864,
+     "null_rate": 5.391e-05,
+     "null_reference": 0.001055,
+     "recall": 0.8864,
+     "retain": true
+    },
+    {
+     "artefact_excess": null,
+     "detector": "jurisdiction_shift",
+     "failed": [],
+     "incremental": 0.9125,
+     "null_rate": 0.002227,
+     "null_reference": 0.001055,
+     "recall": 0.9125,
+     "retain": true
+    },
+    {
+     "artefact_excess": -0.004578,
+     "detector": "long_trend",
+     "failed": [
+      "incremental"
+     ],
+     "incremental": 0.008333,
+     "null_rate": 0.0,
+     "null_reference": 0.0125,
+     "recall": 0.04167,
+     "retain": false
+    },
+    {
+     "artefact_excess": 0.006194,
+     "detector": "short_shift",
+     "failed": [
+      "incremental"
+     ],
+     "incremental": 0.04825,
+     "null_rate": 0.0,
+     "null_reference": 0.0375,
+     "recall": 0.3125,
+     "retain": false
+    },
+    {
+     "artefact_excess": -0.004049,
+     "detector": "structural_shift",
+     "failed": [
+      "null_rate"
+     ],
+     "incremental": 0.1333,
+     "null_rate": 0.09483,
+     "null_reference": 0.0375,
+     "recall": 0.35,
+     "retain": false
+    }
+   ]
+  },
+  "hindsight": {
+   "developments": [
+    {
+     "first_raised": "2020-04-30",
+     "id": "H1",
+     "lead_months": 2,
+     "mainstream": "2020-06",
+     "miss": null,
+     "name": "COVID-19-related trade marks and patents (2020)",
+     "queued": true,
+     "recovered": true
+    },
+    {
+     "first_raised": "2022-03-31",
+     "id": "H2",
+     "lead_months": 0,
+     "mainstream": "2022-03",
+     "miss": "ranking_cut_off",
+     "name": "Virtual goods and metaverse trade marks in Nice classes 9, 35 and 41 (2021-22)",
+     "queued": false,
+     "recovered": true
+    },
+    {
+     "first_raised": "2022-12-31",
+     "id": "H3",
+     "lead_months": 6,
+     "mainstream": "2023-06",
+     "miss": "ranking_cut_off",
+     "name": "Generative-AI patent filings (2022-24)",
+     "queued": false,
+     "recovered": true
+    }
+   ],
+   "median_lead_months": 2,
+   "queued_share": 0.333,
+   "recovery": 1.0,
+   "run_id": "20261016T015244Z-4dbb7b93"
+  }
+ },
+ "funnel": {
+  "candidates": 2634,
+  "clean": 2191,
+  "documents": 132939,
+  "queue": 40,
+  "reviewed": 0,
+  "series": 26999,
+  "shortlist": 100,
+  "sources": 44
+ },
+ "history": [
+  {
+   "as_of": "2026-10-14",
+   "candidates": 2486,
+   "clean": 2129,
+   "types": {
+    "acceleration": 452,
+    "anomaly": 830,
+    "trend": 1068,
+    "weak_signal": 136
+   }
+  },
+  {
+   "as_of": "2026-10-15",
+   "candidates": 2634,
+   "clean": 2191,
+   "queue": 40,
+   "shortlist": 100,
+   "types": {
+    "acceleration": 452,
+    "anomaly": 830,
+    "trend": 1068,
+    "weak_signal": 284
+   }
+  }
+ ],
+ "ingestion": {
+  "days": [
+   {
+    "cadence": "weekly",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 37,
+    "runs": 1,
+    "source": "abs_datacubes"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 839,
+    "runs": 1,
+    "source": "abs_headline"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 3,
+    "source": "aph_house_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_house_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_house_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 3,
+    "source": "aph_joint_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_joint_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_joint_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 3,
+    "source": "aph_senate_hearings"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "aph_senate_hearings"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "aph_senate_hearings"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 34,
+    "runs": 3,
+    "source": "aph_senate_new_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2,
+    "runs": 1,
+    "source": "aph_senate_new_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_senate_new_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 134,
+    "runs": 3,
+    "source": "aph_senate_reports"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_senate_reports"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_senate_reports"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "arxiv_ai_society"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "arxiv_ai_society"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "arxiv_ai_society"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 98,
+    "runs": 1,
+    "source": "aspi_strategist"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 7,
+    "runs": 1,
+    "source": "aspi_strategist"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 10,
+    "runs": 1,
+    "source": "aspi_strategist"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 23,
+    "runs": 3,
+    "source": "cipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "cipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "cipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 42,
+    "runs": 1,
+    "source": "conversation_au"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 43,
+    "runs": 1,
+    "source": "conversation_au"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 44,
+    "runs": 1,
+    "source": "conversation_au"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 899,
+    "runs": 2,
+    "source": "csiro_dap"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 47,
+    "runs": 1,
+    "source": "ec_presscorner"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 21,
+    "runs": 1,
+    "source": "ec_presscorner"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 35,
+    "runs": 1,
+    "source": "ec_presscorner"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "epo_boards_of_appeal"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "epo_boards_of_appeal"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "epo_boards_of_appeal"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2,
+    "runs": 2,
+    "source": "epo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "epo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "epo_news"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2,
+    "runs": 1,
+    "source": "foresight_syntheses"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 7,
+    "runs": 3,
+    "source": "foresight_syntheses"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-10",
+    "failed": 0,
+    "flag": "ok",
+    "records": 121,
+    "runs": 1,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1331,
+    "runs": 2,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 3370,
+    "runs": 2,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 5009,
+    "runs": 1,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4778,
+    "runs": 1,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 92704007,
+    "runs": 1,
+    "source": "ip_rapid"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6,
+    "runs": 1,
+    "source": "ipaustralia_publications"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-10",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 844,
+    "runs": 3,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6,
+    "runs": 1,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 31,
+    "runs": 1,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "iponz_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "iponz_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "iponz_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "ipos_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "ipos_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "ipos_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-10",
+    "failed": 0,
+    "flag": "ok",
+    "records": 16,
+    "runs": 1,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-11",
+    "failed": 1,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 19,
+    "runs": 2,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 39,
+    "runs": 1,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 38,
+    "runs": 1,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 50,
+    "runs": 1,
+    "source": "lowy_interpreter"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 12,
+    "runs": 1,
+    "source": "lowy_interpreter"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 16,
+    "runs": 1,
+    "source": "lowy_interpreter"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 10,
+    "runs": 3,
+    "source": "moip_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6,
+    "runs": 1,
+    "source": "moip_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6,
+    "runs": 1,
+    "source": "moip_news"
+   },
+   {
+    "cadence": "once",
+    "day": "2025-03-10",
+    "failed": 0,
+    "flag": "ok",
+    "records": 104201,
+    "runs": 1,
+    "source": "oalc"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-12",
+    "failed": 1,
+    "flag": "failed",
+    "records": 0,
+    "runs": 1,
+    "source": "oalc"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 10,
+    "runs": 1,
+    "source": "oecd_ai_blog"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "oecd_ai_blog"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "oecd_ai_blog"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 56,
+    "runs": 1,
+    "source": "oecd_ai_haip_reports"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 49,
+    "runs": 1,
+    "source": "oecd_data_releases"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 3,
+    "runs": 1,
+    "source": "oecd_data_releases"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2,
+    "runs": 1,
+    "source": "oecd_data_releases"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 17712,
+    "runs": 1,
+    "source": "oecd_headline"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 47,
+    "runs": 1,
+    "source": "oecd_publications"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 15,
+    "runs": 1,
+    "source": "oecd_publications"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 15,
+    "runs": 1,
+    "source": "oecd_publications"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 424,
+    "runs": 1,
+    "source": "openalex_counts"
+   },
+   {
+    "cadence": "monthly",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "patent_cpc_counts"
+   },
+   {
+    "cadence": "monthly",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 961,
+    "runs": 2,
+    "source": "patent_cpc_counts"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6,
+    "runs": 1,
+    "source": "peer_office_strategies"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 8,
+    "runs": 3,
+    "source": "peer_office_strategies"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 100,
+    "runs": 1,
+    "source": "standards_australia_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 7,
+    "runs": 1,
+    "source": "standards_australia_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 7,
+    "runs": 1,
+    "source": "standards_australia_news"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-09-08",
+    "failed": 0,
+    "flag": "ok",
+    "records": 12806,
+    "runs": 1,
+    "source": "stip_compass"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 3,
+    "runs": 2,
+    "source": "territory_evidence"
+   },
+   {
+    "cadence": "once",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6,
+    "runs": 2,
+    "source": "territory_evidence"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-10",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "un_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 21,
+    "runs": 1,
+    "source": "un_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 25,
+    "runs": 1,
+    "source": "un_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 5,
+    "runs": 1,
+    "source": "us_federal_register_ip"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 3,
+    "runs": 1,
+    "source": "us_federal_register_ip"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "us_federal_register_ip"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "uspto_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "uspto_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "uspto_news"
+   },
+   {
+    "cadence": "once",
+    "day": "2024-06-21",
+    "failed": 0,
+    "flag": "ok",
+    "records": 6242077,
+    "runs": 1,
+    "source": "wipo_ipstats"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-10",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "wipo_press"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-11",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 2,
+    "source": "wipo_press"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 2,
+    "source": "wipo_press"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-13",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "wipo_press"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2,
+    "runs": 1,
+    "source": "wipo_press"
+   },
+   {
+    "cadence": "weekly",
+    "day": "2026-10-12",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2945,
+    "runs": 1,
+    "source": "wipo_treaty_notifications"
+   }
+  ],
+  "incidents": [
+   {
+    "day": "2026-10-12",
+    "kind": "failed_run",
+    "source": "oalc"
+   }
+  ]
+ },
+ "kind": "public",
+ "queue": {
+  "checks": {
+   "administrative": 1,
+   "concentrated_works": 8,
+   "coverage": 10,
+   "explained_by_context": 6,
+   "few_applicants": 3,
+   "known_trend": 4,
+   "reclassified": 1,
+   "redundancy": 32,
+   "source_break": 10
+  },
+  "dossiers": {
+   "dossiers": 100,
+   "with_chart": 75,
+   "with_counter_evidence": 25,
+   "with_related": 58
+  },
+  "flagged": 3,
+  "flags": {
+   "coverage": 3,
+   "source_break": 3
+  },
+  "openalex_samples": {
+   "calls": 32,
+   "concentrated": 8,
+   "fetched": 16
+  },
+  "passes": {
+   "1": 40
+  },
+  "pathways": {
+   "answers": {
+    "horizon": {
+     "h3": 100
+    },
+    "impact": {
+     "high": 5,
+     "low": 83,
+     "medium": 12
+    },
+    "order": {
+     "1": 58,
+     "2": 5,
+     "3": 37
+    },
+    "origin": {
+     "economic": 7,
+     "environmental": 9,
+     "legal": 17,
+     "political": 64,
+     "social": 3
+    },
+    "pathway": {
+     "P1": 20,
+     "P5": 3,
+     "P6": 77
+    },
+    "stance": {
+     "both": 100
+    }
+   },
+   "author": "model:chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF@edf37c26/Q4_K_M",
+   "evaluation": {
+    "irrelevant": [
+     0.5602,
+     0.5458,
+     0.5451,
+     0.5461
+    ],
+    "passes": false,
+    "pathway_iqr": {
+     "P1": 0.3416,
+     "P2": 0.0,
+     "P3": 0.0089,
+     "P4": 0.0106,
+     "P5": 0.0145,
+     "P6": 0.0083
+    },
+    "relevant": [
+     0.5652,
+     0.5489,
+     0.5633,
+     0.5508,
+     0.5543
+    ],
+    "rule": {
+     "min_separation": 0.05,
+     "min_spread": 0.02
+    },
+    "run_id": "20261016T015033Z-77d0d9f7",
+    "sample": 20,
+    "separation": 0.0072,
+    "spread": 0.0253
+   },
+   "probabilities": {
+    "P1": {
+     "hist": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      6,
+      6,
+      16,
+      8,
+      12,
+      5,
+      1,
+      2,
+      1,
+      2,
+      1,
+      3,
+      2,
+      2,
+      1,
+      1,
+      2,
+      2,
+      2,
+      4,
+      3,
+      3,
+      2,
+      3,
+      4,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "max": 0.6941,
+     "median": 0.2757,
+     "min": 0.1669,
+     "q1": 0.2333,
+     "q3": 0.5176
+    },
+    "P2": {
+     "hist": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      100,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "max": 0.5,
+     "median": 0.5,
+     "min": 0.5,
+     "q1": 0.5,
+     "q3": 0.5
+    },
+    "P3": {
+     "hist": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      62,
+      35,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "max": 0.5158,
+     "median": 0.4961,
+     "min": 0.4783,
+     "q1": 0.492,
+     "q3": 0.5022
+    },
+    "P4": {
+     "hist": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      65,
+      34,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "max": 0.458,
+     "median": 0.4367,
+     "min": 0.4168,
+     "q1": 0.4324,
+     "q3": 0.4433
+    },
+    "P5": {
+     "hist": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      22,
+      65,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "max": 0.5738,
+     "median": 0.5457,
+     "min": 0.5178,
+     "q1": 0.5405,
+     "q3": 0.5524
+    },
+    "P6": {
+     "hist": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      40,
+      55,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "max": 0.584,
+     "median": 0.5618,
+     "min": 0.5308,
+     "q1": 0.554,
+     "q3": 0.5692
+    }
+   },
+   "questions": "pathways-v1|0523fe5b2859",
+   "use_in_ranking": false
+  },
+  "quotas": {
+   "adjacent": {
+    "cap": 14,
+    "filled": 14
+   },
+   "core": {
+    "cap": 14,
+    "filled": 14
+   },
+   "wider_world": {
+    "cap": 12,
+    "filled": 12
+   }
+  },
+  "register": {
+   "events": {
+    "machine_interpretation": 40,
+    "machine_pathways": 40,
+    "queued": 40
+   },
+   "reviewed": 0,
+   "status": {
+    "candidate": 40
+   }
+  },
+  "rings": {
+   "adjacent": 14,
+   "core": 14,
+   "wider_world": 12
+  },
+  "sensitivity": [
+   {
+    "component": "flags",
+    "factor": 0.0,
+    "overlap": 28,
+    "size": 40,
+    "view": "both"
+   },
+   {
+    "component": "type",
+    "factor": 0.0,
+    "overlap": 40,
+    "size": 40,
+    "view": "both"
+   },
+   {
+    "component": "lead",
+    "factor": 0.5,
+    "overlap": 39,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "lead",
+    "factor": 1.5,
+    "overlap": 38,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "novelty",
+    "factor": 0.5,
+    "overlap": 39,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "novelty",
+    "factor": 1.5,
+    "overlap": 37,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "pathway",
+    "factor": 0.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "pathway",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "strength",
+    "factor": 0.5,
+    "overlap": 34,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "strength",
+    "factor": 1.5,
+    "overlap": 39,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "breadth",
+    "factor": 0.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "breadth",
+    "factor": 1.5,
+    "overlap": 38,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "impact",
+    "factor": 0.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "impact",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "pathway",
+    "factor": 0.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "pathway",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "strength",
+    "factor": 0.5,
+    "overlap": 35,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "strength",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   }
+  ],
+  "shortlist": {
+   "rings": {
+    "adjacent": 35,
+    "core": 35,
+    "wider_world": 30
+   },
+   "sources": {
+    "abs_headline": 21,
+    "aph_senate_reports": 3,
+    "aspi_strategist": 3,
+    "conversation_au": 2,
+    "gdelt_news": 2,
+    "ip_rapid": 25,
+    "ip_rapid_metrics": 4,
+    "oecd_headline": 12,
+    "openalex_counts": 25,
+    "patent_cpc_counts": 3
+   },
+   "types": {
+    "acceleration": 37,
+    "trend": 22,
+    "weak_signal": 41
+   },
+   "views": {
+    "early_warning": 50,
+    "strategic": 50
+   }
+  },
+  "shortlist_size": 100,
+  "size": 40,
+  "sources": {
+   "abs_headline": 9,
+   "conversation_au": 1,
+   "gdelt_news": 2,
+   "ip_rapid": 8,
+   "ip_rapid_metrics": 2,
+   "oecd_headline": 6,
+   "openalex_counts": 10,
+   "patent_cpc_counts": 2
+  },
+  "types": {
+   "acceleration": 15,
+   "trend": 9,
+   "weak_signal": 16
+  },
+  "views": {
+   "early_warning": 20,
+   "strategic": 20
+  }
+ },
+ "ranking": {
+  "bins": 40,
+  "components": {
+   "breadth": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2147,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    292,
+    92,
+    103
+   ],
+   "lead": {
+    "0.40": 997,
+    "0.50": 42,
+    "0.60": 866,
+    "0.70": 452,
+    "0.80": 126,
+    "0.90": 120,
+    "1.00": 31
+   },
+   "novelty": {
+    "0.24": 49,
+    "0.30": 44,
+    "0.36": 41,
+    "0.40": 948,
+    "0.42": 6,
+    "0.48": 4,
+    "0.50": 815,
+    "0.54": 1,
+    "0.60": 463,
+    "0.70": 44,
+    "0.80": 132,
+    "0.90": 59,
+    "1.00": 28
+   },
+   "strength_pct": [
+    132,
+    135,
+    128,
+    120,
+    135,
+    124,
+    164,
+    125,
+    129,
+    125,
+    133,
+    132,
+    131,
+    130,
+    130,
+    135,
+    130,
+    137,
+    127,
+    132
+   ]
+  },
+  "factors": {
+   "context_factor": {
+    "1": 2634
+   },
+   "flag_factor": {
+    "0.245": 7,
+    "0.294": 5,
+    "0.49": 156,
+    "0.7": 275,
+    "1": 2191
+   },
+   "scope_factor": {
+    "0.7": 785,
+    "0.85": 1039,
+    "1": 810
+   },
+   "type_factor": {
+    "0.5": 830,
+    "1": 1804
+   }
+  },
+  "flow": [
+   {
+    "n": 26,
+    "origin": "abs_headline",
+    "stage": "not shortlisted",
+    "type": "acceleration"
+   },
+   {
+    "n": 5,
+    "origin": "abs_headline",
+    "stage": "queue",
+    "type": "acceleration"
+   },
+   {
+    "n": 5,
+    "origin": "abs_headline",
+    "stage": "shortlist",
+    "type": "acceleration"
+   },
+   {
+    "n": 33,
+    "origin": "abs_headline",
+    "stage": "not shortlisted",
+    "type": "anomaly"
+   },
+   {
+    "n": 170,
+    "origin": "abs_headline",
+    "stage": "not shortlisted",
+    "type": "trend"
+   },
+   {
+    "n": 4,
+    "origin": "abs_headline",
+    "stage": "queue",
+    "type": "trend"
+   },
+   {
+    "n": 7,
+    "origin": "abs_headline",
+    "stage": "shortlist",
+    "type": "trend"
+   },
+   {
+    "n": 162,
+    "origin": "documents",
+    "stage": "not shortlisted",
+    "type": "weak_signal"
+   },
+   {
+    "n": 3,
+    "origin": "documents",
+    "stage": "queue",
+    "type": "weak_signal"
+   },
+   {
+    "n": 7,
+    "origin": "documents",
+    "stage": "shortlist",
+    "type": "weak_signal"
+   },
+   {
+    "n": 73,
+    "origin": "ip_rapid (class pairs)",
+    "stage": "not shortlisted",
+    "type": "weak_signal"
+   },
+   {
+    "n": 8,
+    "origin": "ip_rapid (class pairs)",
+    "stage": "queue",
+    "type": "weak_signal"
+   },
+   {
+    "n": 17,
+    "origin": "ip_rapid (class pairs)",
+    "stage": "shortlist",
+    "type": "weak_signal"
+   },
+   {
+    "n": 5,
+    "origin": "ip_rapid_metrics",
+    "stage": "not shortlisted",
+    "type": "acceleration"
+   },
+   {
+    "n": 2,
+    "origin": "ip_rapid_metrics",
+    "stage": "shortlist",
+    "type": "acceleration"
+   },
+   {
+    "n": 3,
+    "origin": "ip_rapid_metrics",
+    "stage": "not shortlisted",
+    "type": "anomaly"
+   },
+   {
+    "n": 17,
+    "origin": "ip_rapid_metrics",
+    "stage": "not shortlisted",
+    "type": "trend"
+   },
+   {
+    "n": 1,
+    "origin": "ip_rapid_metrics",
+    "stage": "queue",
+    "type": "trend"
+   },
+   {
+    "n": 1,
+    "origin": "ip_rapid_metrics",
+    "stage": "queue",
+    "type": "weak_signal"
+   },
+   {
+    "n": 209,
+    "origin": "oecd_headline",
+    "stage": "not shortlisted",
+    "type": "acceleration"
+   },
+   {
+    "n": 2,
+    "origin": "oecd_headline",
+    "stage": "queue",
+    "type": "acceleration"
+   },
+   {
+    "n": 5,
+    "origin": "oecd_headline",
+    "stage": "shortlist",
+    "type": "acceleration"
+   },
+   {
+    "n": 278,
+    "origin": "oecd_headline",
+    "stage": "not shortlisted",
+    "type": "anomaly"
+   },
+   {
+    "n": 532,
+    "origin": "oecd_headline",
+    "stage": "not shortlisted",
+    "type": "trend"
+   },
+   {
+    "n": 4,
+    "origin": "oecd_headline",
+    "stage": "queue",
+    "type": "trend"
+   },
+   {
+    "n": 1,
+    "origin": "oecd_headline",
+    "stage": "shortlist",
+    "type": "trend"
+   },
+   {
+    "n": 108,
+    "origin": "openalex_counts",
+    "stage": "not shortlisted",
+    "type": "acceleration"
+   },
+   {
+    "n": 6,
+    "origin": "openalex_counts",
+    "stage": "queue",
+    "type": "acceleration"
+   },
+   {
+    "n": 9,
+    "origin": "openalex_counts",
+    "stage": "shortlist",
+    "type": "acceleration"
+   },
+   {
+    "n": 455,
+    "origin": "openalex_counts",
+    "stage": "not shortlisted",
+    "type": "anomaly"
+   },
+   {
+    "n": 265,
+    "origin": "openalex_counts",
+    "stage": "not shortlisted",
+    "type": "trend"
+   },
+   {
+    "n": 5,
+    "origin": "openalex_counts",
+    "stage": "shortlist",
+    "type": "trend"
+   },
+   {
+    "n": 7,
+    "origin": "openalex_counts",
+    "stage": "not shortlisted",
+    "type": "weak_signal"
+   },
+   {
+    "n": 4,
+    "origin": "openalex_counts",
+    "stage": "queue",
+    "type": "weak_signal"
+   },
+   {
+    "n": 1,
+    "origin": "openalex_counts",
+    "stage": "shortlist",
+    "type": "weak_signal"
+   },
+   {
+    "n": 67,
+    "origin": "patent_cpc_counts",
+    "stage": "not shortlisted",
+    "type": "acceleration"
+   },
+   {
+    "n": 2,
+    "origin": "patent_cpc_counts",
+    "stage": "queue",
+    "type": "acceleration"
+   },
+   {
+    "n": 1,
+    "origin": "patent_cpc_counts",
+    "stage": "shortlist",
+    "type": "acceleration"
+   },
+   {
+    "n": 61,
+    "origin": "patent_cpc_counts",
+    "stage": "not shortlisted",
+    "type": "anomaly"
+   },
+   {
+    "n": 62,
+    "origin": "patent_cpc_counts",
+    "stage": "not shortlisted",
+    "type": "trend"
+   },
+   {
+    "n": 1,
+    "origin": "patent_cpc_counts",
+    "stage": "not shortlisted",
+    "type": "weak_signal"
+   }
+  ],
+  "histograms": {
+   "early_warning": {
+    "all": [
+     0,
+     0,
+     1,
+     25,
+     65,
+     88,
+     100,
+     139,
+     176,
+     113,
+     118,
+     112,
+     65,
+     61,
+     43,
+     59,
+     54,
+     52,
+     43,
+     44,
+     36,
+     13,
+     9,
+     24,
+     16,
+     39,
+     8,
+     7,
+     13,
+     17,
+     10,
+     8,
+     5,
+     2,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0
+    ],
+    "in_view": 1566,
+    "queue": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     3,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     5,
+     2,
+     2,
+     4,
+     4,
+     1,
+     2,
+     5,
+     2,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0
+    ],
+    "shortlist": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     4,
+     7,
+     0,
+     3,
+     0,
+     0,
+     4,
+     4,
+     10,
+     6,
+     2,
+     5,
+     7,
+     10,
+     8,
+     5,
+     2,
+     0,
+     0,
+     1,
+     0,
+     0,
+     0
+    ]
+   },
+   "strategic": {
+    "all": [
+     0,
+     0,
+     0,
+     33,
+     29,
+     41,
+     38,
+     44,
+     59,
+     85,
+     100,
+     83,
+     119,
+     100,
+     87,
+     98,
+     89,
+     87,
+     52,
+     64,
+     77,
+     62,
+     25,
+     30,
+     33,
+     20,
+     5,
+     3,
+     4,
+     11,
+     11,
+     11,
+     3,
+     2,
+     3,
+     4,
+     5,
+     2,
+     1,
+     0
+    ],
+    "in_view": 1520,
+    "queue": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     2,
+     2,
+     3,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     5,
+     1,
+     2,
+     1,
+     1,
+     2,
+     2,
+     1,
+     0
+    ],
+    "shortlist": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     2,
+     1,
+     3,
+     3,
+     3,
+     2,
+     4,
+     1,
+     2,
+     1,
+     1,
+     2,
+     8,
+     7,
+     9,
+     1,
+     2,
+     1,
+     1,
+     2,
+     2,
+     1,
+     0
+    ]
+   }
+  },
+  "known_trend_match": 148,
+  "ring_basis": {
+   "card": 321,
+   "core_terms": 286,
+   "items": 172,
+   "map": 1164,
+   "zeroshot": 691
+  },
+  "rings": {
+   "adjacent": 1516,
+   "core": 428,
+   "wider_world": 690
+  }
+ },
+ "runs": {
+  "artefacts": {
+   "commit": "75162ee",
+   "dirty": false,
+   "run_id": "20261016T001603Z-77caa023"
+  },
+  "detect": {
+   "commit": "75162ee",
+   "dirty": false,
+   "run_id": "20261016T001558Z-8e347bd5"
+  },
+  "dossier": {
+   "commit": "b3e5f4e",
+   "dirty": false,
+   "run_id": "20261016T013532Z-a9a73742"
+  },
+  "measure.documents": {
+   "commit": "75162ee",
+   "dirty": false,
+   "run_id": "20261016T001501Z-23d0e35c"
+  },
+  "measure.series": {
+   "commit": "75162ee",
+   "dirty": false,
+   "run_id": "20261016T001344Z-40fb1a2a"
+  },
+  "monitor.ingestion": {
+   "commit": "75162ee",
+   "dirty": false,
+   "run_id": "20261016T001255Z-876b1e80"
+  },
+  "pathways": {
+   "commit": "b3e5f4e",
+   "dirty": false,
+   "run_id": "20261016T014054Z-2b6ca37d"
+  },
+  "queue": {
+   "commit": "b3e5f4e",
+   "dirty": false,
+   "run_id": "20261016T014955Z-67cef29f"
+  },
+  "rank": {
+   "commit": "b3e5f4e",
+   "dirty": false,
+   "run_id": "20261016T013509Z-d1d92350"
+  }
+ },
+ "scan": {
+  "candidates": 2634,
+  "clean": 2191,
+  "detectors": [
+   {
+    "candidates": 1295,
+    "clean": 1180,
+    "detector": "trend",
+    "types": {
+     "acceleration": 269,
+     "trend": 1026
+    }
+   },
+   {
+    "candidates": 899,
+    "clean": 792,
+    "detector": "anomaly",
+    "types": {
+     "acceleration": 40,
+     "anomaly": 830,
+     "trend": 29
+    }
+   },
+   {
+    "candidates": 452,
+    "clean": 381,
+    "detector": "acceleration",
+    "types": {
+     "acceleration": 452
+    }
+   },
+   {
+    "candidates": 77,
+    "clean": 0,
+    "detector": "cross_family",
+    "types": {
+     "weak_signal": 77
+    }
+   },
+   {
+    "candidates": 66,
+    "clean": 13,
+    "detector": "low_base_surge",
+    "types": {
+     "weak_signal": 66
+    }
+   },
+   {
+    "candidates": 60,
+    "clean": 55,
+    "detector": "jurisdiction_shift",
+    "types": {
+     "weak_signal": 60
+    }
+   },
+   {
+    "candidates": 47,
+    "clean": 28,
+    "detector": "new_combination",
+    "types": {
+     "weak_signal": 47
+    }
+   },
+   {
+    "candidates": 42,
+    "clean": 42,
+    "detector": "divergence",
+    "types": {
+     "trend": 42
+    }
+   },
+   {
+    "candidates": 31,
+    "clean": 0,
+    "detector": "new_term",
+    "types": {
+     "weak_signal": 31
+    }
+   },
+   {
+    "candidates": 13,
+    "clean": 0,
+    "detector": "cross_ring",
+    "types": {
+     "weak_signal": 13
+    }
+   },
+   {
+    "candidates": 7,
+    "clean": 7,
+    "detector": "fading_combination",
+    "types": {
+     "weak_signal": 7
+    }
+   }
+  ],
+  "multiple_testing": {
+   "diverging": 42,
+   "pairs": 5130,
+   "series": 26999,
+   "trends_bh": 7007,
+   "trends_holm": 1295,
+   "windows": [
+    {
+     "bh_05": 3692,
+     "hist_holm": [
+      122,
+      83,
+      158,
+      35,
+      34,
+      22,
+      48,
+      36,
+      23,
+      48,
+      29,
+      78,
+      4,
+      13,
+      15,
+      14,
+      14,
+      15,
+      8,
+      17841
+     ],
+     "hist_raw": [
+      5972,
+      1283,
+      1168,
+      1168,
+      334,
+      1171,
+      28,
+      1296,
+      438,
+      21,
+      1363,
+      1,
+      505,
+      1,
+      906,
+      468,
+      26,
+      523,
+      868,
+      1100
+     ],
+     "hist_raw_fine": [
+      2670,
+      988,
+      104,
+      991,
+      14,
+      133,
+      8,
+      897,
+      156,
+      11
+     ],
+     "holm_05": 122,
+     "raw_05": 5972,
+     "tested": 18640,
+     "window": "w1"
+    },
+    {
+     "bh_05": 7575,
+     "hist_holm": [
+      1423,
+      462,
+      356,
+      136,
+      263,
+      84,
+      289,
+      51,
+      32,
+      115,
+      45,
+      236,
+      17,
+      25,
+      10,
+      73,
+      61,
+      17,
+      26,
+      14952
+     ],
+     "hist_raw": [
+      9339,
+      1222,
+      1155,
+      735,
+      604,
+      266,
+      547,
+      583,
+      138,
+      566,
+      494,
+      129,
+      466,
+      262,
+      468,
+      131,
+      456,
+      140,
+      490,
+      482
+     ],
+     "hist_raw_fine": [
+      5956,
+      616,
+      568,
+      509,
+      529,
+      83,
+      455,
+      89,
+      101,
+      433
+     ],
+     "holm_05": 1423,
+     "raw_05": 9339,
+     "tested": 18673,
+     "window": "w2"
+    },
+    {
+     "bh_05": 9409,
+     "hist_holm": [
+      3543,
+      505,
+      278,
+      243,
+      175,
+      133,
+      141,
+      132,
+      46,
+      130,
+      87,
+      31,
+      35,
+      123,
+      116,
+      11,
+      43,
+      24,
+      126,
+      12588
+     ],
+     "hist_raw": [
+      10553,
+      1273,
+      758,
+      618,
+      479,
+      369,
+      568,
+      382,
+      392,
+      328,
+      222,
+      280,
+      297,
+      322,
+      120,
+      325,
+      325,
+      280,
+      142,
+      477
+     ],
+     "hist_raw_fine": [
+      7574,
+      718,
+      580,
+      341,
+      314,
+      287,
+      294,
+      109,
+      227,
+      109
+     ],
+     "holm_05": 3543,
+     "raw_05": 10553,
+     "tested": 18510,
+     "window": "w3"
+    }
+   ]
+  },
+  "new_detectors": {
+   "contextual_anomaly": false,
+   "decoupling": false,
+   "fading_combination": true,
+   "jurisdiction_shift": true,
+   "long_trend": false,
+   "short_shift": false,
+   "structural_shift": false
+  },
+  "origins": [
+   {
+    "acceleration": 36,
+    "anomaly": 33,
+    "clean": 250,
+    "origin": "abs_headline",
+    "trend": 181
+   },
+   {
+    "clean": 0,
+    "origin": "documents",
+    "weak_signal": 172
+   },
+   {
+    "clean": 90,
+    "origin": "ip_rapid (class pairs)",
+    "weak_signal": 98
+   },
+   {
+    "acceleration": 7,
+    "anomaly": 3,
+    "clean": 29,
+    "origin": "ip_rapid_metrics",
+    "trend": 18,
+    "weak_signal": 1
+   },
+   {
+    "acceleration": 216,
+    "anomaly": 278,
+    "clean": 1031,
+    "origin": "oecd_headline",
+    "trend": 537
+   },
+   {
+    "acceleration": 123,
+    "anomaly": 455,
+    "clean": 755,
+    "origin": "openalex_counts",
+    "trend": 270,
+    "weak_signal": 12
+   },
+   {
+    "acceleration": 70,
+    "anomaly": 61,
+    "clean": 36,
+    "origin": "patent_cpc_counts",
+    "trend": 62,
+    "weak_signal": 1
+   }
+  ],
+  "rings": [
+   {
+    "rings": "(none)",
+    "trend": 42
+   },
+   {
+    "acceleration": 70,
+    "anomaly": 61,
+    "rings": "adjacent",
+    "trend": 59,
+    "weak_signal": 5
+   },
+   {
+    "rings": "adjacent + core",
+    "weak_signal": 7
+   },
+   {
+    "rings": "adjacent + core + wider_world",
+    "weak_signal": 53
+   },
+   {
+    "acceleration": 159,
+    "anomaly": 488,
+    "rings": "adjacent + wider_world",
+    "trend": 435,
+    "weak_signal": 69
+   },
+   {
+    "acceleration": 216,
+    "anomaly": 278,
+    "rings": "adjacent + wider_world + core",
+    "trend": 514
+   },
+   {
+    "acceleration": 7,
+    "anomaly": 3,
+    "rings": "core",
+    "trend": 18,
+    "weak_signal": 103
+   },
+   {
+    "rings": "core + wider_world",
+    "weak_signal": 14
+   },
+   {
+    "rings": "wider_world",
+    "weak_signal": 33
+   }
+  ],
+  "series_tested": [
+   {
+    "accelerations": 16,
+    "anomalies": 38,
+    "frequency": "A",
+    "level_changes": 0,
+    "series": 603,
+    "source": "abs_headline",
+    "surges": 0,
+    "testable": 287,
+    "trends": 86
+   },
+   {
+    "accelerations": 0,
+    "anomalies": 0,
+    "frequency": "M",
+    "level_changes": 0,
+    "series": 8,
+    "source": "abs_headline",
+    "surges": 0,
+    "testable": 7,
+    "trends": 5
+   },
+   {
+    "accelerations": 1,
+    "anomalies": 4,
+    "frequency": "Q",
+    "level_changes": 0,
+    "series": 209,
+    "source": "abs_headline",
+    "surges": 0,
+    "testable": 209,
+    "trends": 124
+   },
+   {
+    "accelerations": 0,
+    "anomalies": 0,
+    "frequency": "D",
+    "level_changes": 0,
+    "series": 284,
+    "source": "gdelt_news",
+    "surges": 0,
+    "testable": 0,
+    "trends": 0
+   },
+   {
+    "accelerations": 6,
+    "anomalies": 1,
+    "frequency": "M",
+    "level_changes": 3,
+    "series": 731,
+    "source": "ip_rapid_metrics",
+    "surges": 1,
+    "testable": 279,
+    "trends": 24
+   },
+   {
+    "accelerations": 138,
+    "anomalies": 308,
+    "frequency": "A",
+    "level_changes": 0,
+    "series": 4642,
+    "source": "oecd_headline",
+    "surges": 0,
+    "testable": 2900,
+    "trends": 639
+   },
+   {
+    "accelerations": 0,
+    "anomalies": 0,
+    "frequency": "M",
+    "level_changes": 0,
+    "series": 67,
+    "source": "oecd_headline",
+    "surges": 0,
+    "testable": 66,
+    "trends": 45
+   },
+   {
+    "accelerations": 1,
+    "anomalies": 2,
+    "frequency": "Q",
+    "level_changes": 1,
+    "series": 26,
+    "source": "oecd_headline",
+    "surges": 0,
+    "testable": 16,
+    "trends": 7
+   },
+   {
+    "accelerations": 87,
+    "anomalies": 266,
+    "frequency": "A",
+    "level_changes": 0,
+    "series": 9344,
+    "source": "openalex_counts",
+    "surges": 5,
+    "testable": 8100,
+    "trends": 218
+   },
+   {
+    "accelerations": 26,
+    "anomalies": 118,
+    "frequency": "M",
+    "level_changes": 120,
+    "series": 9197,
+    "source": "openalex_counts",
+    "surges": 7,
+    "testable": 5592,
+    "trends": 67
+   },
+   {
+    "accelerations": 64,
+    "anomalies": 71,
+    "frequency": "A",
+    "level_changes": 0,
+    "series": 1888,
+    "source": "patent_cpc_counts",
+    "surges": 1,
+    "testable": 1206,
+    "trends": 80
+   }
+  ],
+  "signalboost": {
+   "anomaly": 808,
+   "candidate_redundancy_groups": 1370,
+   "combinations_fading": 33,
+   "context_explained": 295,
+   "context_modelled": 18612,
+   "contextual": 101,
+   "coupled": 2,
+   "coupling_tested": 1558,
+   "decoupled": 0,
+   "horizon_long_sig": 1449,
+   "horizon_long_tested": 26528,
+   "horizon_medium_sig": 524,
+   "horizon_medium_tested": 12112,
+   "horizon_short_sig": 547,
+   "horizon_short_tested": 12339,
+   "horizon_structural": 1718,
+   "jurisdiction_fading": 26,
+   "jurisdiction_new": 14,
+   "jurisdiction_rising": 20,
+   "redundancy_flagged": 4550,
+   "redundancy_groups": 2444,
+   "redundant_candidates": 977
+  },
+  "subject_kinds": {
+   "combination": 114,
+   "concept": 156,
+   "pair": 42,
+   "series": 2322
+  },
+  "types": {
+   "acceleration": {
+    "candidates": 452,
+    "clean": 381,
+    "flags": {
+     "coverage": 71,
+     "duplicate": 0,
+     "ingestion": 0,
+     "label_drift": 0,
+     "news_cycle": 0,
+     "source_break": 0
+    }
+   },
+   "anomaly": {
+    "candidates": 830,
+    "clean": 733,
+    "flags": {
+     "coverage": 97,
+     "duplicate": 0,
+     "ingestion": 0,
+     "label_drift": 0,
+     "news_cycle": 0,
+     "source_break": 0
+    }
+   },
+   "trend": {
+    "candidates": 1068,
+    "clean": 974,
+    "flags": {
+     "coverage": 94,
+     "duplicate": 0,
+     "ingestion": 0,
+     "label_drift": 0,
+     "news_cycle": 0,
+     "source_break": 0
+    }
+   },
+   "weak_signal": {
+    "candidates": 284,
+    "clean": 103,
+    "flags": {
+     "coverage": 173,
+     "duplicate": 5,
+     "ingestion": 0,
+     "label_drift": 0,
+     "news_cycle": 7,
+     "source_break": 176
+    }
+   }
+  }
+ },
+ "schema": 1
+}

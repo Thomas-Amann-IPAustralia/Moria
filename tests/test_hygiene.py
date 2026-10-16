@@ -46,7 +46,7 @@ def test_no_invisible_or_bidirectional_characters_in_tracked_text():
     offenders = []
     for path in _git("ls-files").splitlines():
         full = REPO_ROOT / path
-        text_file = full.is_file() and full.suffix in {".py", ".yaml", ".yml", ".md", ".toml", ".html"}
+        text_file = full.is_file() and full.suffix in {".py", ".yaml", ".yml", ".md", ".toml", ".html", ".js", ".css"}
         if text_file and hidden.search(full.read_text(encoding="utf-8", errors="ignore")):
             offenders.append(path)
     assert not offenders, offenders

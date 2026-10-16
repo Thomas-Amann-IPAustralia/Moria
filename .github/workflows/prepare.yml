@@ -3,7 +3,8 @@ name: prepare
 # The evidence layer's preparation (day 3): normalise, embed, dedup, keyphrases, tag and index, into the private R2
 # bucket; then day 4's scan (the detectors and artefact checks) and the seeded-artefact check; then day 5's review
 # (the ranking, dossiers, pathway suggestions, the queue, the register's events, the reviewer's spreadsheet and the
-# early-warning digest, all in the bucket). Weekly, after collect-weekly; or by hand. Embeddings are reused while a
+# early-warning digest, all in the bucket); then the dashboard's data (D-030: the private bundle to the bucket).
+# Weekly, after collect-weekly; or by hand. Embeddings are reused while a
 # text is unchanged, so a weekly run embeds only new items; the decision model's responses are cached in the bucket.
 # Logs are public: the stages print counts and keys, never content (`moria candidates` and `moria show` are for a
 # terminal, not here); the job summary holds aggregate reports only.
@@ -74,3 +75,7 @@ jobs:
         run: |
           uv run moria queue-report --store r2
           cat reports/queue.md >> "$GITHUB_STEP_SUMMARY"
+      - name: The dashboard's data (D-030) - the private bundle to the bucket; the public and practice bundles rebuilt
+        run: |
+          uv run moria dashboard --store r2
+          echo "The dashboard's private bundle is in the bucket under interpretation/dashboard/ (load it in the dashboard; nothing is uploaded). Publishing the new counts on GitHub Pages means committing dashboard/data/ from a build session." >> "$GITHUB_STEP_SUMMARY"

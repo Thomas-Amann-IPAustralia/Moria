@@ -6,8 +6,8 @@ adjacent fields, and the wider world. People (for now, the owner alone) validate
 then read through PESTLE, SWOT/TOWS and a Futures Cone. The design is `docs/design.md` (v0.3); the decisions are in
 `docs/decisions.md`; the owner's SOP is `sop-agent-construction-v2.md`, and it governs how this repo is built.
 
-**Current scope: the one-week machinery sprint (design §13). Days 1 to 5, the Tier 1 cleanup and the widening of
-sources (D-020) are built; days 6 and 7 are the buffer.**
+**Current scope: the one-week machinery sprint (design §13). Days 1 to 5, the Tier 1 cleanup, the widening of
+sources (D-020) and the dashboard (D-030) are built; days 6 and 7 are the buffer.**
 - **Built (day 1):** the package skeleton, config, the store (R2, plus a local stand-in), manifests, the polite HTTP
   client, five daily collectors, the environment check, and the CI, collect-daily and probe workflows.
 - **Built (day 2, D-011 to D-013):** six peer-office sources (daily); OpenAlex whole-taxonomy counts, the ABS headline
@@ -71,11 +71,18 @@ sources (D-020) are built; days 6 and 7 are the buffer.**
   eval hindsight` (term-only; `config/hindsight.yaml` is proposed). Settings in `config/review.yaml`. **The decision
   model's suggestions are recorded and shown, not ranked (`pathways.use_in_ranking: false`): on the SOP's marked
   states it does not pass its check (D-029). Switching it on is the owner's call.**
+- **Built (the dashboard, D-030; the owner's request):** `dashboard/`, a static page for GitHub Pages that explains
+  and explores the scan and the review: the queue, every candidate, the series over time with their fits and bands, a
+  what-if of the ranking (a port of `rank.select`, checked to reproduce the queue), playgrounds for the statistics,
+  the sources and limits, a glossary; every number has a hover explainer. `moria dashboard` writes the public bundle
+  (aggregates only, in the repo), the private bundle (the bucket; `--out` to the analyst's own disk) and the practice
+  bundle (invented, run through the real detectors and ranking). The private bundle is read in the browser only.
+  The owner switches Pages on (`docs/dashboard.md`).
 - **Next:** the owner's first review round (the spreadsheet), the hindsight set and the decision model's options
   (D-029); days 6 and 7 (fixes, `docs/methodology.md`, handover) when the owner asks. `docs/handover-day5.md` lists
   the flags. Pile of Law was checked and discarded (D-016).
 - **Not to build yet:** generative drafting (paid menu M2), forecasts beyond baselines, the rest of Tier 2 (the OECD
-  and the breadth pack came forward, D-020), a dashboard, agents. Shape outputs for them only.
+  and the breadth pack came forward, D-020), agents. Shape outputs for them only.
 - **Nothing in the machinery spends money.** Any paid step is on the paid menu (design §4.6) and needs the owner's
   approval of that item.
 
@@ -128,6 +135,11 @@ sources (D-020) are built; days 6 and 7 are the buffer.**
 - Dossiers, pathway suggestions, the register (its events and spreadsheets) and the digest hold labels and links:
   the private bucket only (`interpretation/`, `review/`, `inbox/register/`). The reviewer's spreadsheet goes to
   their own disk with `--out`, never the repo.
+- The dashboard (D-030) is public. Its public bundle (`dashboard/data/public.json`) is aggregates only, like the
+  reports; its practice bundle is invented. The private bundle (labels, series, titles, links, dossiers) lives in
+  the bucket and on the analyst's own disk (`--out` refuses a path in the repo outside `data/`; `dashboard/data/` is
+  git-ignored but for the two public files). The page loads nothing from third parties and its content security
+  policy allows no outbound connection; a loaded file stays in the tab. Source text reaches the page as text only.
 - The decision model's states wrap every source text in `<data>` markers, defanged, after a line saying it is
   data, never instructions (SOP §22). Its suggestions are attributed to the model and never thresholds.
 - Owner uploads go to `inbox/documents/` in the private bucket, never into the repo. Every document's own licence
@@ -174,6 +186,7 @@ sources (D-020) are built; days 6 and 7 are the buffer.**
 | Review (the chain) | `moria review [--as-of D] [--store r2]` | the scan | all of the above, in order; stops at the first failure |
 | Queue report | `moria queue-report [--as-of D]` | the review's manifests and outputs | `reports/queue.md` in the repo (aggregates only) |
 | Show | `moria show <id> [--as-of D]` | a dossier | nothing (prints it to the analyst's terminal) |
+| Dashboard | `moria dashboard [--as-of D] [--out PATH] [--practice-only]` | the scan, the review, the register, the evaluations | `interpretation/dashboard/as_of=<D>/dashboard.json.gz` (private); `dashboard/data/public.json` (aggregates only) and `practice.json` (invented) in the repo |
 | Pathways' check | `moria eval pathways [--as-of D]` | the dossiers, synthetic anchors | `manifests/eval.pathways/`; `reports/eval/pathways.md` (aggregates only) |
 | Hindsight | `moria eval hindsight [H1 ...]` | the evidence layer at past dates, term-only | `manifests/eval.hindsight/`; `reports/eval/hindsight.md` (aggregates only) |
 | Search | `moria search "words" [--source S] [--since D]` | the index | nothing (prints matches to the analyst's terminal) |
@@ -194,8 +207,8 @@ instead of the document's URL.
   index, IP RAPID metrics), with the model files cached by their pinned revision; then `moria scan`, `moria eval
   artefacts` (a missed seed fails the job) and `moria eval detectors` (its report in the job summary); then
   `moria review --build-scorer` (day 5, the decision model and its scorer cached), `moria eval pathways` and `moria
-  queue-report` (their reports in the job summary). It did not parse on main from 2026-10-14 to D-025 (a colon in
-  a step name): fixed on D-025's branch.
+  queue-report` (their reports in the job summary); then `moria dashboard` (the private bundle to the bucket, D-030).
+  It did not parse on main from 2026-10-14 to D-025 (a colon in a step name): fixed on D-025's branch.
 - `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
@@ -291,7 +304,7 @@ Matilda-Jev is the measured paid upgrade (M1). A judge never shares the writer's
 
 ## Future state (context only — do not build yet)
 Quarterly cycles; an IPAVentures-specific lens once internal data can be used in an approved environment; a
-question-answering agent over the evidence; a dashboard.
+question-answering agent over the evidence; live data in the dashboard (it reads files today, D-030).
 
 ## Conventions
 - Python 3.11, uv with a committed lockfile, ruff (line length 120), pytest. One package under `src/moria`, with a
