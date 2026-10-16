@@ -213,7 +213,7 @@ def queue(store: Store, cfg: ReviewConfig, as_of: date, config_hash: str | None 
             counts[f"view_{r['view']}"] += 1
             counts[f"pass_{r['pass']}"] += 1
             counts["flagged"] += bool(r["flags"])
-            counts["third_order"] += r["order_top"] == "3"
+            counts["machine_order_3"] += r["order_top"] == "3"  # the model's suggestion, capped only when used
         counts["sensitivity_min_overlap"] = min((s["overlap"] for s in sens), default=len(out))
         manifest.counts = dict(sorted(counts.items()))
         return "passed", manifest.finish(store, "passed"), manifest.counts

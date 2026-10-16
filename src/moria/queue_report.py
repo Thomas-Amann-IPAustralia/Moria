@@ -66,7 +66,9 @@ def queue_report(store: Store, cfg: ReviewConfig, as_of: date) -> str:
     lines += [*_table(Counter(q["view"] for q in queue), "Picked by view"), ""]
     lines += [*_table(Counter(r["ring_basis"] for r in ranked), "Ring basis (every candidate)"), ""]
     lines += ["## Sensitivity of the queue to the weights", "",
-              f"Each weight times each factor, the queue chosen again: places of the {size} still in it.", "",
+              f"Each weight times each factor, the queue chosen again: places of the {size} still in it."
+              + ("" if cfg.pathways.use_in_ranking else " Pathway and impact have no effect while the suggestions "
+                 "are not used in the ranking."), "",
               "| View | Component | Factor | Places kept |", "|---|---|---:|---:|"]  # fmt: skip
     for s in sens:
         lines.append(f"| {s['view']} | {s['component']} | {s['factor']:g} | {s['overlap']} of {s['size']} |")
