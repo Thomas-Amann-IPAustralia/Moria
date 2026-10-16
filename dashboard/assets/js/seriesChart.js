@@ -162,7 +162,7 @@ export function seriesOption(items, opts = {}) {
       series.push({ name: `_recent ${name}`, type: "line", data: L.accel.recent, symbol: "none", lineStyle: { color: tk.critical, width: 2.5 }, z: 4, tooltip: { show: false } });
     }
     const markLine = opts.changes !== false && L.changes.length
-      ? { silent: true, symbol: "none", lineStyle: { color: tk.muted, type: "solid", width: 1 }, label: { formatter: (p) => p.name, color: tk.muted, fontSize: 11, position: "insideEndTop" },
+      ? { silent: true, symbol: "none", lineStyle: { color: tk.muted, type: "solid", width: 1 }, label: { show: items.length === 1, formatter: (p) => p.name, color: tk.muted, fontSize: 11, position: "insideEndTop" },
           data: L.changes.map((c) => ({ xAxis: c.at, name: c.what === "slope" ? "slope changes" : "level shifts" })) }
       : undefined;
     series.push({

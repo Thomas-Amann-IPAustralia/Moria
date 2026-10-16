@@ -76,7 +76,8 @@ function mirror(ctx) {
       details.replaceChildren();
       return;
     }
-    chart(box, seriesOption(items, { ...opts, mode, zoom: true }));
+    const recent = { M: 72, Q: 32, A: 24, D: 180 }[items[0].s.frequency] || 60;
+    chart(box, seriesOption(items, { ...opts, mode, zoom: true, recent }));
     details.replaceChildren(...items.map((it) => measured(it, ctx)));
   };
   // the picker
