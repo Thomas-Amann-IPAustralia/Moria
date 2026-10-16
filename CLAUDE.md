@@ -59,8 +59,9 @@ sources (D-020) are built.**
   (`src/moria/context.py`); fading pairs and applicant countries by class (IP RAPID's new `country_classes`);
   redundancy groups and corroboration on the candidates (correlated indicators and overlapping windows are not
   independent corroboration); `moria eval detectors` against day 4's detectors. **Every new detector is measured
-  at each scan and adds candidates only when switched on in `config/detect.yaml` `new_detectors` (all off until the
-  owner decides on the evaluation's verdicts).**
+  at each scan and adds candidates only when switched on in `config/detect.yaml` `new_detectors`. The owner
+  switched on fading pairs and jurisdictions by class, and had the dossiers show "explained by its context"
+  (`context.annotate_explained`); the other five stay off but are kept, to revisit after calibration (D-028).**
 - **Next:** day 5 (dossiers, pathway suggestions, ranking and quotas, the register export and import, the
   early-warning digest, a term-only hindsight smoke run), when the owner asks. `docs/handover-day4.md` lists what
   day 5 reads and its flags. Pile of Law was checked and discarded (D-016).

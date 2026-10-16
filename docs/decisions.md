@@ -2039,3 +2039,42 @@ questions stand.
 
 Next free decision number: D-028.
 
+## D-028 — The owner's answers on D-025: two detectors on, the context note shown, the rules confirmed, structural breaks off; nothing removed (2026-10-16)
+
+**The owner's answers** to D-025's questions:
+1. **"Yes turn on the two passing detectors."** `fading_combination` and `jurisdiction_shift` are on. **"Please don't
+   delete/remove the underperforming time series analyses you created. I'd like to revisit them once we've got the
+   project into a stable position."** Short-term shifts, long-run trends, structural breaks, the contextual detector
+   and decoupling stay in the code, measured at every scan and scored by the weekly evaluation, switched off.
+2. **"Yes, show 'explained by its context' in day 5's dossiers."** New setting `context.annotate_explained: true`: a
+   band anomaly whose move its context predicts carries `context_explains` in its numbers (the prediction, each
+   covariate's contribution, the share explained) and its peers and counterpart as evidence (`peer`,
+   `reference`), while `contextual_anomaly` stays off as a detector. An explanation, never a filter.
+3. **"Yes, use your 'first look' thresholds. We'll likely run a few calibration and refinement passes later to
+   ensure our thresholds are behaving correctly."** The retention rules D-025 revised after its development run
+   stand (incremental value at least 10%; false positives at most day 4's comparable rate plus 1 point, at most 5%;
+   artefact excess at most 2 points), with the long-window break penalty of 6.
+4. **"Agreed. Leave it off for now and revisit later."** Structural breaks stay off.
+
+**Run** (from `75162ee`): `moria scan --as-of 2026-10-15 --store r2` (monitor `20261016T001255Z-876b1e80`, detect
+`20261016T001558Z-8e347bd5`, artefacts `20261016T001603Z-77caa023`): **2,634 candidates, 2,191 with no artefact
+flag** (acceleration 452, trend 1,068, weak signal 284, anomaly 830); the switches added 7 fading class pairs and 60
+country-by-class changes (new, rising or fading); 295 candidates carry the context note; redundancy as D-026 (1,370
+groups, 977 candidates behind another). `moria eval artefacts` (`20261016T001608Z-7bb555df`): 6 of 6 caught, 6 of 6
+controls clean. `reports/scan.md`.
+
+**Checked:** 156 tests pass (one skipped), the new one showing the note on while the detector is off. Lint and format
+clean.
+
+**Spend:** $0.
+
+**Consequences.**
+- Day 5 reads the candidates as they now are; the dossier renders `context_explains` beside the alternative
+  explanations checklist (design §8.4).
+- **To revisit later (the owner):** calibration and refinement passes on the retention thresholds; the five detectors
+  switched off (`reports/eval/detectors.md` holds their latest numbers each week); structural breaks' false
+  positives (a different fix than a larger penalty, D-025); keyphrase fading pairs once the feeds have a baseline.
+- The merge of this branch (or a pull request) is still the owner's.
+
+Next free decision number: D-029.
+
