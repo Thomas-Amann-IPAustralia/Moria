@@ -1,0 +1,50 @@
+# The hindsight set (design §2.6, §11.1, §11.3): developments a past scan should have raised, each with the dates
+# its scans run at, its mainstream point and how a candidate matches it. Validated by moria.config.HindsightFile.
+#
+# PROPOSED: Claude's draft for day 5's term-only smoke run (D-029), from the three candidate developments of design
+# §11.3. The design asks for the set to be chosen by analysts blind to Moria's output, with non-events (so false
+# alarms are counted) and pass rules: the owner's (about an hour, §2.6). Until then this set exercises the machinery;
+# its numbers are not the sprint's hindsight result. The mainstream months are approximate.
+version: 1
+status: proposed
+variant: term_only           # §11.3: counts, keyphrases and co-occurrence; no pretrained model
+# Left out of the term-only variant: OpenAlex (its topics come from a classifier trained in 2024: a pretrained model
+# that knows the future) and GDELT (collected from October 2026 only).
+exclude_sources: [openalex_counts, gdelt_news]
+# A candidate matches only through a detector of change: a plain trend or divergence is a level that may predate the
+# development (a first look, D-029: Nice class 5's rise since 2017 matched H1 before the shock of March 2020).
+match_detectors: [acceleration, anomaly, low_base_surge, new_term, new_combination, cross_family, cross_ring,
+                  novel_items, jurisdiction_shift, short_shift, structural_shift, contextual_anomaly]
+developments:
+  - id: H1
+    name: COVID-19-related trade marks and patents (2020)
+    mainstream: "2020-06"
+    dates: ["2020-02-29", "2020-04-30", "2020-06-30"]
+    direction: 1
+    # Nice 5 (pharmaceuticals, sanitisers), 10 (medical apparatus), 44 (medical services); IPC subclasses for
+    # medicines, diagnostics and protective equipment
+    series:
+      - '^ip_rapid_metrics\|applications_nice\|trade_mark\|(5|10|44)$'
+      - '^ip_rapid_metrics\|applications_ipc\|patent\|(A61K|A61P|A62B|A41D|C12N|C12Q|G01N)$'
+    combinations: ['^nc:nice:(10\+5|10\+44|44\+5)$']
+    terms: [covid, coronavirus, pandemic, sars-cov-2]
+  - id: H2
+    name: Virtual goods and metaverse trade marks in Nice classes 9, 35 and 41 (2021-22)
+    mainstream: "2022-03"
+    dates: ["2021-09-30", "2021-12-31", "2022-03-31"]
+    direction: 1
+    series: ['^ip_rapid_metrics\|applications_nice\|trade_mark\|(9|35|41)$']
+    combinations: ['^nc:nice:(35\+9|41\+9|35\+41)$']
+    terms: [metaverse, nft, non-fungible, virtual goods]
+  - id: H3
+    name: Generative-AI patent filings (2022-24)
+    mainstream: "2023-06"
+    dates: ["2022-12-31", "2023-03-31", "2023-06-30"]
+    direction: 1
+    series:
+      - '^ip_rapid_metrics\|applications_ai_g06n\|'
+      - '^ip_rapid_metrics\|applications_ipc\|patent\|G06N$'
+      - '^patent_cpc_counts\|G06N\|'
+    combinations: ['^nc:ipc:(G06N\+|.*\+G06N$)', '^nc:ipc_country:[A-Z]+\+G06N$']
+    terms: [generative ai, large language model, chatgpt, generative artificial intelligence]
+non_events: []               # the owner's: developments that were expected and did not happen

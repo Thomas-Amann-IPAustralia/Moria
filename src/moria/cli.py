@@ -23,6 +23,8 @@ from .config import (
     load_config,
     load_detect,
     load_features,
+    load_hindsight,
+    load_review,
     load_sources,
     load_territories,
     load_themes,
@@ -48,6 +50,8 @@ measure_app = typer.Typer(no_args_is_help=True, help="Day 4's detectors over ser
 app.add_typer(measure_app, name="measure")
 monitor_app = typer.Typer(no_args_is_help=True, help="The ingestion monitor: incidents per source and day")
 app.add_typer(monitor_app, name="monitor")
+register_app = typer.Typer(no_args_is_help=True, help="The signal register: machine events, the spreadsheet round trip")
+app.add_typer(register_app, name="register")
 
 
 @app.callback()
@@ -729,6 +733,279 @@ def candidates(
             f"{'/'.join(c['detectors']):<34} {mark:<28} {(c['label'] or c['subject'])[:90]}"
         )
     typer.echo(f"{len(rows)} candidates")
+
+
+# ---------------------------------------------------------------------------------------------------------- day 5
+
+
+def _review_setup(store: str | None):
+    cfg = load_config()
+    return cfg, load_review(), load_sources(), open_store(cfg.store, store)
+
+
+@app.command("rank")
+def rank_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Score every candidate of a scan for the early-warning and strategic views (one ring each, components and
+    factors), and choose the shortlist that dossiers and pathway suggestions are built for, under the ring quotas."""
+    from .rank import COMMAND, rank
+
+    cfg, review, cards, st = _review_setup(store)
+    features = load_features()
+    codebook, territories, baseline = load_codebook(), load_territories(), load_baseline()
+    chash = config_hash(review, codebook, territories, baseline, *cards.values())
+    _stage_line(COMMAND, *rank(st, review, cards, codebook, territories, baseline, _encoder_factory(cfg, features),
+                               _as_of(as_of), chash))  # fmt: skip
+
+
+@app.command("dossier")
+def dossier_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    samples: bool = typer.Option(True, "--samples/--no-samples", help="Fetch OpenAlex sample works (free credits)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """An evidence dossier for each shortlisted candidate: the detectors' numbers, the original evidence, the
+    alternative-explanations checklist, counter-evidence, analogues and sample works. Private bucket only."""
+    from .dossier import COMMAND, dossier
+
+    cfg, review, cards, st = _review_setup(store)
+    client = PoliteClient(cfg.http) if samples else None
+    try:
+        chash = config_hash(review, load_detect(), load_baseline())
+        _stage_line(COMMAND, *dossier(st, review, load_detect(), cards, load_baseline(), client, _as_of(as_of),
+                                      load_features().embed.dim, chash))  # fmt: skip
+    finally:
+        if client is not None:
+            client.close()
+
+
+def _backend_factory(cfg, review, backend: str, build: bool):
+    if backend == "none":
+        return None
+    if backend != "jevstyle":
+        typer.echo(f"backend {backend!r} is not built (jevstyle or none)", err=True)
+        raise typer.Exit(2)
+
+    def make():
+        from .pathways import JevStyleBackend
+
+        return JevStyleBackend(review.pathways, PoliteClient(cfg.http.model_copy(update={"timeout_s": 600.0})), build)
+
+    return make
+
+
+@app.command("pathways")
+def pathways_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    backend: str = typer.Option(None, help="jevstyle (the free decision model) or none; default from config"),
+    build_scorer: bool = typer.Option(False, "--build-scorer", help="Build llama.cpp and the scorer if missing"),
+    limit: int = typer.Option(None, help="Smoke test: only the first N dossiers"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The decision model's pathway suggestions (P1 to P6 and their order) and machine interpretation (origin,
+    horizon, stance, impact) for each dossier: suggestions, attributed to the model, never thresholds."""
+    from .pathways import COMMAND, pathways
+
+    cfg, review, _, st = _review_setup(store)
+    factory = _backend_factory(cfg, review, backend or review.pathways.backend, build_scorer)
+    _stage_line(COMMAND, *pathways(st, review, factory, _as_of(as_of), config_hash(review), limit))
+
+
+@app.command("queue")
+def queue_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The review queue of about 40 from the shortlist: the two views' rankings in turn, ring quotas, the
+    third-order cap, one per redundancy group; and how much the queue moves with each weight."""
+    from .queue import COMMAND, queue
+
+    _, review, _, st = _review_setup(store)
+    _stage_line(COMMAND, *queue(st, review, _as_of(as_of), config_hash(review)))
+
+
+@register_app.command("sync")
+def register_sync(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Append the machine's events for a scan's queue: queued, the pathway suggestions, the machine interpretation."""
+    from .register import SYNC, sync
+
+    _, review, _, st = _review_setup(store)
+    _stage_line(SYNC, *sync(st, review, _as_of(as_of), config_hash(review)))
+
+
+@register_app.command("export")
+def register_export(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option(None, help="Also write the spreadsheet here (your own disk; it holds labels)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The reviewer's spreadsheet: the queue and the signals under review, with the machine's columns and yours,
+    the dossiers, a sheet for missed signals and the rules. Into the private bucket (and --out)."""
+    from .register import EXPORT, export
+
+    _, review, _, st = _review_setup(store)
+    path = Path(out) if out else None
+    _stage_line(EXPORT, *export(st, review, load_baseline(), load_territories(), _as_of(as_of), path,
+                                config_hash(review)))  # fmt: skip
+    if path:
+        typer.echo(f"wrote {path}")
+
+
+@register_app.command("import")
+def register_import(
+    path: str = typer.Argument(..., help="A reviewed spreadsheet from `moria register export`"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Validate a reviewed spreadsheet and append its reviews (and missed signals) as events. Any error rejects the
+    whole file: nothing is appended, and the first bad row and column are named."""
+    from .register import IMPORT, import_review
+
+    _, review, _, st = _review_setup(store)
+    _stage_line(IMPORT, *import_review(st, review, load_baseline(), load_territories(), Path(path),
+                                       config_hash(review)))  # fmt: skip
+
+
+@app.command("digest")
+def digest_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The weekly early-warning digest: signals past the artefact checks, flagged ones shown with their flags,
+    what changed, and the territories' coverage. Private bucket only."""
+    from .digest import COMMAND, digest
+
+    _, review, _, st = _review_setup(store)
+    _stage_line(COMMAND, *digest(st, review, load_territories(), _as_of(as_of), config_hash(review)))
+
+
+@app.command()
+def review(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    backend: str = typer.Option(None, help="jevstyle or none; default from config"),
+    build_scorer: bool = typer.Option(False, "--build-scorer", help="Build llama.cpp and the scorer if missing"),
+    samples: bool = typer.Option(True, "--samples/--no-samples", help="Fetch OpenAlex sample works"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Day 5's chain at one date, after the scan: rank, dossiers, pathway suggestions, the queue, the register's
+    machine events, the reviewer's spreadsheet and the early-warning digest. Stops at the first stage that fails."""
+    from .digest import COMMAND as DIG
+    from .digest import digest
+    from .dossier import COMMAND as DOS
+    from .dossier import dossier
+    from .pathways import COMMAND as PW
+    from .pathways import pathways
+    from .queue import COMMAND as QUE
+    from .queue import queue
+    from .rank import COMMAND as RNK
+    from .rank import rank
+    from .register import EXPORT, SYNC, export, sync
+
+    cfg, rv, cards, st = _review_setup(store)
+    day = _as_of(as_of)
+    features, detect_cfg = load_features(), load_detect()
+    codebook, territories, baseline = load_codebook(), load_territories(), load_baseline()
+    chash = config_hash(rv)
+    _stage_line(RNK, *rank(st, rv, cards, codebook, territories, baseline, _encoder_factory(cfg, features), day,
+                           config_hash(rv, codebook, territories, baseline, *cards.values())))  # fmt: skip
+    client = PoliteClient(cfg.http) if samples else None
+    try:
+        _stage_line(DOS, *dossier(st, rv, detect_cfg, cards, baseline, client, day, features.embed.dim,
+                                  config_hash(rv, detect_cfg, baseline)))  # fmt: skip
+    finally:
+        if client is not None:
+            client.close()
+    _stage_line(PW, *pathways(st, rv, _backend_factory(cfg, rv, backend or rv.pathways.backend, build_scorer), day,
+                              chash))  # fmt: skip
+    _stage_line(QUE, *queue(st, rv, day, chash))
+    _stage_line(SYNC, *sync(st, rv, day, chash))
+    _stage_line(EXPORT, *export(st, rv, baseline, territories, day, None, chash))
+    _stage_line(DIG, *digest(st, rv, territories, day, chash))
+
+
+@app.command("queue-report")
+def queue_report_command(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option("reports/queue.md", help="Where to write the report (aggregates only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Profile the review queue: counts by ring, type, view and source, the quotas' fill, the ranking's
+    sensitivity to its weights, the dossiers' checks and the suggestions' distributions. Safe for the public repo."""
+    from .queue_report import queue_report
+
+    _, review, _, st = _review_setup(store)
+    path = Path(out)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(queue_report(st, review, _as_of(as_of)), encoding="utf-8")
+    typer.echo(f"wrote {path}")
+
+
+@app.command()
+def show(
+    candidate: str = typer.Argument(..., help="A candidate id (sig-...)"),
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Print a dossier. It holds titles and links: for the analyst's own terminal, never a scheduled job."""
+    from .dossier import key_of
+
+    _, _, _, st = _review_setup(store)
+    key = key_of(candidate, _as_of(as_of), "md")
+    if not st.exists(key):
+        typer.echo(f"no dossier at {key}", err=True)
+        raise typer.Exit(2)
+    typer.echo(st.get(key).decode("utf-8"))
+
+
+@eval_app.command("pathways")
+def eval_pathways(
+    as_of: str = typer.Option(None, "--as-of", help=AS_OF_HELP),
+    out: str = typer.Option("reports/eval/pathways.md", help="Where to write the report (aggregates only)"),
+    build_scorer: bool = typer.Option(False, "--build-scorer", help="Build llama.cpp and the scorer if missing"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """Does the decision model discriminate on the stage's own states? Synthetic anchors and a sample of the scan's
+    dossiers, against the rule in config/review.yaml. The verdict is a recommendation: switching
+    `pathways.use_in_ranking` on is the owner's call."""
+    from .pathways import EVAL, evaluate, report
+
+    cfg, review, _, st = _review_setup(store)
+    day = _as_of(as_of)
+    status, mkey, counts, result = evaluate(st, review, _backend_factory(cfg, review, "jevstyle", build_scorer), day,
+                                            config_hash(review))  # fmt: skip
+    if result:
+        path = Path(out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        author = json.loads(st.get(mkey)).get("params", {}).get("author", "")
+        path.write_text(report(result, mkey, day, author), encoding="utf-8")
+        typer.echo(f"wrote {path}")
+    _stage_line(EVAL, status, mkey, counts)
+
+
+@eval_app.command("hindsight")
+def eval_hindsight(
+    only: Annotated[list[str] | None, typer.Argument(help="Only these developments (default: all)")] = None,
+    out: str = typer.Option("reports/eval/hindsight.md", help="Where to write the report (aggregates only)"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """The term-only hindsight smoke run (design §11.3): each development of config/hindsight.yaml scanned at its
+    dates with no pretrained model, the vocabulary fitted at each date, and its recovery and lead time."""
+    from .hindsight import COMMAND, evaluate, report
+
+    detect_cfg, cards, st = _detect_setup(store)
+    review, hs, features = load_review(), load_hindsight(), load_features()
+    status, mkey, counts, result = evaluate(st, detect_cfg, features, review, hs, cards, only,
+                                            config_hash(detect_cfg, features, review, hs))  # fmt: skip
+    if result:
+        path = Path(out)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(report(result, mkey), encoding="utf-8")
+        typer.echo(f"wrote {path}")
+    _stage_line(COMMAND, status, mkey, counts)
 
 
 @app.command()

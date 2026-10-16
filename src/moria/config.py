@@ -666,3 +666,241 @@ class DetectConfig(Strict):
 
 def load_detect(config_dir: Path = CONFIG_DIR) -> DetectConfig:
     return DetectConfig.model_validate(_load_yaml(config_dir / "detect.yaml"))
+
+
+# ------------------------------------------------------------------------------------------------- day 5: review
+
+View = Literal["early_warning", "strategic"]
+Pathway = Literal["P1", "P2", "P3", "P4", "P5", "P6"]
+STATUSES = ("candidate", "investigating", "validated", "rejected", "tracked", "strengthened", "weakened", "disproved",
+            "mainstream")  # fmt: skip
+Status = Literal["candidate", "investigating", "validated", "rejected", "tracked", "strengthened", "weakened",
+                 "disproved", "mainstream"]  # fmt: skip
+CHECK_FLAGS = ("coverage", "ingestion", "duplicate", "news_cycle", "source_break", "label_drift")
+DETECTORS = ("trend", "acceleration", "anomaly", "low_base_surge", "divergence", "new_term", "cross_family",
+             "cross_ring", "new_combination", "novel_items", *NEW_DETECTORS)  # fmt: skip
+
+
+class ScopeRule(Strict):
+    australia: list[str]
+    aggregates: list[str]
+    factor_australia: float
+    factor_aggregate: float
+    factor_other: float
+
+    def factor(self, scope: str | None) -> float:
+        if not scope or scope.startswith("AU vs "):
+            return self.factor_australia
+        if scope in self.australia:
+            return self.factor_australia
+        return self.factor_aggregate if scope in self.aggregates else self.factor_other
+
+
+class RingMaps(Strict):
+    by_query: dict[str, dict[str, Ring]] = {}
+    openalex_fields: dict[str, Ring] = {}
+    openalex_domains: dict[str, Ring] = {}
+
+
+def _complete(table: dict[str, float], name: str) -> dict[str, float]:
+    missing = set(DETECTORS) - set(table)
+    unknown = set(table) - set(DETECTORS)
+    if missing or unknown:
+        raise ValueError(f"{name}: every detector once (missing {sorted(missing)}, unknown {sorted(unknown)})")
+    if any(not 0 < v <= 1 for v in table.values()):
+        raise ValueError(f"{name}: values in (0, 1]")
+    return table
+
+
+class RankConfig(Strict):
+    shortlist: int
+    floor: float
+    weights: dict[View, dict[str, float]]
+    type_weight: dict[str, float]
+    context_explained: float
+    flag_penalty: dict[str, float]
+    scope: ScopeRule
+    lead: dict[str, float]
+    novelty: dict[str, float]
+    known_trend_sim: float
+    known_trend_factor: float
+    rings: RingMaps
+
+    @model_validator(mode="after")
+    def _checks(self) -> RankConfig:
+        _complete(self.lead, "rank.lead")
+        _complete(self.novelty, "rank.novelty")
+        want = {"early_warning": {"strength", "novelty", "lead", "pathway"},
+                "strategic": {"strength", "breadth", "impact", "pathway"}}  # fmt: skip
+        for view, comps in want.items():
+            if set(self.weights.get(view, {})) != comps:
+                raise ValueError(f"rank.weights.{view}: exactly {sorted(comps)}")
+        if set(self.type_weight) != {"acceleration", "trend", "weak_signal", "anomaly"}:
+            raise ValueError("rank.type_weight: acceleration, trend, weak_signal and anomaly")
+        if set(self.flag_penalty) != set(CHECK_FLAGS):
+            raise ValueError(f"rank.flag_penalty: exactly {', '.join(CHECK_FLAGS)}")
+        return self
+
+
+class QueueConfig(Strict):
+    size: int
+    views: dict[View, float]
+    rings: dict[Ring, float]
+    third_order_max: float
+    source_max: float
+    sensitivity: list[float]
+
+    @model_validator(mode="after")
+    def _shares(self) -> QueueConfig:
+        for name, shares in (("views", self.views), ("rings", self.rings)):
+            if abs(sum(shares.values()) - 1) > 1e-9:
+                raise ValueError(f"queue.{name}: shares add up to 1")
+        if set(self.rings) != {"core", "adjacent", "wider_world"}:
+            raise ValueError("queue.rings: core, adjacent and wider_world")
+        return self
+
+
+class AdministrativeEvent(Strict):
+    date: str  # YYYY-MM-DD
+    sources: list[str]
+    pattern: str  # a regular expression searched in the candidate's subject
+    note: str
+
+
+class OpenAlexSamples(Strict):
+    enabled: bool
+    max_calls: int
+    concentrated: float
+    sample: int
+
+
+class DossierConfig(Strict):
+    version: str
+    evidence_items: int
+    examples: int
+    chart_points: int
+    related_items: int
+    counter_items: int
+    analogues: int
+    analogue_follow: int
+    history_scans: int
+    falling_words: list[str]
+    rising_words: list[str]
+    administrative_events: list[AdministrativeEvent] = []
+    openalex_samples: OpenAlexSamples
+
+
+class DecisionModel(Strict):
+    repo: str
+    revision: str
+    quant: str
+    llama_cpp_commit: str
+    files: dict[str, str]
+    cache_dir: str
+
+
+class ChoiceQuestion(Strict):
+    question: str
+    options: dict[str, str]
+
+
+class PathwaysAnchors(Strict):
+    relevant: list[str]
+    irrelevant: list[str]
+
+
+class PathwaysEvaluation(Strict):
+    sample: int
+    min_separation: float
+    min_spread: float
+    anchors: PathwaysAnchors
+
+
+class PathwaysConfig(Strict):
+    version: str
+    backend: Literal["jevstyle", "none"]
+    use_in_ranking: bool
+    evaluation: PathwaysEvaluation
+    model: DecisionModel
+    threads: int
+    many_mode: Literal["exact", "batched"]
+    max_state_tokens: int
+    order_weight: dict[Literal["1", "2", "3"], float]
+    impact_value: dict[str, float]
+    statements: dict[Pathway, str]
+    order: ChoiceQuestion
+    origin: ChoiceQuestion
+    horizon: ChoiceQuestion
+    stance: ChoiceQuestion
+    impact: ChoiceQuestion
+
+    @model_validator(mode="after")
+    def _checks(self) -> PathwaysConfig:
+        if set(self.statements) != {"P1", "P2", "P3", "P4", "P5", "P6"}:
+            raise ValueError("pathways.statements: P1 to P6")
+        if set(self.order.options) != {"1", "2", "3"} or set(self.order_weight) != {"1", "2", "3"}:
+            raise ValueError("pathways.order: options and weights for orders 1, 2 and 3")
+        if set(self.impact_value) != set(self.impact.options):
+            raise ValueError("pathways.impact_value: a value for each impact option")
+        return self
+
+
+class RegisterConfig(Strict):
+    reviewer: str
+    transitions: dict[Status, list[Status]]
+
+    @model_validator(mode="after")
+    def _all(self) -> RegisterConfig:
+        if set(self.transitions) != set(STATUSES):
+            raise ValueError(f"lifecycle.transitions: every status ({', '.join(STATUSES)})")
+        return self
+
+
+class DigestConfig(Strict):
+    top: int
+    flagged: int
+    changes: int
+
+
+class ReviewConfig(Strict):
+    """config/review.yaml: day 5's ranking and quotas, dossiers, pathway suggestions, the signal lifecycle and the
+    early-warning digest."""
+
+    version: int
+    rank: RankConfig
+    queue: QueueConfig
+    dossier: DossierConfig
+    pathways: PathwaysConfig
+    lifecycle: RegisterConfig
+    digest: DigestConfig
+
+
+def load_review(config_dir: Path = CONFIG_DIR) -> ReviewConfig:
+    return ReviewConfig.model_validate(_load_yaml(config_dir / "review.yaml"))
+
+
+class Development(Strict):
+    id: str
+    name: str
+    mainstream: str  # YYYY-MM
+    dates: list[str]  # the hindsight scans' as_of dates (YYYY-MM-DD)
+    direction: Literal[1, -1] = 1
+    series: list[str] = []  # regular expressions searched in a series candidate's subject
+    combinations: list[str] = []  # in a combination's key (nc:<scheme>:<a>+<b>)
+    terms: list[str] = []  # in a document candidate's label (whole words, any case)
+
+
+class HindsightFile(Strict):
+    """config/hindsight.yaml: the developments a past scan should have raised (design §11.3)."""
+
+    version: int
+    status: Confirmation
+    variant: Literal["term_only"]
+    exclude_sources: list[str] = []
+    match_detectors: list[str] = []  # a match needs one of these detectors (empty: any)
+    developments: list[Development]
+    non_events: list[Development] = []
+
+
+def load_hindsight(config_dir: Path = CONFIG_DIR) -> HindsightFile:
+    return HindsightFile.model_validate(_load_yaml(config_dir / "hindsight.yaml"))

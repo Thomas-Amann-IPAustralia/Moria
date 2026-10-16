@@ -1,9 +1,12 @@
 name: prepare
 
 # The evidence layer's preparation (day 3): normalise, embed, dedup, keyphrases, tag and index, into the private R2
-# bucket; then day 4's scan (the detectors and artefact checks) and the seeded-artefact check. Weekly, after
-# collect-weekly; or by hand. Embeddings are reused while a text is unchanged, so a weekly run embeds only new items.
-# Logs are public: the stages print counts and keys, never content (`moria candidates` is for a terminal, not here).
+# bucket; then day 4's scan (the detectors and artefact checks) and the seeded-artefact check; then day 5's review
+# (the ranking, dossiers, pathway suggestions, the queue, the register's events, the reviewer's spreadsheet and the
+# early-warning digest, all in the bucket). Weekly, after collect-weekly; or by hand. Embeddings are reused while a
+# text is unchanged, so a weekly run embeds only new items; the decision model's responses are cached in the bucket.
+# Logs are public: the stages print counts and keys, never content (`moria candidates` and `moria show` are for a
+# terminal, not here); the job summary holds aggregate reports only.
 on:
   schedule:
     - cron: "17 7 * * 1"  # Mondays 07:17 UTC, after collect-weekly (03:41 UTC)
@@ -51,3 +54,21 @@ jobs:
         run: |
           uv run moria eval detectors --store r2
           cat reports/eval/detectors.md >> "$GITHUB_STEP_SUMMARY"
+      - name: The decision model and its scorer (pinned revision and llama.cpp commit; every file hash-checked)
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/models/chaoliangUNSW__Jev-Style-0.8B-Decision-v3-GGUF
+            data/models/jev-score-*
+            data/models/llama.cpp-*/build/bin
+          key: jevstyle-${{ hashFiles('config/review.yaml') }}
+      - name: Review (day 5) - rank, dossiers, pathway suggestions, the queue, the register and the digest
+        run: uv run moria review --store r2 --build-scorer
+      - name: The decision model's suggestions, checked (D-029; aggregates only, a verdict never fails the job)
+        run: |
+          uv run moria eval pathways --store r2
+          cat reports/eval/pathways.md >> "$GITHUB_STEP_SUMMARY"
+      - name: The review queue (aggregates only)
+        run: |
+          uv run moria queue-report --store r2
+          cat reports/queue.md >> "$GITHUB_STEP_SUMMARY"
