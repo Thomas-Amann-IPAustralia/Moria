@@ -2,7 +2,7 @@
 
 **Design v0.3, 2026-10-09; updated 2026-10-10. Status: direction approved by the owner (D-005, D-006), with set-up
 items open (§15). It builds on
-D-003 and D-004.** Days 1 and 2 of the machinery sprint are built (D-007, D-011 to D-014). v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
+D-003 and D-004.** Days 1 to 5 of the machinery sprint are built (D-007, D-011 to D-014, D-021, D-022, D-029). v0.2 (D-002) adopted the alternative view. v0.3 applies the owner's answers:
 - one purpose, with two audiences;
 - broader than the IP system;
 - free options first;
@@ -1017,8 +1017,12 @@ WIPO's treaty notifications and bulk statistics, and the ABS's CABEE and BERD; E
 run on 2026-10-13 (D-021): normalise with the sweep, embeddings, de-duplication, keyphrases, BM25, zero-shot tags
 and the IP RAPID metrics; the decision model's T4 test waits on the owner (a free notebook needs a person). Day 4 was
 built and run on 2026-10-14 (D-022): the series and document detectors, the ingestion monitor, the candidates and six
-artefact checks, all six seeded artefacts caught; 2,486 candidates, 2,129 unflagged. The rules and commands are in
-`CLAUDE.md`, and what's next is in `docs/handover-day4.md`.
+artefact checks, all six seeded artefacts caught; 2,486 candidates, 2,129 unflagged. Day 5 was built and run on
+2026-10-16 (D-029): the ranking, dossiers, pathway suggestions, ring quotas and the register's spreadsheet round
+trip, the early-warning digest and a term-only hindsight smoke run; **the first ranked queue of 40 dossiers is
+ready for review.** The free decision model's suggestions did not discriminate on states that keep §12's markers,
+so they are recorded and shown, not ranked, until a check passes and the owner switches them on. The rules and
+commands are in `CLAUDE.md`, and what's next is in `docs/handover-day5.md`.
 
 **Before day 1 (the owner, about an hour):** see §15, items 1 to 5.
 
