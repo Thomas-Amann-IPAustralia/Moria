@@ -25,7 +25,9 @@ document candidate takes the ring most of its window items carry (one item per d
 A view's score is the weighted geometric mean of its components times the candidate's factors: its type (band
 anomalies rank lower, D-025), its flags (shown, never hidden: §8.3), the scope's Australian relevance and, if set,
 'explained by its context' (D-028). The early-warning view takes candidates whose views include it, and likewise the
-strategic view.
+strategic view. A document weak signal whose evidence would not make a weak signal from sources with
+`rank.cold_start_days` of history before the window is **held** (D-032): scored for neither view, so it is shown in the
+ranking and the dashboard but neither shortlisted nor queued, until its sources have a baseline.
 
 **Selection** (`select`, shared with `moria queue`): picks alternate between the two views' rankings by their
 shares; each ring is capped at its quota, each source at `queue.source_max`, third-order pathways at
@@ -43,7 +45,7 @@ import logging
 import math
 import tempfile
 from collections import Counter, defaultdict
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -109,6 +111,7 @@ RANKED = pa.schema(
         ("type_factor", pa.float64()),
         ("flag_factor", pa.float64()),
         ("context_factor", pa.float64()),
+        ("held", pa.bool_()),  # a document weak signal whose sources have no baseline yet: not shortlisted (D-032)
         ("score_early_warning", pa.float64()),  # before the pathway suggestions; null when not in the view
         ("score_strategic", pa.float64()),
         ("shortlisted", pa.bool_()),
@@ -398,8 +401,11 @@ def inputs(store: Store, as_of: date) -> tuple[dict, dict]:
 
 def score_candidates(cands: list[dict], evidence: list[dict], flags: dict[str, list[str]], meta: dict[str, dict],
                      tags: dict[str, dict], semantics: LabelSemantics | None, matcher, cards: dict[str, SourceCard],
-                     cfg: ReviewConfig, as_of: date) -> list[dict]:  # fmt: skip
-    """The ranked rows (before selection)."""
+                     cfg: ReviewConfig, as_of: date, history: dict[str, float] | None = None,
+                     min_items: int = 3, min_sources: int = 2) -> list[dict]:  # fmt: skip
+    """The ranked rows (before selection). `history` is each document source's days of history before the window
+    (`baseline_days`); with `rank.cold_start_days`, a document weak signal is held unless its window items from
+    sources with that much history still make a weak signal (min_items groups from min_sources sources)."""
     from .tags import term_tags
 
     rc = cfg.rank
@@ -457,6 +463,10 @@ def score_candidates(cands: list[dict], evidence: list[dict], flags: dict[str, l
         row["flag_factor"] = math.prod(rc.flag_penalty[f] for f in row["flags"] if f in rc.flag_penalty)
         explained = "context_explains" in json.loads(c["numbers"] or "{}")
         row["context_factor"] = rc.context_explained if explained else 1.0
+        row["held"] = bool(rc.cold_start_days and history is not None and c["subject_kind"] not in ("series", "pair")
+                           and c["sources"] != ["ip_rapid"]
+                           and not established(items.get(cid, []), history, rc.cold_start_days, min_items,
+                                               min_sources))  # fmt: skip
         rows.append(row)
     # percentiles: strength within type and subject kind; breadth over all
     by: dict[tuple, list[int]] = defaultdict(list)
@@ -472,6 +482,25 @@ def score_candidates(cands: list[dict], evidence: list[dict], flags: dict[str, l
     return rows
 
 
+def established(items: list[dict], history: dict[str, float], days: int, min_items: int, min_sources: int) -> bool:
+    """Would a document candidate still be a weak signal on the window items of sources with `days` of history?"""
+    kept = [i for i in items if i.get("role") == "window" and (history.get(i["source"]) or 0) >= days]
+    return len({i["dedup_group"] for i in kept}) >= min_items and len({i["source"] for i in kept}) >= min_sources
+
+
+def baseline_days(volumes: list[dict], as_of: date, window_days: int, baseline_days_: int) -> dict[str, float]:
+    """Each document source's days of dated history before the window (in the baseline, at most its length)."""
+    from .measures import as_of_end
+
+    w_start = as_of_end(as_of) - timedelta(days=window_days)
+    b_start = w_start - timedelta(days=baseline_days_)
+    out = {}
+    for v in volumes:
+        start = v.get("coverage_start")
+        out[v["source"]] = max((w_start - max(start, b_start)).total_seconds() / 86400, 0.0) if start else 0.0
+    return out
+
+
 def factors(r: dict) -> float:
     return r["scope_factor"] * r["type_factor"] * r["flag_factor"] * r["context_factor"]
 
@@ -485,7 +514,7 @@ def view_scores(r: dict, cfg: ReviewConfig, weights: dict[str, dict[str, float]]
              **(extra or {})}  # fmt: skip
     for view in VIEWS:
         key = f"score_{view}"
-        if view not in (r["views"] or []):
+        if view not in (r["views"] or []) or r.get("held"):
             r[key] = None
             continue
         comps = {k: parts[k] for k in COMPONENTS[view] if k in parts}
@@ -514,9 +543,17 @@ def rank(store: Store, cfg: ReviewConfig, cards: dict[str, SourceCard], codebook
             semantics = LabelSemantics(encoder, codebook, territories, baseline, context)
             manifest.params["encoder"] = encoder.identity
             manifest.params["territory_context"] = context is not None
+        from .config import load_detect
         from .tags import term_matcher
 
-        rows = score_candidates(cands, evidence, flags, meta, tags, semantics, term_matcher(cards), cards, cfg, as_of)
+        dc = load_detect().documents
+        history = None
+        if cfg.rank.cold_start_days:
+            vols = read_rows(files_of(store, got["documents_run"], "measures/documents/")["volumes.parquet"])
+            history = baseline_days(vols, as_of, dc.window_days, dc.baseline_days)
+            manifest.params["cold_start_days"] = cfg.rank.cold_start_days
+        rows = score_candidates(cands, evidence, flags, meta, tags, semantics, term_matcher(cards), cards, cfg, as_of,
+                                history, dc.min_items, dc.min_sources)  # fmt: skip
         picks = select(rows, cfg.rank.shortlist, cfg.queue, {v: f"score_{v}" for v in VIEWS})
         place = {p["candidate_id"]: p for p in picks}
         for r in rows:
@@ -546,6 +583,7 @@ def counts_of(rows: list[dict], picks: list[dict]) -> dict[str, int]:
             counts[f"shortlist_type_{r['type']}"] += 1
             counts["shortlist_flagged"] += bool(r["flags"])
         counts["known_trend_match"] += bool(r["known_trend_match"])
+        counts["held"] += bool(r.get("held"))
     for p in picks:
         counts[f"shortlist_pass_{p['pass']}"] += 1
         counts[f"shortlist_view_{p['view']}"] += 1

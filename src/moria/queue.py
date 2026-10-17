@@ -11,7 +11,9 @@ the owner turns it on (D-029): the suggestions are then recorded and shown, not 
 The queue is chosen by `rank.select`: the views alternate by their shares, each ring is held to its quota (core 35%,
 adjacent 35%, wider world 30%), each source to `queue.source_max`, third-order pathways to 20% of the queue (the
 order a person confirmed; the model's when its suggestions are used), and one candidate per redundancy group. A flag
-is shown, never hidden: it lowers a rank (`rank.flag_penalty`).
+is shown, never hidden: it lowers a rank (`rank.flag_penalty`). So do the dossier's own checks that the shortlist
+could not know of (`queue.dossier_penalty`, D-032): a surge concentrated in one venue, old applications reclassified,
+one firm's filings; they are listed in the queue's `dossier_flags`.
 
 **Sensitivity** (design §8.2: the report shows how sensitive the ranking is to the weights): each weight of each view
 is multiplied by each factor in `queue.sensitivity`, the queue chosen again, and the places that change counted; so
@@ -24,6 +26,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import tempfile
 from collections import defaultdict
 from datetime import date
@@ -37,7 +40,7 @@ from .dossier import key_of
 from .manifest import Manifest
 from .pathways import COMMAND as PATHWAYS
 from .rank import COMMAND as RANK
-from .rank import VIEWS, failed, files_of, percentiles, select, view_scores
+from .rank import VIEWS, failed, files_of, manifest_of, percentiles, select, view_scores
 from .store import Store
 from .tables import STRS, read_rows, upload, write_rows
 
@@ -60,6 +63,7 @@ QUEUE = pa.schema(
         ("label", pa.string()),
         ("detectors", STRS),
         ("flags", STRS),
+        ("dossier_flags", STRS),  # the dossier's checks that lowered its place (queue.dossier_penalty)
         ("redundancy_group", pa.string()),
         ("score_early_warning", pa.float64()),
         ("score_strategic", pa.float64()),
@@ -178,6 +182,10 @@ def queue(store: Store, cfg: ReviewConfig, as_of: date, config_hash: str | None 
         if not cfg.pathways.use_in_ranking:
             manifest.warnings.append("pathway suggestions are recorded, not ranked (pathways.use_in_ranking is off)")
         confirmed = confirmed_orders(store)
+        flagged = dossier_flags(store, pm["params"].get("dossier_run"), set(cfg.queue.dossier_penalty))
+        for r in rows:
+            r["dossier_flags"] = flagged.get(r["candidate_id"], [])
+            r["flag_factor"] *= math.prod(cfg.queue.dossier_penalty[f] for f in r["dossier_flags"])
         rescore(rows, sug, cfg, confirmed=confirmed)
         picks = choose(rows, cfg)
         base = {p["candidate_id"] for p in picks}
@@ -188,7 +196,7 @@ def queue(store: Store, cfg: ReviewConfig, as_of: date, config_hash: str | None 
         for p in picks:
             r, s = by[p["candidate_id"]], sug[p["candidate_id"]]
             out.append({**{k: r.get(k) for k in ("candidate_id", "views", "type", "subject_kind", "ring", "source",
-                                                 "label", "detectors", "flags", "redundancy_group",
+                                                 "label", "detectors", "flags", "dossier_flags", "redundancy_group",
                                                  "score_early_warning", "score_strategic", "strength_pct", "breadth",
                                                  "lead", "novelty", "pathway", "impact", "known_trend",
                                                  "known_trend_sim", "known_trend_match", "territory_top",
@@ -213,12 +221,33 @@ def queue(store: Store, cfg: ReviewConfig, as_of: date, config_hash: str | None 
             counts[f"view_{r['view']}"] += 1
             counts[f"pass_{r['pass']}"] += 1
             counts["flagged"] += bool(r["flags"])
+            counts["dossier_flagged"] += bool(r["dossier_flags"])
             counts["machine_order_3"] += r["order_top"] == "3"  # the model's suggestion, capped only when used
         counts["sensitivity_min_overlap"] = min((s["overlap"] for s in sens), default=len(out))
         manifest.counts = dict(sorted(counts.items()))
         return "passed", manifest.finish(store, "passed"), manifest.counts
     except Exception as e:
         return failed(COMMAND, store, manifest, e)
+
+
+DOSSIER_CHECKS = ("concentrated_works", "reclassified", "few_applicants")  # those queue.dossier_penalty may weigh
+
+
+def dossier_flags(store: Store, dossier_run: str | None, checks=DOSSIER_CHECKS) -> dict[str, list[str]]:
+    """Each shortlisted candidate's dossier checks among `checks` that flagged it."""
+    if not dossier_run or not checks:
+        return {}
+    from .dossier import COMMAND as DOSSIER
+    from .dossier import load_dossiers
+
+    out = {}
+    for cid, d in load_dossiers(store, manifest_of(store, DOSSIER, dossier_run)).items():
+        got = sorted(
+            {c["check"] for c in d.get("checklist") or [] if c.get("outcome") == "flag" and c["check"] in checks}
+        )
+        if got:
+            out[cid] = got
+    return out
 
 
 def confirmed_orders(store: Store) -> dict[str, str]:

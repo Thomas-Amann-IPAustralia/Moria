@@ -42,6 +42,7 @@ export function settingsFrom(config) {
     weights_order: r.weights_order || { early_warning: ["strength", "novelty", "lead", "pathway"], strategic: ["strength", "breadth", "impact", "pathway"] },
     type_weight: { ...r.type_weight },
     flag_penalty: { ...r.flag_penalty },
+    dossier_penalty: { ...(q.dossier_penalty || {}) },
     size: q.size,
     views: { ...q.views },
     rings: { ...q.rings },
@@ -50,15 +51,18 @@ export function settingsFrom(config) {
   };
 }
 
-/** Each view's score for a candidate under the settings (pathway and impact absent: the suggestions are not used). */
-export function scores(c, s) {
+/** Each view's score for a candidate under the settings (pathway and impact absent: the suggestions are not used).
+ * In the queue (`inQueue`), the dossier's own checks lower it too, as queue.py does; a held candidate (a document
+ * weak signal whose sources have no baseline yet) is in neither view. */
+export function scores(c, s, inQueue = false) {
   const parts = { strength: c.strength_pct, novelty: c.novelty, lead: c.lead, breadth: c.breadth };
   let flag = 1;
   for (const f of c.flags) if (f in s.flag_penalty) flag *= s.flag_penalty[f];
+  if (inQueue) for (const f of c.dossier_flags || []) if (f in (s.dossier_penalty || {})) flag *= s.dossier_penalty[f];
   const factor = c.factors.scope * s.type_weight[c.type] * flag * c.factors.context;
   const out = {};
   for (const view of VIEWS) {
-    if (!c.views.includes(view)) {
+    if (!c.views.includes(view) || c.held) {
       out[view] = null;
       continue;
     }
@@ -140,7 +144,9 @@ export function whatIf(candidates, s, register) {
   const rows = candidates.map((c) => ({ id: c.id, ring: c.ring, source: c.source, redundancy_group: c.redundancy_group, order: orders[c.id] || null, score: scores(c, s) }));
   const shortlist = select(rows, s.shortlist, s);
   const inShort = new Set(shortlist.map((p) => p.id));
-  const queue = select(rows.filter((r) => inShort.has(r.id)), s.size, s, true);
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
+  // the queue's scores also weigh the dossiers' checks (queue.dossier_penalty)
+  const queueRows = candidates.filter((c) => inShort.has(c.id)).map((c) => ({ ...byId[c.id], score: scores(c, s, true) }));
+  const queue = select(queueRows, s.size, s, true);
   return { rows, byId, shortlist, queue };
 }

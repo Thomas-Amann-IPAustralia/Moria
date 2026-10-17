@@ -15,7 +15,8 @@ without the evidence the check casts doubt on:
 Series and AU/world pairs:
 - coverage: the source's volume (the denominator) moved more than ±25% over the detector's window;
 - ingestion: the source's latest collection had an incident, or a daily source had one in the window;
-- source_break: a dated break on the source's card falls inside the detector's window;
+- source_break: a dated break on the source's card falls inside the detector's window, or a reclassification of
+  the series' own classes does (`artefacts.series_breaks`, D-032);
 - duplicate (GDELT volumes): the group's window items are at least twice their de-duplication groups;
 - news_cycle (GDELT bursts: surges and anomalies): no item from a primary family matches the group in the window.
 
@@ -207,6 +208,9 @@ class Checker:
         start, end = _period_bounds(freq, c["window_start"], c["window_end"]) if freq else (None, None)
         if start and end:
             crossed = [d.isoformat() for d in self.breaks.get(collected, []) if start < d <= end]
+            subject = c["subject"] if c["subject_kind"] == "series" else ""
+            crossed += [f"{b.date}: {b.note}" for b in self.cfg.artefacts.series_breaks
+                        if start < date.fromisoformat(b.date) <= end and re.search(b.pattern, subject)]  # fmt: skip
             out["source_break"] = "flag" if crossed else "pass"
             details["source_break"] = crossed
         # GDELT volumes: syndicated copies, and news bursts without a primary source
