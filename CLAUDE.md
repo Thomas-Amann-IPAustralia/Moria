@@ -81,6 +81,15 @@ sources (D-020) and the dashboard (D-030) are built; days 6 and 7 are the buffer
 - **Reviewed (D-031):** the first queue, at the owner's request: about 8 of 40 worth a reviewer's time, 17 artefacts of
   five kinds, recommended fixes awaiting the owner (the full note is in the bucket, `interpretation/reviews/`). The
   dashboard's Tolkien references dialled back.
+- **Built (D-032, the owner's request):** the review's fixes, each a setting: the dossiers' checks lower a queue place
+  (`queue.dossier_penalty`); document weak signals are held until their sources have 90 days of baseline
+  (`rank.cold_start_days`); OpenAlex counts are shares of their taxonomy parent (`config/openalex_taxonomy.yaml`) with
+  the latest 2 months lagged; patent lags of 4 (AU) and 3 years, index-only CPC schemes left out, reclassifications and
+  change points many series share flag `source_break`; IP RAPID pairs are also compared with their latest 24 months;
+  redundancy within a source; clusters named by a representative title. Measured at 2026-10-16: 16 of D-031's 17
+  artefacts left the queue; relevance (the owner's list of IP-relevant statistics) is now the main limit. `moria
+  backfill` gives GDELT and the legislation register a longer history. IPGOD and IPLORD not added (IP RAPID supersedes
+  them).
 - **Next:** the owner's first review round (the spreadsheet), the hindsight set and the decision model's options
   (D-029); days 6 and 7 (fixes, `docs/methodology.md`, handover) when the owner asks. `docs/handover-day5.md` lists
   the flags. Pile of Law was checked and discarded (D-016).
@@ -159,6 +168,7 @@ sources (D-020) and the dashboard (D-030) are built; days 6 and 7 are the buffer
 | Collect weekly sources | `moria collect-weekly [--store r2]` | OpenAlex, ABS (both), IP RAPID, WIPO treaty notifications, the OECD's statistics and HAIP reports, STIP Compass | the same; IP RAPID and STIP Compass as below |
 | IP RAPID | `moria ipr refresh [--zip PATH] [--limit N] [--store r2]` | data.gov.au's weekly zip | `lake/ip_rapid/base=<release>/<table>.parquet` or `delta=<release>/…`, `raw/ip_rapid/<release>/manifest.json` |
 | Bulk sources (once per release) | `moria collect oalc`, `moria collect wipo_ipstats`, `moria collect stip_compass` | a pinned Hugging Face file; WIPO's ZIPs; STIP Compass's file | `lake/<source>/release=<release>/<part>.parquet`, `raw/<source>/<release>/manifest.json` (written last) |
+| Backfill | `moria backfill <source> --from D [--to D] [--max-days N]` | past days of a source asked by day (GDELT, legislation; D-032) | the same as `collect`, a day at a time, newest first, skipping days collected |
 | Discover | `moria discover URL… [--match RE]` | the addresses | nothing (prints status, type, item counts, feed links; never text) |
 | Terms check | `moria terms check [--end D] [--weeks 13] [--store r2]` | sampled GKG days | `reports/terms-check/<run_id>.json` (with hit samples); `reports/terms-check.md` in the repo (counts only) |
 | Census | `moria census <source> [--all-runs]` | the store | `reports/census/<source>.md` in the repo (aggregates only) |
@@ -213,6 +223,8 @@ instead of the document's URL.
   queue-report` (their reports in the job summary); then `moria dashboard` (the private bundle to the bucket, D-030).
   It did not parse on main from 2026-10-14 to D-025 (a colon in a step name): fixed on D-025's branch.
 - `collect-source.yml`: one source by hand (with `backfill`), or `discover` with a list of addresses, from a runner.
+- `backfill.yml`: by hand, `moria backfill` for GDELT or the legislation register (up to 150 days a run), in the daily
+  collection's queue, then `moria normalise` (D-032).
 - `terms-check.yml`: by hand; the job summary shows counts and flags.
 - `probe.yml`: the memory probe on a real runner.
 
