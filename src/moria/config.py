@@ -532,6 +532,7 @@ class SeriesBreak(Strict):
 class SharedBreak(Strict):
     min_series: int = 0  # 0: off
     factor: float = 4.0
+    sources: list[str] = []  # indexes whose coverage can change at once; statistics share real shocks (2020-21)
 
 
 class ArtefactsConfig(Strict):

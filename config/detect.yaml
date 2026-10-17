@@ -103,8 +103,9 @@ artefacts:
   # priority years about 18 months before it; IP RAPID's classes are dated by the month they became observable.
   # A change point many of a source's series share (one frequency): at least min_series of them, and factor times the
   # median period's count, flag source_break on the candidates that rest on it (D-032: 54 OpenAlex monthly series
-  # changed slope in 2025-11, against about 5 a month).
-  shared_break: {min_series: 10, factor: 4}
+  # changed slope in 2025-11, against about 5 a month). Indexes only: the ABS's and the OECD's series crowd into 2020
+  # and 2021 too, with the pandemic, which is a real shock, not a change in the source.
+  shared_break: {min_series: 10, factor: 4, sources: [openalex_counts, gdelt_news]}
   series_breaks:
     - {date: "2020-07-01", pattern: '^patent_cpc_counts\|(G06K|G06V)\|',
        note: "CPC 2022.01: image and video recognition moved from G06K 9 to the new G06V (priority years from mid-2020)"}

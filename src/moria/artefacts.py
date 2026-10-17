@@ -92,12 +92,16 @@ def crowded_breaks(rows, cfg: DetectConfig) -> dict[tuple[str, str], dict[str, i
     """Periods where many of one source's series (one frequency) change slope or level at once (D-032): at least
     `shared_break.min_series` of them and `shared_break.factor` times the median period's count. OpenAlex's monthly
     series crowded into November 2025 (54 against about 5 a month): a change in what the source indexes, not in each
-    topic. The last periods a change point can fall on crowd too, with every late change; both are flagged."""
+    topic. The last periods a change point can fall on crowd too, with every late change; both are flagged. Only for
+    `shared_break.sources`, indexes whose coverage can change at once: statistics share real shocks (ABS and OECD
+    series crowd into 2020 and 2021)."""
     sb = cfg.artefacts.shared_break
     if not sb.min_series:
         return {}
     counts: dict[tuple[str, str], Counter] = defaultdict(Counter)
     for r in rows:
+        if r.get("source") not in sb.sources:
+            continue
         for at in {r.get("cp_slope_period"), r.get("cp_level_period")} - {None}:
             counts[(r.get("source"), r.get("frequency"))][at] += 1
     out = {}

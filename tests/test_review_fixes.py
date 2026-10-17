@@ -178,7 +178,8 @@ def test_a_change_point_many_series_share_is_a_source_break():
             for _ in range(30)]  # fmt: skip
     rows += [{"source": "openalex_counts", "frequency": "M", "cp_slope_period": f"2024-{m:02d}",
               "cp_level_period": None} for m in range(1, 13) for _ in range(3)]  # fmt: skip
-    hot = crowded_breaks(rows, CFG)
+    stats = [{**r, "source": "abs_headline"} for r in rows]  # a shared shock in statistics is not a source break
+    hot = crowded_breaks(rows + stats, CFG)
     assert hot == {("openalex_counts", "M"): {"2025-11": 30}}
     series = {"openalex_counts|topic|T1|world|month": {"denominator": "d", "volume_change": 0.0,
               "surge_volume_change": 0.0, "frequency": "M", "source": "openalex_counts"}}  # fmt: skip
