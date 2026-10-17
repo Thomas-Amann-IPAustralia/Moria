@@ -2346,4 +2346,46 @@ CSV download neutralises spreadsheet formulas.
      would rather the weekly workflow publish them, that needs the workflow to commit to `main`, or a Pages
      deployment from the workflow: your call.
 
-Next free decision number: D-031.
+## D-031: a review of the first queue; the dashboard's Tolkien references dialled back (2026-10-17)
+
+**Asked by the owner:** fewer Tolkien references in the dashboard; and, more importantly, a review of the signals
+coming through and of how effective the system is at its goal.
+
+**The dashboard.** The name Moria, the gem icons and the palette stay. The section subtitles, Durin's Bane and the
+Balrogs, the doors' inscription and the 'mellon' shortcut, "Open the Doors" (now "Open private file") and the Cinzel
+font go; two sections are renamed in the address bar (`#/ranking`, `#/statistics`; the old links still work). The
+practice data's places are invented, no longer Middle-earth's (`dashboard/data/practice.json` rebuilt).
+
+**The review** (Claude's; the full note names candidates, so it is in the bucket at
+`interpretation/reviews/2026-10-17-signal-review.md`). Of the 40 queued at the scan of 2026-10-15: about 8 worth a
+reviewer's time (2 of them restating a known trend), 9 plausible but weak, 6 macro-economic series with no evident
+path to the IP system, 17 artefacts. The artefacts' causes, by queue places:
+1. **The trailing edge of research and patent counts (11).** OpenAlex's recent months differ in make-up (whole
+   fields' shares of works doubled within a year; every monthly anomaly falls in the latest month; no lag is set);
+   surges of a dozen works in one venue; Australian-scope patent counts by priority year still filling in beyond the
+   2-year lag; a subclass emptied by reclassification; an indexing scheme counted as a technology.
+2. **IP RAPID by class against a five-year baseline (4).** A step four years ago still fires (the innovation patents'
+   closure in 2021); a reclassification of old applications; one firm's filings.
+3. **The document arm's cold start (3).** Most document sources were onboarded between 11 and 15 October, so their
+   baselines are empty: every document candidate is flagged, "new" means new to Moria, and cluster labels (top
+   keyphrases) are hard to read. The sources nearest the IP system yield no candidate yet.
+4. **No relevance in the ranking (6).** Known (D-029); the wider-world quota fills with the strongest macro series.
+5. **Plumbing.** The dossier's checks (`concentrated_works`, `reclassified`, `few_applicants`) are computed after the
+   ranking and don't move the queue (7 of the 40 carry one); redundancy groups join unrelated annual series that
+   share the 2020-21 shocks (a correlation of 0.8 over 12 to 16 points among 4,550 series).
+
+**Claude's assessment:** sound and auditable as machinery; not yet effective as a detector (about 20% of the queue
+worth reading; nothing from the core ring's documents; the early-warning view drawn to the least reliable points).
+
+**Recommended (not adopted; each to be measured at the scan of 2026-10-15 before the owner decides):** dossier checks
+as flag penalties, the queue re-picked after the dossiers; document weak signals held from the queue until their
+sources have about 90 days of baseline; OpenAlex's latest one or two months dropped and topics tested within their
+field; patent lags of 4 years (Australian scope) and 3 (world), indexing schemes left out, a falling subclass with a
+rising successor flagged; IP RAPID's classes also compared with the latest 12 to 24 months; redundancy within a
+source or dataflow only; cluster labels from a representative title. **For the owner:** a relevance list of the
+statistics with a path to the IP system (now) and a classifier on the first round's labels (after); the wider-world
+quota; the first review round as calibration, with artefacts marked as such.
+
+**Spend:** $0.
+
+Next free decision number: D-032.

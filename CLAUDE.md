@@ -78,6 +78,9 @@ sources (D-020) and the dashboard (D-030) are built; days 6 and 7 are the buffer
   (aggregates only, in the repo), the private bundle (the bucket; `--out` to the analyst's own disk) and the practice
   bundle (invented, run through the real detectors and ranking). The private bundle is read in the browser only.
   The owner switches Pages on (`docs/dashboard.md`).
+- **Reviewed (D-031):** the first queue, at the owner's request: about 8 of 40 worth a reviewer's time, 17 artefacts of
+  five kinds, recommended fixes awaiting the owner (the full note is in the bucket, `interpretation/reviews/`). The
+  dashboard's Tolkien references dialled back.
 - **Next:** the owner's first review round (the spreadsheet), the hindsight set and the decision model's options
   (D-029); days 6 and 7 (fixes, `docs/methodology.md`, handover) when the owner asks. `docs/handover-day5.md` lists
   the flags. Pile of Law was checked and discarded (D-016).
