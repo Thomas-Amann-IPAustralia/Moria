@@ -391,6 +391,7 @@ class Group:
     excluded: np.ndarray  # columns of excluded calendar months
     valid: np.ndarray | None = None  # rows day 4 tests (data, not stale, enough volume)
     lags: np.ndarray | None = None  # each row's lagged periods (config/detect.yaml): staleness counts from there
+    volume: np.ndarray | None = None  # the source's own volume per period, where the denominator is a parent (D-032)
 
     def lag_of(self, rows: np.ndarray | None = None) -> np.ndarray:
         lags = self.lags if self.lags is not None else np.zeros(len(self.ids), dtype=int)
@@ -449,9 +450,18 @@ def build_group(source: str, kind: str, members: list[Series], all_series: dict[
         excluded = np.array([(lo + c) % 12 + 1 in months for c in range(t)])
         y[:, excluded] = np.nan
     lags = np.array([sc.lag(s.series_id) for s in members], dtype=int)
+    # the coverage check reads the source's volume: for an OpenAlex count tested against its parent, all works
+    volume = denom.copy()
+    for k, (_, dname, _) in enumerate(roles):
+        total = _openalex_total(dname) if source == "openalex_counts" and dname else None
+        if total and total != dname and total in all_series:
+            volume[k] = np.nan
+            for i, v in all_series[total].points.items():
+                if lo <= i <= hi:
+                    volume[k, i - lo] = v
     return Group(source, kind, [s.series_id for s in members], members, lo, counts, y, denom, last,
                  [x[0] for x in roles], [x[1] for x in roles], [x[2] for x in roles], excluded,
-                 lags=lags)  # fmt: skip
+                 lags=lags, volume=volume)  # fmt: skip
 
 
 # ------------------------------------------------------------------------------------------------------- measures
@@ -683,6 +693,11 @@ def _surge(g: Group, valid, rows, index, cfg: DetectConfig) -> None:
     x1, x0 = cnt[:, bl:].sum(axis=1), cnt[:, :bl].sum(axis=1)
     e1, e0 = den[:, bl:].sum(axis=1), den[:, :bl].sum(axis=1)
     p, ratio = stats.poisson_rate_test(x1, e1, x0, e0)
+    if g.volume is not None:  # the coverage check's volume: the source's own (all works for OpenAlex, D-032)
+        vol = aligned(g.volume, g.last, g.base, w + bl)
+        v1, v0 = np.nansum(vol[:, bl:], axis=1), np.nansum(vol[:, :bl], axis=1)
+    else:
+        v1, v0 = e1, e0
     with np.errstate(all="ignore"):
         expected = x0 * e1 / e0
     for k in np.nonzero(ok)[0]:
@@ -691,14 +706,15 @@ def _surge(g: Group, valid, rows, index, cfg: DetectConfig) -> None:
         row.update(surge_window=f"{first}/{index_label(g.kind, int(g.last[k]))}", surge_count=_f(x1[k]),
                    surge_baseline=_f(x0[k]), surge_expected=_f(expected[k]), surge_ratio=_f(ratio[k]),
                    surge_p=_f(p[k]) if x1[k] >= sv.min_count and expected[k] <= sv.max_expected else None,
-                   surge_volume_change=_f((e1[k] / w) / (e0[k] / bl) - 1) if e0[k] > 0 else None)  # fmt: skip
+                   surge_volume_change=_f((v1[k] / w) / (v0[k] / bl) - 1) if v0[k] > 0 else None)  # fmt: skip
 
 
 def _volume(g: Group, valid, rows, index, cfg: DetectConfig) -> None:
     """The source's volume (the denominator, or the count itself for a total) over the shortest window against the
     window before it, for the coverage check (design §8.3)."""
     w = cfg.series.windows[g.kind][0]
-    vol = np.where(np.array([d is None for d in g.denominators])[:, None], g.counts, g.denom)
+    own = g.volume if g.volume is not None else g.denom
+    vol = np.where(np.array([d is None for d in g.denominators])[:, None], g.counts, own)
     mat = aligned(vol, g.last, g.base, 2 * w)
     for k in np.nonzero(valid)[0]:
         prev, now = mat[k, :w], mat[k, w:]

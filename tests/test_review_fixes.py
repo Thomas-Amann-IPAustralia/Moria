@@ -87,6 +87,7 @@ def test_a_whole_field_moving_shows_at_the_field_not_in_its_topics():
     for t in topics:
         r = rows[f"openalex_counts|topic|{t}|world|month"]
         assert r["denominator"] == sub_id and not r["trend_dir"]
+        assert abs(r["volume_change"]) < 1e-6  # the coverage check reads all works, not the growing subfield
 
 
 def test_a_reclassification_flags_the_classes_it_moved():
