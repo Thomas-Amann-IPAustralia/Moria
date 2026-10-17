@@ -197,3 +197,33 @@ def test_a_change_point_many_series_share_is_a_source_break():
     }
     out, details = checker.series_check(c)
     assert out["source_break"] == "flag" and "shared break" in details["source_break"][0]
+
+
+def test_backfill_collects_missing_past_days_newest_first(tmp_path, monkeypatch):
+    import json
+    from types import SimpleNamespace
+
+    from typer.testing import CliRunner
+
+    from moria import cli
+    from moria.store import LocalStore
+
+    store = LocalStore(tmp_path)
+    done = {"day": "2026-10-09", "status": "passed", "source": "gdelt_news"}
+    store.put("monitors/ingestion/source=gdelt_news/2026-10-09/r1.json", json.dumps(done).encode())
+    store.put("monitors/ingestion/source=gdelt_news/2026-10-11/r2.json", json.dumps(done).encode())
+    asked = []
+
+    def fake(sources, day, limit, backend, backfill=False):
+        asked.append(day)
+        return [SimpleNamespace(status="passed", source=sources[0])]
+
+    monkeypatch.setattr(cli, "open_store", lambda cfg, backend=None: store)
+    monkeypatch.setattr(cli, "_collect", fake)
+    run = CliRunner().invoke(cli.app, ["backfill", "gdelt_news", "--from", "2026-10-05", "--max-days", "3"])
+    assert run.exit_code == 0, run.output
+    # up to the day before the first collection (10-08), newest first, skipping collected days, three this run
+    assert asked == [date(2026, 10, 8), date(2026, 10, 7), date(2026, 10, 6)]
+    assert cli.collected_days(store, "gdelt_news") == {date(2026, 10, 9), date(2026, 10, 11)}
+    refused = CliRunner().invoke(cli.app, ["backfill", "un_news", "--from", "2026-01-01"])
+    assert refused.exit_code == 2

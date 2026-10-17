@@ -1,0 +1,72 @@
+name: backfill
+
+# A longer history for a source that can be asked for past days (D-032): GDELT's GKG files (back to 2015) and the
+# Federal Register of Legislation. Each run collects up to `max_days` missing days, newest first, and normalises them;
+# run it again to carry on (days already collected are skipped). GDELT takes about 1.6 minutes a day, so 150 days fit
+# one run. It shares the daily collection's queue, so the two never write the lake at once. Logs are public: the
+# commands print counts and keys, never content. Then the weekly `prepare` embeds and tags the new items.
+on:
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "gdelt_news or legislation_frl"
+        required: true
+        default: gdelt_news
+      from:
+        description: "The first day (YYYY-MM-DD)"
+        required: true
+        default: "2024-10-01"
+      to:
+        description: "The last day; empty means the day before the source's first collection"
+        required: false
+        default: ""
+      max_days:
+        description: "At most this many days this run"
+        required: false
+        default: "150"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: collect-daily
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    env:
+      PYTHONUNBUFFERED: "1"
+      R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install uv
+        run: python -m pip install --quiet uv
+      - name: Install dependencies (from the lockfile)
+        run: uv sync --frozen
+      - name: Environment check (the bucket must answer)
+        run: uv run moria env-check --require store:r2
+      - name: Backfill
+        env:
+          SOURCE: ${{ inputs.source }}
+          FROM: ${{ inputs.from }}
+          TO: ${{ inputs.to }}
+          MAX_DAYS: ${{ inputs.max_days }}
+        run: |
+          if [[ ! "$SOURCE" =~ ^[a-z0-9_]+$ ]]; then echo "source must be a source id"; exit 2; fi
+          day='^[0-9]{4}-[0-9]{2}-[0-9]{2}$'
+          if [[ ! "$FROM" =~ $day ]]; then echo "from must be YYYY-MM-DD"; exit 2; fi
+          if [ -n "$TO" ] && [[ ! "$TO" =~ $day ]]; then echo "to must be YYYY-MM-DD"; exit 2; fi
+          if [[ ! "$MAX_DAYS" =~ ^[0-9]+$ ]]; then echo "max_days must be a number"; exit 2; fi
+          args=(--from "$FROM" --max-days "$MAX_DAYS" --store r2)
+          if [ -n "$TO" ]; then args+=(--to "$TO"); fi
+          status=0
+          uv run moria backfill "$SOURCE" "${args[@]}" || status=$?
+          uv run moria normalise "$SOURCE" --store r2
+          exit $status

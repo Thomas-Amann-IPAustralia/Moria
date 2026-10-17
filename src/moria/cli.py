@@ -231,6 +231,55 @@ def collect_daily(
         raise typer.Exit(2)
 
 
+# Adapters that ask their source for a given day, so a past day returns what it held then (D-032). Feeds, sitemaps and
+# list pages return what they hold today: their history is a `--backfill` snapshot, or none.
+DATED_ADAPTERS = ("gdelt_gkg", "legislation")
+
+
+def collected_days(store, source: str) -> set[date]:
+    """Days the ingestion monitor has a passed run of the source for."""
+    days = set()
+    for k in store.list(f"monitors/ingestion/source={source}/"):
+        if json.loads(store.get(k)).get("status") == "passed":
+            days.add(date.fromisoformat(k.split("/")[-2]))
+    return days
+
+
+@app.command()
+def backfill(
+    source: str = typer.Argument(..., help="A source whose adapter asks for a given day: gdelt_news, legislation_frl"),
+    start: str = typer.Option(..., "--from", help="The first day (YYYY-MM-DD)"),
+    end: str = typer.Option(None, "--to", help="The last day; default the day before the source's first collection"),
+    max_days: int = typer.Option(30, help="Collect at most this many days this run (newest first); run it again"),
+    store: str = typer.Option(None, help="local or r2; default from config/moria.yaml"),
+) -> None:
+    """A longer history for a source that can be asked for past days (D-032): each missing day from --to back to
+    --from is collected as `moria collect --day` would, newest first, skipping days already collected; a later run
+    carries on. Items keep their own dates (backfill, bound by its observable date; design §6.3). Run `moria
+    normalise <source>` after, then `moria prepare` embeds the new items. Exits 2 if a day failed."""
+    cards = load_sources()
+    if source not in cards or cards[source].adapter not in DATED_ADAPTERS:
+        typer.echo(f"backfill: {source} can't be asked for a past day (adapters that can: {', '.join(DATED_ADAPTERS)})",
+                   err=True)  # fmt: skip
+        raise typer.Exit(2)
+    cfg = load_config()
+    st = open_store(cfg.store, store)
+    have = collected_days(st, source)
+    first = date.fromisoformat(start)
+    last = date.fromisoformat(end) if end else (min(have) - timedelta(days=1) if have else _yesterday())
+    todo = [last - timedelta(days=k) for k in range((last - first).days + 1)]
+    todo = [d for d in todo if d not in have][:max_days]
+    typer.echo(f"backfill {source}: {len(todo)} days to collect this run, {first} to {last}")
+    failed = []
+    for d in todo:
+        (r,) = _collect([source], d, None, store)
+        if r.status != "passed":
+            failed.append(d.isoformat())
+    typer.echo(json.dumps({"source": source, "collected": len(todo) - len(failed), "failed": failed}, sort_keys=True))
+    if failed:
+        raise typer.Exit(2)
+
+
 @app.command("collect-weekly")
 def collect_weekly(
     day: str = typer.Option(None, help="UTC day the snapshot is filed under (YYYY-MM-DD); default yesterday"),
