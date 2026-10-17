@@ -16,7 +16,8 @@ Series and AU/world pairs:
 - coverage: the source's volume (the denominator) moved more than ±25% over the detector's window;
 - ingestion: the source's latest collection had an incident, or a daily source had one in the window;
 - source_break: a dated break on the source's card falls inside the detector's window, or a reclassification of
-  the series' own classes does (`artefacts.series_breaks`, D-032);
+  the series' own classes does (`artefacts.series_breaks`, D-032), or its change point is one that many of the
+  source's series share (`artefacts.shared_break`, D-032);
 - duplicate (GDELT volumes): the group's window items are at least twice their de-duplication groups;
 - news_cycle (GDELT bursts: surges and anomalies): no item from a primary family matches the group in the window.
 
@@ -29,13 +30,15 @@ the flags, and the numbers behind them (canonical JSON).
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 import tempfile
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import date, timedelta
 from pathlib import Path
 
+import numpy as np
 import pyarrow as pa
 
 from .concepts import COMMAND as DOCS
@@ -85,6 +88,27 @@ def card_breaks(cards: dict[str, SourceCard]) -> dict[str, list[date]]:
     return out
 
 
+def crowded_breaks(rows, cfg: DetectConfig) -> dict[tuple[str, str], dict[str, int]]:
+    """Periods where many of one source's series (one frequency) change slope or level at once (D-032): at least
+    `shared_break.min_series` of them and `shared_break.factor` times the median period's count. OpenAlex's monthly
+    series crowded into November 2025 (54 against about 5 a month): a change in what the source indexes, not in each
+    topic. The last periods a change point can fall on crowd too, with every late change; both are flagged."""
+    sb = cfg.artefacts.shared_break
+    if not sb.min_series:
+        return {}
+    counts: dict[tuple[str, str], Counter] = defaultdict(Counter)
+    for r in rows:
+        for at in {r.get("cp_slope_period"), r.get("cp_level_period")} - {None}:
+            counts[(r.get("source"), r.get("frequency"))][at] += 1
+    out = {}
+    for key, cnt in counts.items():
+        med = float(np.median(list(cnt.values())))
+        hot = {p: n for p, n in cnt.items() if n >= sb.min_series and n >= sb.factor * med}
+        if hot:
+            out[key] = hot
+    return out
+
+
 def _period_bounds(freq: str, start: str | None, end: str | None) -> tuple[date | None, date | None]:
     """The first day of the window's first period and the last day of its last."""
     if not start or not end or period_index_of_label(freq, start) is None:
@@ -121,6 +145,7 @@ class Checker:
                 self.latest_day[d["source"]] = d
         self.series, self.combos = series, combos
         self.breaks = card_breaks(cards)
+        self.crowded = crowded_breaks(series.values(), cfg)
         self.group_items: dict[str, list[dict]] = defaultdict(list)
         for g in group_items:
             self.group_items[g["group"]].append(g)
@@ -211,6 +236,13 @@ class Checker:
             subject = c["subject"] if c["subject_kind"] == "series" else ""
             crossed += [f"{b.date}: {b.note}" for b in self.cfg.artefacts.series_breaks
                         if start < date.fromisoformat(b.date) <= end and re.search(b.pattern, subject)]  # fmt: skip
+            # a change point that many of the source's series share: a change in the source, not in each subject
+            nums = json.loads(c.get("numbers") or "{}")
+            shared = self.crowded.get((source, freq), {})
+            for at in ((nums.get("acceleration") or {}).get("change_point"),
+                       (nums.get("anomaly") or {}).get("level_change_point")):  # fmt: skip
+                if at in shared:
+                    crossed.append(f"{at}: {shared[at]} of the source's series change there (a shared break)")
             out["source_break"] = "flag" if crossed else "pass"
             details["source_break"] = crossed
         # GDELT volumes: syndicated copies, and news bursts without a primary source
@@ -278,8 +310,9 @@ def artefacts(store: Store, cfg: DetectConfig, cards: dict[str, SourceCard], as_
 
         cf, sf, df, mf = (files(dm, "candidates/"), files(sm, "measures/series/"), files(docm, "measures/documents/"),
                           files(mm, "monitors/summary/"))  # fmt: skip
-        series = {r["series_id"]: r for r in read_rows(sf["measures.parquet"], ["series_id", "denominator",
-                  "volume_change", "surge_volume_change", "frequency"])}  # fmt: skip
+        cols = ["series_id", "source", "denominator", "volume_change", "surge_volume_change", "frequency",
+                "cp_slope_period", "cp_level_period"]  # fmt: skip
+        series = {r["series_id"]: r for r in read_rows(sf["measures.parquet"], cols)}
         combos = {r["combination"]: r for r in read_rows(df["combinations.parquet"],
                                                           ["combination", "exposure_change", "classes_since",
                                                            "new_class"])}  # fmt: skip

@@ -169,3 +169,30 @@ def test_the_queue_weighs_the_dossiers_checks():
     review = load_review()
     assert set(review.queue.dossier_penalty) == {"concentrated_works", "reclassified", "few_applicants"}
     assert all(0 < v < 1 for v in review.queue.dossier_penalty.values())
+
+
+def test_a_change_point_many_series_share_is_a_source_break():
+    from moria.artefacts import crowded_breaks
+
+    rows = [{"source": "openalex_counts", "frequency": "M", "cp_slope_period": "2025-11", "cp_level_period": None}
+            for _ in range(30)]  # fmt: skip
+    rows += [{"source": "openalex_counts", "frequency": "M", "cp_slope_period": f"2024-{m:02d}",
+              "cp_level_period": None} for m in range(1, 13) for _ in range(3)]  # fmt: skip
+    hot = crowded_breaks(rows, CFG)
+    assert hot == {("openalex_counts", "M"): {"2025-11": 30}}
+    series = {"openalex_counts|topic|T1|world|month": {"denominator": "d", "volume_change": 0.0,
+              "surge_volume_change": 0.0, "frequency": "M", "source": "openalex_counts"}}  # fmt: skip
+    checker = Checker(CFG, {}, AS_OF, [], [], [], {**series}, {}, [], [])
+    checker.crowded = hot
+    c = {
+        "subject_kind": "series",
+        "subject": "openalex_counts|topic|T1|world|month",
+        "sources": ["openalex_counts"],
+        "type": "acceleration",
+        "detectors": ["acceleration"],
+        "window_start": "2023-09",
+        "window_end": "2026-08",
+        "numbers": '{"acceleration": {"change_point": "2025-11"}}',
+    }
+    out, details = checker.series_check(c)
+    assert out["source_break"] == "flag" and "shared break" in details["source_break"][0]

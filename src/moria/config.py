@@ -529,12 +529,18 @@ class SeriesBreak(Strict):
     note: str
 
 
+class SharedBreak(Strict):
+    min_series: int = 0  # 0: off
+    factor: float = 4.0
+
+
 class ArtefactsConfig(Strict):
     coverage_change: float
     duplicate_ratio: float
     news_cycle_days: int
     primary_families: list[Family]
     series_breaks: list[SeriesBreak] = []
+    shared_break: SharedBreak = SharedBreak()
 
 
 class ShortHorizonConfig(Strict):
