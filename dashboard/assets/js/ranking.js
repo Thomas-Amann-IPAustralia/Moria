@@ -1,5 +1,5 @@
 // The ranking and the selection, ported line for line from src/moria/rank.py (geomean, view_scores, select,
-// largest_remainder), so that the forge's what-if can be trusted: at Moria's own settings it must reproduce the
+// largest_remainder), so that the what-if in How ranking works can be trusted: at Moria's own settings it must reproduce the
 // real shortlist and queue exactly (checked on load, and in the repo's tests). The what-if never changes Moria.
 
 export const VIEWS = ["early_warning", "strategic"];

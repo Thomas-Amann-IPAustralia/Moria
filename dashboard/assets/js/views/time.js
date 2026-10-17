@@ -1,4 +1,4 @@
-// Level 4, the Mirrormere (where Durin saw a crown of stars reflected): the series behind the candidates over time.
+// Change over time: the series behind the candidates over time.
 // Choose up to eight, overlay them, and switch on what Moria measured: trend lines with their uncertainty, the
 // expected band, accelerations, change points and surge windows. One axis only: different units are indexed.
 
@@ -16,13 +16,13 @@ const slotColour = (k) => (document.documentElement.dataset.theme === "dark" ? S
 
 export function render(root, ctx) {
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "The Mirrormere"),
+    el("div.eyebrow", "Series over time"),
     el("h1", "Change over time"),
     el("p.lede", "The series behind the candidates, drawn as Moria tested them. Overlay several, switch on the trend lines and their uncertainty, and see the expected band an anomaly broke out of. Nothing here is a forecast: every line stays inside the data."))));
   if (!hasDetail()) {
-    root.append(needsPrivate("The series themselves are private, so this level needs the private file (or the practice data).", { pickFile, loadPractice }));
+    root.append(needsPrivate("The series themselves are private, so this section needs the private file (or the practice data).", { pickFile, loadPractice }));
     root.append(el("div.section", el("h2", "What was tested")), testedCard(state.data));
-    root.append(el("div.callout.info.mt", el("div.c-ico", "✦"), el("div", el("h4", "Want to see how a trend line and its band work?"), el("p", "The ", el("a", { href: "#/lore" }, "statistics level"), " has a playground: dig a made-up series, add a trend, noise or a jump, and watch Moria's tests react."))));
+    root.append(el("div.callout.info.mt", el("div.c-ico", "✦"), el("div", el("h4", "Want to see how a trend line and its band work?"), el("p", "The ", el("a", { href: "#/statistics" }, "Statistics explained"), " has a playground: make up a series, add a trend, noise or a jump, and watch Moria's tests react."))));
     return;
   }
   root.append(mirror(ctx));

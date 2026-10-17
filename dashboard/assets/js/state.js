@@ -7,7 +7,7 @@ export const state = {
   mode: "public", // public | practice | private
   fileName: null,
   index: null,
-  series: [], // the Mirrormere's chosen series: [{id, slot}]
+  series: [], // Change over time's chosen series: [{id, slot}]
   filter: null, // a filter handed from one level to another (a type tile to the candidates)
 };
 

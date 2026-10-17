@@ -1,4 +1,4 @@
-// Level 7, the Chamber of Mazarbul (the Book of Records): where the data comes from, what it can't tell you, and
+// Sources and limits: where the data comes from, what it can't tell you, and
 // how Moria has been tested. All of it public.
 
 import { ringTag } from "../bits.js";
@@ -10,9 +10,9 @@ import { css, debounce, el, fmt, longDate, n, pct, RINGS, signedPct, title, word
 export function render(root) {
   const d = state.data;
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "The Chamber of Mazarbul"),
+    el("div.eyebrow", "Data and tests"),
     el("h1", "Sources and limits"),
-    el("p.lede", "Where Moria's data comes from, what it can't tell you, and how Moria has been tested. Read this before leaning on anything in the other levels."))));
+    el("p.lede", "Where Moria's data comes from, what it can't tell you, and how Moria has been tested. Read this before leaning on anything in the other sections."))));
   root.append(el("div.section", el("h2", "What to keep in mind")), limits(d));
   root.append(el("div.section", el("h2", `The sources (${d.config.sources.length})`)), catalogue(d));
   root.append(el("div.section", el("h2", "Why so many weak signals are flagged", tip("source_break"))), volumes(d));

@@ -1,11 +1,11 @@
-// Level 8, the runes decoded: every term the dashboard explains, searchable, grouped.
+// Glossary: every term the dashboard explains, searchable, grouped.
 
 import { GROUPS, TERMS } from "../glossary.js";
 import { debounce, el } from "../util.js";
 
 export function render(root, ctx) {
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "Runes decoded"),
+    el("div.eyebrow", "Every term"),
     el("h1", "Glossary"),
     el("p.lede", "Every term the dashboard uses, in plain words: what it means, how Moria uses it, and what to watch out for."))));
   const search = el("input", { type: "search", placeholder: "Search the glossary…", "aria-label": "Search the glossary", style: { width: "420px" } });

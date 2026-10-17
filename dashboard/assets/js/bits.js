@@ -1,8 +1,8 @@
-// Small visual pieces shared by the levels: the type gems, ring tags, check statuses (always an icon and a word),
+// Small visual pieces shared by the sections: the type gems, ring tags, check statuses (always an icon and a word),
 // flags, and empty states.
 
 import { tip } from "./glossary.js";
-import { el, key, RING_SHORT, svg, title, TYPE_GEMS, TYPE_NAMES } from "./util.js";
+import { el, key, RING_SHORT, svg, title, TYPE_NAMES } from "./util.js";
 
 export function gem(type, size = 22) {
   const g = svg(`<svg class="gem" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">
@@ -15,7 +15,7 @@ export function gem(type, size = 22) {
 export function typeTag(type, withTip = false) {
   const t = el("span.type-tag", gem(type, 18), TYPE_NAMES[type] || title(type));
   t.style.setProperty("--gem", `var(--t-${key(type)})`);
-  t.title = `${TYPE_NAMES[type]}: a ${TYPE_GEMS[type]} in Moria's mine`;
+  t.title = TYPE_NAMES[type] || title(type);
   return withTip ? el("span.row-flex", { style: { gap: "2px" } }, t, tip(type)) : t;
 }
 
@@ -61,15 +61,14 @@ export function empty(text, action) {
     el("p", text), action || null);
 }
 
-/** "Open the Doors" call to action for levels that need the private file. */
+/** "Open private file" call to action for sections that need the private file. */
 export function needsPrivate(what, { pickFile, loadPractice }) {
   return el("div.card.tint.mt",
     el("div.row-flex",
       el("div", { style: { flex: "1 1 360px" } },
-        el("h3", "The Doors are shut"),
-        el("p.ink2", `${what} The public page holds counts only, because the signals' names, titles and links stay in IP Australia's private store.`),
-        el("p.inscription", "Speak, friend, and enter.")),
+        el("h3", "This needs the private file"),
+        el("p.ink2", `${what} The public page holds counts only, because the signals' names, titles and links stay in IP Australia's private store.`)),
       el("div.row-flex",
-        el("button.btn.btn-primary", { type: "button", onclick: pickFile }, "Open the Doors"),
+        el("button.btn.btn-primary", { type: "button", onclick: pickFile }, "Open private file"),
         el("button.btn", { type: "button", onclick: loadPractice }, "Try practice data"))));
 }

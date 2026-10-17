@@ -1,4 +1,4 @@
-// Level 2, the review queue (the mithril): the 40 picked for a person, their make-up, and, with the Doors open, the
+// The review queue: the 40 picked for a person, their make-up, and, with the private file open, the
 // cards themselves (click one for its dossier).
 
 import { flagChip, gem, needsPrivate, ringTag, sealedCard, typeTag } from "../bits.js";
@@ -12,7 +12,7 @@ export function render(root, ctx) {
   const d = state.data;
   const q = d.queue;
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "Mithril worth the digging"),
+    el("div.eyebrow", "Worth a person's time"),
     el("h1", "The review queue", tip("queue")),
     el("p.lede", `The ${q.size} candidates Moria judged most worth a person's time this round, picked from a shortlist of ${q.shortlist_size} under the ring quotas. Nobody has reviewed them yet: they are questions, not answers.`))));
   root.append(el("div.stats",
@@ -23,7 +23,7 @@ export function render(root, ctx) {
   if (hasDetail()) root.append(cards(ctx));
   else {
     root.append(el("div.section", el("h2", "The 40, sealed"), el("p.lede", "Forty places, by type. Their names, charts and evidence are private.")), sealedGrid(q));
-    root.append(needsPrivate("To read the 40 (their names, charts and evidence), open the Doors with your private file.", { pickFile, loadPractice }));
+    root.append(needsPrivate("To read the 40 (their names, charts and evidence), open your private file.", { pickFile, loadPractice }));
   }
   root.append(el("div.section", el("h2", "What the queue is made of")));
   root.append(el("div.grid.g2", ringType(d), sources(d)));
