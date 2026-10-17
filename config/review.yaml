@@ -75,6 +75,10 @@ rank:
   # machine tag for ranking only: the person judges whether a signal reinforces a trend.
   known_trend_sim: 0.68
   known_trend_factor: 0.6    # novelty times this when it matches
+  # Document weak signals are held back from the shortlist and the queue (shown, never hidden) until enough of their
+  # evidence comes from sources with this many days of history before the window (D-032): a source collected for a
+  # week has no baseline, so 'new' means new to Moria (D-031). Backfilled history counts. 0 holds nothing.
+  cold_start_days: 90
   # One ring per candidate, for the quotas (handover flag 7). A one-ring card gives its ring; a label matching the
   # IP-system terms is core; then these maps; then the label's zero-shot ring among the card's other rings.
   rings:
@@ -143,6 +147,10 @@ queue:
   third_order_max: 0.20      # §2.5: third-order pathways at most 20% of the queue (the machine's suggested order)
   source_max: 0.25           # no source fills more than this share (breadth across sources, §8.2)
   sensitivity: [0.5, 1.5]    # the report re-ranks with each weight times these and counts the queue's changes
+  # The dossiers' checks lower a place as the artefact flags do (shown, never hidden; multiplied with them). D-031: 7
+  # of the 40 queued carried one (a surge of a dozen works in one venue, old applications reclassified, one firm's
+  # filings), found after the shortlist and never counted (D-032).
+  dossier_penalty: {concentrated_works: 0.5, reclassified: 0.5, few_applicants: 0.6}
 
 dossier:
   version: dossier-v1

@@ -1,5 +1,5 @@
 {
- "as_of": "2026-10-15",
+ "as_of": "2026-10-16",
  "config": {
   "detect": {
    "accel_min_change": 0.1,
@@ -402,6 +402,11 @@
    "P6": "This development could change Australia's ability to benefit from new ideas: their commercialisation, their use and their contribution to productivity."
   },
   "queue": {
+   "dossier_penalty": {
+    "concentrated_works": 0.5,
+    "few_applicants": 0.6,
+    "reclassified": 0.5
+   },
    "rings": {
     "adjacent": 0.35,
     "core": 0.35,
@@ -1526,17 +1531,17 @@
   "baseline_days": 730,
   "indicators": {
    "clusters": 200,
-   "combinations_new": 54,
+   "combinations_new": 51,
    "combinations_rising": 27,
-   "concepts": 15568,
-   "cross_family": 77,
-   "cross_ring": 13,
-   "low_base_surge": 135,
-   "new_term": 31,
-   "novel_micro_clusters": 16
+   "concepts": 18462,
+   "cross_family": 72,
+   "cross_ring": 14,
+   "low_base_surge": 141,
+   "new_term": 44,
+   "novel_micro_clusters": 18
   },
-  "items_baseline": 37164,
-  "items_window": 15433,
+  "items_baseline": 37152,
+  "items_window": 19700,
   "min_items": 3,
   "min_sources": 2,
   "sources": [
@@ -1564,8 +1569,8 @@
    },
    {
     "baseline_groups": 21,
-    "baseline_per_day": 0.05976,
-    "change": 1.391,
+    "baseline_per_day": 0.05959,
+    "change": 1.397,
     "family": "policy",
     "history_from": 2025,
     "onboarded": "2026-10-12",
@@ -1575,8 +1580,8 @@
    },
    {
     "baseline_groups": 99,
-    "baseline_per_day": 0.2817,
-    "change": 0.3653,
+    "baseline_per_day": 0.2809,
+    "change": 0.3691,
     "family": "policy",
     "history_from": 2025,
     "onboarded": "2026-10-12",
@@ -1592,8 +1597,8 @@
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "aspi_strategist",
-    "window_groups": 104,
-    "window_per_day": 1.143
+    "window_groups": 107,
+    "window_per_day": 1.176
    },
    {
     "baseline_groups": 4,
@@ -1614,19 +1619,19 @@
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "conversation_au",
-    "window_groups": 82,
-    "window_per_day": 0.9011
+    "window_groups": 102,
+    "window_per_day": 1.121
    },
    {
-    "baseline_groups": 406,
-    "baseline_per_day": 0.5562,
-    "change": 3.406,
+    "baseline_groups": 405,
+    "baseline_per_day": 0.5548,
+    "change": 3.536,
     "family": "research",
     "history_from": 2012,
     "onboarded": "2026-10-15",
     "source": "csiro_dap",
-    "window_groups": 223,
-    "window_per_day": 2.451
+    "window_groups": 229,
+    "window_per_day": 2.516
    },
    {
     "baseline_groups": 0,
@@ -1636,8 +1641,19 @@
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "ec_presscorner",
-    "window_groups": 71,
-    "window_per_day": 0.7802
+    "window_groups": 80,
+    "window_per_day": 0.8791
+   },
+   {
+    "baseline_groups": 0,
+    "baseline_per_day": null,
+    "change": null,
+    "family": "legal",
+    "history_from": 2026,
+    "onboarded": "2026-10-17",
+    "source": "epo_boards_of_appeal",
+    "window_groups": 1,
+    "window_per_day": 0.01099
    },
    {
     "baseline_groups": 0,
@@ -1669,13 +1685,13 @@
     "history_from": 2026,
     "onboarded": "2026-10-11",
     "source": "gdelt_news",
-    "window_groups": 7457,
-    "window_per_day": 81.95
+    "window_groups": 9955,
+    "window_per_day": 109.4
    },
    {
     "baseline_groups": 3,
-    "baseline_per_day": 0.01181,
-    "change": 1.791,
+    "baseline_per_day": 0.01176,
+    "change": 1.802,
     "family": "ipa_internal",
     "history_from": 2025,
     "onboarded": "2026-10-12",
@@ -1702,8 +1718,8 @@
     "history_from": 2026,
     "onboarded": "2026-10-12",
     "source": "legislation_frl",
-    "window_groups": 112,
-    "window_per_day": 1.231
+    "window_groups": 132,
+    "window_per_day": 1.451
    },
    {
     "baseline_groups": 0,
@@ -1713,8 +1729,8 @@
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "lowy_interpreter",
-    "window_groups": 58,
-    "window_per_day": 0.6374
+    "window_groups": 62,
+    "window_per_day": 0.6813
    },
    {
     "baseline_groups": 0,
@@ -1728,8 +1744,8 @@
     "window_per_day": 0.1319
    },
    {
-    "baseline_groups": 33375,
-    "baseline_per_day": 45.72,
+    "baseline_groups": 33364,
+    "baseline_per_day": 45.7,
     "change": -1.0,
     "family": "legal",
     "history_from": 1903,
@@ -1740,8 +1756,8 @@
    },
    {
     "baseline_groups": 4,
-    "baseline_per_day": 0.09663,
-    "change": -0.3177,
+    "baseline_per_day": 0.09435,
+    "change": -0.3012,
     "family": "policy",
     "history_from": 2026,
     "onboarded": "2026-10-13",
@@ -1751,8 +1767,8 @@
    },
    {
     "baseline_groups": 25,
-    "baseline_per_day": 0.04843,
-    "change": 6.033,
+    "baseline_per_day": 0.04834,
+    "change": 6.047,
     "family": "policy",
     "history_from": 2025,
     "onboarded": "2026-10-13",
@@ -1762,14 +1778,14 @@
    },
    {
     "baseline_groups": 31,
-    "baseline_per_day": 0.2398,
-    "change": -0.1293,
+    "baseline_per_day": 0.2379,
+    "change": -0.07635,
     "family": "statistics",
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "oecd_data_releases",
-    "window_groups": 19,
-    "window_per_day": 0.2088
+    "window_groups": 20,
+    "window_per_day": 0.2198
    },
    {
     "baseline_groups": 0,
@@ -1779,8 +1795,8 @@
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "oecd_publications",
-    "window_groups": 50,
-    "window_per_day": 0.5495
+    "window_groups": 57,
+    "window_per_day": 0.6264
    },
    {
     "baseline_groups": 3,
@@ -1795,14 +1811,14 @@
    },
    {
     "baseline_groups": 44,
-    "baseline_per_day": 0.1636,
-    "change": 2.762,
+    "baseline_per_day": 0.163,
+    "change": 2.843,
     "family": "policy",
     "history_from": 2025,
     "onboarded": "2026-10-13",
     "source": "standards_australia_news",
-    "window_groups": 56,
-    "window_per_day": 0.6154
+    "window_groups": 57,
+    "window_per_day": 0.6264
    },
    {
     "baseline_groups": 2514,
@@ -1845,8 +1861,8 @@
     "history_from": 2026,
     "onboarded": "2026-10-13",
     "source": "un_news",
-    "window_groups": 45,
-    "window_per_day": 0.4945
+    "window_groups": 53,
+    "window_per_day": 0.5824
    },
    {
     "baseline_groups": 0,
@@ -2056,12 +2072,12 @@
   }
  },
  "funnel": {
-  "candidates": 2634,
-  "clean": 2191,
-  "documents": 132939,
+  "candidates": 2571,
+  "clean": 1977,
+  "documents": 141208,
   "queue": 40,
   "reviewed": 0,
-  "series": 26999,
+  "series": 26968,
   "shortlist": 100,
   "sources": 44
  },
@@ -2088,6 +2104,19 @@
     "anomaly": 830,
     "trend": 1068,
     "weak_signal": 284
+   }
+  },
+  {
+   "as_of": "2026-10-16",
+   "candidates": 2571,
+   "clean": 1977,
+   "queue": 40,
+   "shortlist": 100,
+   "types": {
+    "acceleration": 402,
+    "anomaly": 810,
+    "trend": 1071,
+    "weak_signal": 288
    }
   }
  ],
@@ -2140,6 +2169,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_house_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_house_inquiries"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2167,6 +2214,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_joint_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_joint_inquiries"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2186,6 +2251,24 @@
    {
     "cadence": "daily",
     "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "aph_senate_hearings"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "aph_senate_hearings"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
     "failed": 0,
     "flag": "ok",
     "records": 30,
@@ -2221,6 +2304,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_senate_new_inquiries"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_senate_new_inquiries"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2248,6 +2349,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "aph_senate_reports"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "aph_senate_reports"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2267,6 +2386,24 @@
    {
     "cadence": "daily",
     "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "arxiv_ai_society"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "arxiv_ai_society"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
     "failed": 0,
     "flag": "ok",
     "records": 0,
@@ -2302,6 +2439,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 12,
+    "runs": 1,
+    "source": "aspi_strategist"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 11,
+    "runs": 1,
+    "source": "aspi_strategist"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2321,6 +2476,24 @@
    {
     "cadence": "daily",
     "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "cipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "cipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
     "failed": 0,
     "flag": "ok",
     "records": 0,
@@ -2356,11 +2529,47 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 47,
+    "runs": 1,
+    "source": "conversation_au"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 50,
+    "runs": 1,
+    "source": "conversation_au"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-14",
     "failed": 0,
     "flag": "ok",
     "records": 899,
     "runs": 2,
+    "source": "csiro_dap"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 50,
+    "runs": 1,
+    "source": "csiro_dap"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 49,
+    "runs": 1,
     "source": "csiro_dap"
    },
    {
@@ -2392,6 +2601,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 42,
+    "runs": 1,
+    "source": "ec_presscorner"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 37,
+    "runs": 1,
+    "source": "ec_presscorner"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2414,6 +2641,24 @@
     "failed": 0,
     "flag": "ok",
     "records": 0,
+    "runs": 1,
+    "source": "epo_boards_of_appeal"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "epo_boards_of_appeal"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
     "runs": 1,
     "source": "epo_boards_of_appeal"
    },
@@ -2441,6 +2686,24 @@
     "failed": 0,
     "flag": "ok",
     "records": 4,
+    "runs": 1,
+    "source": "epo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "epo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 3,
     "runs": 1,
     "source": "epo_news"
    },
@@ -2504,6 +2767,24 @@
     "failed": 0,
     "flag": "ok",
     "records": 4778,
+    "runs": 1,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4281,
+    "runs": 1,
+    "source": "gdelt_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4043,
     "runs": 1,
     "source": "gdelt_news"
    },
@@ -2572,6 +2853,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 25,
+    "runs": 1,
+    "source": "ipaustralia_site"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2599,6 +2898,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "iponz_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "iponz_news"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2618,6 +2935,24 @@
    {
     "cadence": "daily",
     "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "ipos_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "ipos_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
     "failed": 0,
     "flag": "ok",
     "records": 0,
@@ -2671,6 +3006,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 20,
+    "runs": 1,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 27,
+    "runs": 1,
+    "source": "legislation_frl"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2698,6 +3051,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 16,
+    "runs": 1,
+    "source": "lowy_interpreter"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 12,
+    "runs": 1,
+    "source": "lowy_interpreter"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -2720,6 +3091,24 @@
     "failed": 0,
     "flag": "ok",
     "records": 6,
+    "runs": 1,
+    "source": "moip_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "moip_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
     "runs": 1,
     "source": "moip_news"
    },
@@ -2769,6 +3158,24 @@
     "source": "oecd_ai_blog"
    },
    {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "oecd_ai_blog"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "oecd_ai_blog"
+   },
+   {
     "cadence": "weekly",
     "day": "2026-10-12",
     "failed": 0,
@@ -2805,6 +3212,24 @@
     "source": "oecd_data_releases"
    },
    {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "oecd_data_releases"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "oecd_data_releases"
+   },
+   {
     "cadence": "weekly",
     "day": "2026-10-12",
     "failed": 0,
@@ -2834,6 +3259,24 @@
    {
     "cadence": "daily",
     "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 15,
+    "runs": 1,
+    "source": "oecd_publications"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 17,
+    "runs": 1,
+    "source": "oecd_publications"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
     "failed": 0,
     "flag": "ok",
     "records": 15,
@@ -2913,6 +3356,24 @@
     "source": "standards_australia_news"
    },
    {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 4,
+    "runs": 1,
+    "source": "standards_australia_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 5,
+    "runs": 1,
+    "source": "standards_australia_news"
+   },
+   {
     "cadence": "weekly",
     "day": "2026-09-08",
     "failed": 0,
@@ -2986,6 +3447,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "ukipo_news"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -3008,6 +3487,24 @@
     "failed": 0,
     "flag": "ok",
     "records": 25,
+    "runs": 1,
+    "source": "un_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 30,
+    "runs": 1,
+    "source": "un_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 29,
     "runs": 1,
     "source": "un_news"
    },
@@ -3040,6 +3537,24 @@
    },
    {
     "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "us_federal_register_ip"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "us_federal_register_ip"
+   },
+   {
+    "cadence": "daily",
     "day": "2026-10-12",
     "failed": 0,
     "flag": "ok",
@@ -3059,6 +3574,24 @@
    {
     "cadence": "daily",
     "day": "2026-10-14",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "uspto_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 0,
+    "runs": 1,
+    "source": "uspto_news"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
     "failed": 0,
     "flag": "ok",
     "records": 0,
@@ -3120,6 +3653,24 @@
     "source": "wipo_press"
    },
    {
+    "cadence": "daily",
+    "day": "2026-10-15",
+    "failed": 0,
+    "flag": "ok",
+    "records": 2,
+    "runs": 1,
+    "source": "wipo_press"
+   },
+   {
+    "cadence": "daily",
+    "day": "2026-10-16",
+    "failed": 0,
+    "flag": "ok",
+    "records": 1,
+    "runs": 1,
+    "source": "wipo_press"
+   },
+   {
     "cadence": "weekly",
     "day": "2026-10-12",
     "failed": 0,
@@ -3140,31 +3691,30 @@
  "kind": "public",
  "queue": {
   "checks": {
-   "administrative": 1,
-   "concentrated_works": 8,
-   "coverage": 10,
-   "explained_by_context": 6,
+   "administrative": 2,
+   "concentrated_works": 2,
+   "coverage": 7,
+   "explained_by_context": 3,
    "few_applicants": 3,
-   "known_trend": 4,
+   "known_trend": 3,
    "reclassified": 1,
-   "redundancy": 32,
-   "source_break": 10
+   "redundancy": 29,
+   "source_break": 4
   },
   "dossiers": {
    "dossiers": 100,
-   "with_chart": 75,
-   "with_counter_evidence": 25,
-   "with_related": 58
+   "with_chart": 76,
+   "with_counter_evidence": 23,
+   "with_related": 56
   },
-  "flagged": 3,
+  "flagged": 2,
   "flags": {
-   "coverage": 3,
-   "source_break": 3
+   "coverage": 2
   },
   "openalex_samples": {
-   "calls": 32,
-   "concentrated": 8,
-   "fetched": 16
+   "calls": 20,
+   "concentrated": 2,
+   "fetched": 10
   },
   "passes": {
    "1": 40
@@ -3175,64 +3725,34 @@
      "h3": 100
     },
     "impact": {
-     "high": 5,
-     "low": 83,
-     "medium": 12
+     "high": 3,
+     "low": 78,
+     "medium": 19
     },
     "order": {
-     "1": 58,
-     "2": 5,
-     "3": 37
+     "1": 54,
+     "2": 6,
+     "3": 40
     },
     "origin": {
      "economic": 7,
-     "environmental": 9,
-     "legal": 17,
-     "political": 64,
-     "social": 3
+     "environmental": 8,
+     "legal": 11,
+     "political": 66,
+     "social": 6,
+     "technological": 2
     },
     "pathway": {
      "P1": 20,
-     "P5": 3,
-     "P6": 77
+     "P5": 4,
+     "P6": 76
     },
     "stance": {
      "both": 100
     }
    },
    "author": "model:chaoliangUNSW/Jev-Style-0.8B-Decision-v3-GGUF@edf37c26/Q4_K_M",
-   "evaluation": {
-    "irrelevant": [
-     0.5602,
-     0.5458,
-     0.5451,
-     0.5461
-    ],
-    "passes": false,
-    "pathway_iqr": {
-     "P1": 0.3416,
-     "P2": 0.0,
-     "P3": 0.0089,
-     "P4": 0.0106,
-     "P5": 0.0145,
-     "P6": 0.0083
-    },
-    "relevant": [
-     0.5652,
-     0.5489,
-     0.5633,
-     0.5508,
-     0.5543
-    ],
-    "rule": {
-     "min_separation": 0.05,
-     "min_spread": 0.02
-    },
-    "run_id": "20261016T015033Z-77d0d9f7",
-    "sample": 20,
-    "separation": 0.0072,
-    "spread": 0.0253
-   },
+   "evaluation": null,
    "probabilities": {
     "P1": {
      "hist": [
@@ -3244,32 +3764,32 @@
       0,
       0,
       0,
-      5,
-      6,
-      6,
-      16,
+      2,
+      9,
       8,
       12,
+      6,
+      10,
+      10,
+      3,
+      2,
+      1,
+      2,
+      0,
+      3,
+      2,
+      1,
+      2,
+      1,
+      4,
+      1,
+      0,
       5,
-      1,
-      2,
-      1,
-      2,
-      1,
       3,
-      2,
-      2,
-      1,
-      1,
+      6,
       2,
       2,
       2,
-      4,
-      3,
-      3,
-      2,
-      3,
-      4,
       1,
       0,
       0,
@@ -3287,11 +3807,11 @@
       0,
       0
      ],
-     "max": 0.6941,
-     "median": 0.2757,
-     "min": 0.1669,
-     "q1": 0.2333,
-     "q3": 0.5176
+     "max": 0.6804,
+     "median": 0.2898,
+     "min": 0.1758,
+     "q1": 0.2348,
+     "q3": 0.5033
     },
     "P2": {
      "hist": [
@@ -3377,9 +3897,9 @@
       0,
       0,
       0,
-      3,
-      62,
-      35,
+      4,
+      65,
+      31,
       0,
       0,
       0,
@@ -3405,11 +3925,11 @@
       0,
       0
      ],
-     "max": 0.5158,
-     "median": 0.4961,
-     "min": 0.4783,
-     "q1": 0.492,
-     "q3": 0.5022
+     "max": 0.5148,
+     "median": 0.4962,
+     "min": 0.4705,
+     "q1": 0.4917,
+     "q3": 0.5007
     },
     "P4": {
      "hist": [
@@ -3433,9 +3953,9 @@
       0,
       0,
       0,
-      1,
-      65,
-      34,
+      2,
+      58,
+      40,
       0,
       0,
       0,
@@ -3465,10 +3985,10 @@
       0
      ],
      "max": 0.458,
-     "median": 0.4367,
-     "min": 0.4168,
-     "q1": 0.4324,
-     "q3": 0.4433
+     "median": 0.4375,
+     "min": 0.4185,
+     "q1": 0.4319,
+     "q3": 0.4448
     },
     "P5": {
      "hist": [
@@ -3498,9 +4018,9 @@
       0,
       0,
       1,
-      22,
-      65,
-      12,
+      27,
+      59,
+      13,
       0,
       0,
       0,
@@ -3523,11 +4043,11 @@
       0,
       0
      ],
-     "max": 0.5738,
-     "median": 0.5457,
-     "min": 0.5178,
-     "q1": 0.5405,
-     "q3": 0.5524
+     "max": 0.5766,
+     "median": 0.5463,
+     "min": 0.5175,
+     "q1": 0.5395,
+     "q3": 0.555
     },
     "P6": {
      "hist": [
@@ -3557,10 +4077,10 @@
       0,
       0,
       0,
-      2,
-      40,
-      55,
       3,
+      37,
+      53,
+      7,
       0,
       0,
       0,
@@ -3582,11 +4102,11 @@
       0,
       0
      ],
-     "max": 0.584,
-     "median": 0.5618,
-     "min": 0.5308,
+     "max": 0.5853,
+     "median": 0.5634,
+     "min": 0.5293,
      "q1": 0.554,
-     "q3": 0.5692
+     "q3": 0.5691
     }
    },
    "questions": "pathways-v1|0523fe5b2859",
@@ -3608,13 +4128,13 @@
   },
   "register": {
    "events": {
-    "machine_interpretation": 40,
-    "machine_pathways": 40,
-    "queued": 40
+    "machine_interpretation": 88,
+    "machine_pathways": 88,
+    "queued": 160
    },
    "reviewed": 0,
    "status": {
-    "candidate": 40
+    "candidate": 64
    }
   },
   "rings": {
@@ -3626,7 +4146,7 @@
    {
     "component": "flags",
     "factor": 0.0,
-    "overlap": 28,
+    "overlap": 30,
     "size": 40,
     "view": "both"
    },
@@ -3640,112 +4160,112 @@
    {
     "component": "lead",
     "factor": 0.5,
-    "overlap": 39,
+    "overlap": 38,
     "size": 40,
     "view": "early_warning"
    },
    {
     "component": "lead",
     "factor": 1.5,
-    "overlap": 38,
-    "size": 40,
-    "view": "early_warning"
-   },
-   {
-    "component": "novelty",
-    "factor": 0.5,
     "overlap": 39,
     "size": 40,
     "view": "early_warning"
    },
    {
     "component": "novelty",
+    "factor": 0.5,
+    "overlap": 38,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "novelty",
     "factor": 1.5,
+    "overlap": 39,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "pathway",
+    "factor": 0.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "pathway",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "strength",
+    "factor": 0.5,
+    "overlap": 36,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "strength",
+    "factor": 1.5,
+    "overlap": 36,
+    "size": 40,
+    "view": "early_warning"
+   },
+   {
+    "component": "breadth",
+    "factor": 0.5,
     "overlap": 37,
     "size": 40,
-    "view": "early_warning"
+    "view": "strategic"
    },
    {
-    "component": "pathway",
-    "factor": 0.5,
-    "overlap": 40,
-    "size": 40,
-    "view": "early_warning"
-   },
-   {
-    "component": "pathway",
-    "factor": 1.5,
-    "overlap": 40,
-    "size": 40,
-    "view": "early_warning"
-   },
-   {
-    "component": "strength",
-    "factor": 0.5,
-    "overlap": 34,
-    "size": 40,
-    "view": "early_warning"
-   },
-   {
-    "component": "strength",
+    "component": "breadth",
     "factor": 1.5,
     "overlap": 39,
     "size": 40,
-    "view": "early_warning"
+    "view": "strategic"
    },
    {
-    "component": "breadth",
+    "component": "impact",
     "factor": 0.5,
     "overlap": 40,
     "size": 40,
     "view": "strategic"
    },
    {
-    "component": "breadth",
+    "component": "impact",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "pathway",
+    "factor": 0.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "pathway",
+    "factor": 1.5,
+    "overlap": 40,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "strength",
+    "factor": 0.5,
+    "overlap": 36,
+    "size": 40,
+    "view": "strategic"
+   },
+   {
+    "component": "strength",
     "factor": 1.5,
     "overlap": 38,
-    "size": 40,
-    "view": "strategic"
-   },
-   {
-    "component": "impact",
-    "factor": 0.5,
-    "overlap": 40,
-    "size": 40,
-    "view": "strategic"
-   },
-   {
-    "component": "impact",
-    "factor": 1.5,
-    "overlap": 40,
-    "size": 40,
-    "view": "strategic"
-   },
-   {
-    "component": "pathway",
-    "factor": 0.5,
-    "overlap": 40,
-    "size": 40,
-    "view": "strategic"
-   },
-   {
-    "component": "pathway",
-    "factor": 1.5,
-    "overlap": 40,
-    "size": 40,
-    "view": "strategic"
-   },
-   {
-    "component": "strength",
-    "factor": 0.5,
-    "overlap": 35,
-    "size": 40,
-    "view": "strategic"
-   },
-   {
-    "component": "strength",
-    "factor": 1.5,
-    "overlap": 40,
     "size": 40,
     "view": "strategic"
    }
@@ -3758,20 +4278,20 @@
    },
    "sources": {
     "abs_headline": 21,
+    "aph_joint_inquiries": 1,
+    "aph_senate_new_inquiries": 1,
     "aph_senate_reports": 3,
-    "aspi_strategist": 3,
-    "conversation_au": 2,
-    "gdelt_news": 2,
-    "ip_rapid": 25,
+    "csiro_dap": 2,
+    "ip_rapid": 24,
     "ip_rapid_metrics": 4,
-    "oecd_headline": 12,
+    "oecd_headline": 18,
     "openalex_counts": 25,
-    "patent_cpc_counts": 3
+    "patent_cpc_counts": 1
    },
    "types": {
-    "acceleration": 37,
-    "trend": 22,
-    "weak_signal": 41
+    "acceleration": 39,
+    "trend": 23,
+    "weak_signal": 38
    },
    "views": {
     "early_warning": 50,
@@ -3781,19 +4301,18 @@
   "shortlist_size": 100,
   "size": 40,
   "sources": {
-   "abs_headline": 9,
-   "conversation_au": 1,
-   "gdelt_news": 2,
+   "abs_headline": 10,
+   "aph_joint_inquiries": 1,
+   "csiro_dap": 1,
    "ip_rapid": 8,
    "ip_rapid_metrics": 2,
-   "oecd_headline": 6,
-   "openalex_counts": 10,
-   "patent_cpc_counts": 2
+   "oecd_headline": 8,
+   "openalex_counts": 10
   },
   "types": {
    "acceleration": 15,
-   "trend": 9,
-   "weak_signal": 16
+   "trend": 11,
+   "weak_signal": 14
   },
   "views": {
    "early_warning": 20,
@@ -3812,7 +4331,7 @@
     0,
     0,
     0,
-    2147,
+    2087,
     0,
     0,
     0,
@@ -3821,76 +4340,76 @@
     0,
     0,
     0,
-    292,
-    92,
-    103
+    274,
+    104,
+    106
    ],
    "lead": {
-    "0.40": 997,
-    "0.50": 42,
-    "0.60": 866,
-    "0.70": 452,
-    "0.80": 126,
-    "0.90": 120,
-    "1.00": 31
+    "0.40": 1011,
+    "0.50": 34,
+    "0.60": 843,
+    "0.70": 402,
+    "0.80": 116,
+    "0.90": 121,
+    "1.00": 44
    },
    "novelty": {
-    "0.24": 49,
-    "0.30": 44,
-    "0.36": 41,
-    "0.40": 948,
-    "0.42": 6,
-    "0.48": 4,
-    "0.50": 815,
+    "0.24": 50,
+    "0.30": 43,
+    "0.36": 28,
+    "0.40": 961,
+    "0.42": 4,
+    "0.48": 5,
+    "0.50": 793,
     "0.54": 1,
-    "0.60": 463,
-    "0.70": 44,
-    "0.80": 132,
-    "0.90": 59,
-    "1.00": 28
+    "0.60": 420,
+    "0.70": 52,
+    "0.80": 118,
+    "0.90": 57,
+    "1.00": 39
    },
    "strength_pct": [
-    132,
-    135,
-    128,
-    120,
-    135,
-    124,
-    164,
-    125,
     129,
-    125,
-    133,
-    132,
-    131,
-    130,
-    130,
-    135,
-    130,
-    137,
     127,
-    132
+    135,
+    115,
+    117,
+    135,
+    158,
+    123,
+    122,
+    126,
+    127,
+    128,
+    127,
+    133,
+    126,
+    129,
+    127,
+    134,
+    123,
+    130
    ]
   },
   "factors": {
    "context_factor": {
-    "1": 2634
+    "1": 2571
    },
    "flag_factor": {
-    "0.245": 7,
-    "0.294": 5,
-    "0.49": 156,
-    "0.7": 275,
-    "1": 2191
+    "0.245": 5,
+    "0.294": 7,
+    "0.49": 170,
+    "0.7": 412,
+    "1": 1977
    },
    "scope_factor": {
-    "0.7": 785,
-    "0.85": 1039,
-    "1": 810
+    "0.7": 789,
+    "0.85": 961,
+    "1": 821
    },
    "type_factor": {
-    "0.5": 830,
-    "1": 1804
+    "0.5": 810,
+    "1": 1761
    }
   },
   "flow": [
@@ -3901,13 +4420,13 @@
     "type": "acceleration"
    },
    {
-    "n": 5,
+    "n": 6,
     "origin": "abs_headline",
     "stage": "queue",
     "type": "acceleration"
    },
    {
-    "n": 5,
+    "n": 4,
     "origin": "abs_headline",
     "stage": "shortlist",
     "type": "acceleration"
@@ -3937,25 +4456,25 @@
     "type": "trend"
    },
    {
-    "n": 162,
+    "n": 178,
     "origin": "documents",
     "stage": "not shortlisted",
     "type": "weak_signal"
    },
    {
-    "n": 3,
+    "n": 2,
     "origin": "documents",
     "stage": "queue",
     "type": "weak_signal"
    },
    {
-    "n": 7,
+    "n": 5,
     "origin": "documents",
     "stage": "shortlist",
     "type": "weak_signal"
    },
    {
-    "n": 73,
+    "n": 68,
     "origin": "ip_rapid (class pairs)",
     "stage": "not shortlisted",
     "type": "weak_signal"
@@ -3967,7 +4486,7 @@
     "type": "weak_signal"
    },
    {
-    "n": 17,
+    "n": 16,
     "origin": "ip_rapid (class pairs)",
     "stage": "shortlist",
     "type": "weak_signal"
@@ -4009,31 +4528,31 @@
     "type": "weak_signal"
    },
    {
-    "n": 209,
+    "n": 204,
     "origin": "oecd_headline",
     "stage": "not shortlisted",
     "type": "acceleration"
    },
    {
-    "n": 2,
+    "n": 4,
     "origin": "oecd_headline",
     "stage": "queue",
     "type": "acceleration"
    },
    {
-    "n": 5,
+    "n": 9,
     "origin": "oecd_headline",
     "stage": "shortlist",
     "type": "acceleration"
    },
    {
-    "n": 278,
+    "n": 280,
     "origin": "oecd_headline",
     "stage": "not shortlisted",
     "type": "anomaly"
    },
    {
-    "n": 532,
+    "n": 534,
     "origin": "oecd_headline",
     "stage": "not shortlisted",
     "type": "trend"
@@ -4051,13 +4570,13 @@
     "type": "trend"
    },
    {
-    "n": 108,
+    "n": 83,
     "origin": "openalex_counts",
     "stage": "not shortlisted",
     "type": "acceleration"
    },
    {
-    "n": 6,
+    "n": 5,
     "origin": "openalex_counts",
     "stage": "queue",
     "type": "acceleration"
@@ -4069,67 +4588,61 @@
     "type": "acceleration"
    },
    {
-    "n": 455,
+    "n": 357,
     "origin": "openalex_counts",
     "stage": "not shortlisted",
     "type": "anomaly"
    },
    {
-    "n": 265,
+    "n": 264,
     "origin": "openalex_counts",
     "stage": "not shortlisted",
     "type": "trend"
    },
    {
-    "n": 5,
+    "n": 2,
+    "origin": "openalex_counts",
+    "stage": "queue",
+    "type": "trend"
+   },
+   {
+    "n": 3,
     "origin": "openalex_counts",
     "stage": "shortlist",
     "type": "trend"
-   },
-   {
-    "n": 7,
-    "origin": "openalex_counts",
-    "stage": "not shortlisted",
-    "type": "weak_signal"
    },
    {
     "n": 4,
     "origin": "openalex_counts",
+    "stage": "not shortlisted",
+    "type": "weak_signal"
+   },
+   {
+    "n": 3,
+    "origin": "openalex_counts",
     "stage": "queue",
     "type": "weak_signal"
    },
    {
-    "n": 1,
+    "n": 3,
     "origin": "openalex_counts",
     "stage": "shortlist",
     "type": "weak_signal"
    },
    {
-    "n": 67,
+    "n": 45,
     "origin": "patent_cpc_counts",
     "stage": "not shortlisted",
     "type": "acceleration"
    },
    {
-    "n": 2,
-    "origin": "patent_cpc_counts",
-    "stage": "queue",
-    "type": "acceleration"
-   },
-   {
-    "n": 1,
-    "origin": "patent_cpc_counts",
-    "stage": "shortlist",
-    "type": "acceleration"
-   },
-   {
-    "n": 61,
+    "n": 137,
     "origin": "patent_cpc_counts",
     "stage": "not shortlisted",
     "type": "anomaly"
    },
    {
-    "n": 62,
+    "n": 63,
     "origin": "patent_cpc_counts",
     "stage": "not shortlisted",
     "type": "trend"
@@ -4137,8 +4650,8 @@
    {
     "n": 1,
     "origin": "patent_cpc_counts",
-    "stage": "not shortlisted",
-    "type": "weak_signal"
+    "stage": "shortlist",
+    "type": "trend"
    }
   ],
   "histograms": {
@@ -4146,36 +4659,36 @@
     "all": [
      0,
      0,
-     1,
-     25,
+     21,
+     19,
+     69,
+     91,
+     121,
+     148,
+     167,
+     92,
      65,
-     88,
-     100,
-     139,
-     176,
-     113,
-     118,
-     112,
-     65,
-     61,
-     43,
-     59,
-     54,
      52,
-     43,
      44,
+     52,
+     31,
+     27,
      36,
+     45,
+     35,
+     45,
+     37,
      13,
+     8,
+     18,
+     12,
+     28,
+     4,
+     8,
      9,
-     24,
-     16,
-     39,
-     8,
-     7,
-     13,
-     17,
-     10,
-     8,
+     15,
+     9,
+     9,
      5,
      2,
      0,
@@ -4185,7 +4698,7 @@
      0,
      0
     ],
-    "in_view": 1566,
+    "in_view": 1338,
     "queue": [
      0,
      0,
@@ -4204,26 +4717,26 @@
      0,
      0,
      0,
+     1,
+     1,
      0,
+     1,
+     1,
+     0,
+     0,
+     2,
+     1,
+     2,
      3,
-     0,
-     0,
-     0,
-     0,
-     0,
-     0,
-     5,
-     2,
-     2,
-     4,
-     4,
-     1,
      2,
      5,
+     0,
+     4,
+     4,
      2,
      0,
      0,
-     1,
+     0,
      0,
      0,
      0
@@ -4243,24 +4756,24 @@
      0,
      0,
      0,
-     0,
-     0,
-     0,
-     4,
-     7,
-     0,
-     3,
-     0,
-     0,
-     4,
-     4,
-     10,
-     6,
      2,
+     2,
+     2,
+     2,
+     1,
+     0,
      5,
-     7,
-     10,
+     4,
+     2,
+     2,
      8,
+     6,
+     3,
+     3,
+     3,
+     6,
+     9,
+     9,
      5,
      2,
      0,
@@ -4276,36 +4789,36 @@
      0,
      0,
      0,
-     33,
-     29,
+     31,
+     31,
      41,
-     38,
-     44,
-     59,
+     39,
+     31,
+     65,
+     82,
      85,
-     100,
+     95,
+     115,
+     86,
+     85,
+     96,
+     101,
+     82,
+     60,
+     63,
      83,
-     119,
-     100,
-     87,
-     98,
-     89,
-     87,
-     52,
-     64,
-     77,
-     62,
-     25,
-     30,
-     33,
-     20,
+     56,
+     24,
+     27,
+     35,
+     14,
+     7,
+     1,
+     5,
+     6,
      5,
      3,
-     4,
-     11,
-     11,
-     11,
-     3,
+     2,
      2,
      3,
      4,
@@ -4314,7 +4827,7 @@
      1,
      0
     ],
-    "in_view": 1520,
+    "in_view": 1473,
     "queue": [
      0,
      0,
@@ -4333,11 +4846,11 @@
      0,
      0,
      0,
-     0,
-     0,
+     1,
      0,
      0,
      2,
+     1,
      2,
      3,
      1,
@@ -4345,13 +4858,13 @@
      0,
      0,
      0,
+     1,
+     4,
+     1,
      0,
-     1,
-     5,
-     1,
      2,
      1,
-     1,
+     2,
      2,
      2,
      1,
@@ -4370,30 +4883,30 @@
      0,
      0,
      0,
+     1,
      0,
      0,
-     0,
-     0,
-     0,
+     1,
+     1,
      2,
      1,
      3,
-     3,
-     3,
+     5,
+     4,
      2,
      4,
-     1,
+     5,
+     3,
+     3,
+     0,
+     5,
+     5,
+     4,
+     3,
+     0,
      2,
      1,
-     1,
      2,
-     8,
-     7,
-     9,
-     1,
-     2,
-     1,
-     1,
      2,
      2,
      1,
@@ -4401,152 +4914,152 @@
     ]
    }
   },
-  "known_trend_match": 148,
+  "known_trend_match": 136,
   "ring_basis": {
-   "card": 321,
-   "core_terms": 286,
-   "items": 172,
-   "map": 1164,
-   "zeroshot": 691
+   "card": 367,
+   "core_terms": 289,
+   "items": 185,
+   "map": 1134,
+   "zeroshot": 596
   },
   "rings": {
-   "adjacent": 1516,
-   "core": 428,
-   "wider_world": 690
+   "adjacent": 1496,
+   "core": 424,
+   "wider_world": 651
   }
  },
  "runs": {
   "artefacts": {
-   "commit": "75162ee",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T001603Z-77caa023"
+   "run_id": "20261017T213020Z-62a5efad"
   },
   "detect": {
-   "commit": "75162ee",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T001558Z-8e347bd5"
+   "run_id": "20261017T213017Z-6a8f91bb"
   },
   "dossier": {
-   "commit": "b3e5f4e",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T013532Z-a9a73742"
+   "run_id": "20261017T213045Z-3c0ecf03"
   },
   "measure.documents": {
-   "commit": "75162ee",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T001501Z-23d0e35c"
+   "run_id": "20261017T212940Z-c9bcbab2"
   },
   "measure.series": {
-   "commit": "75162ee",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T001344Z-40fb1a2a"
+   "run_id": "20261017T212900Z-50fb60ac"
   },
   "monitor.ingestion": {
-   "commit": "75162ee",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T001255Z-876b1e80"
+   "run_id": "20261017T212810Z-9c24bd69"
   },
   "pathways": {
-   "commit": "b3e5f4e",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T014054Z-2b6ca37d"
+   "run_id": "20261017T213538Z-fd4b8336"
   },
   "queue": {
-   "commit": "b3e5f4e",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T014955Z-67cef29f"
+   "run_id": "20261017T213655Z-85fbb35f"
   },
   "rank": {
-   "commit": "b3e5f4e",
+   "commit": "81063c8",
    "dirty": false,
-   "run_id": "20261016T013509Z-d1d92350"
+   "run_id": "20261017T213024Z-32d5361d"
   }
  },
  "scan": {
-  "candidates": 2634,
-  "clean": 2191,
+  "candidates": 2571,
+  "clean": 1977,
   "detectors": [
    {
-    "candidates": 1295,
-    "clean": 1180,
+    "candidates": 1298,
+    "clean": 1171,
     "detector": "trend",
     "types": {
-     "acceleration": 269,
-     "trend": 1026
+     "acceleration": 261,
+     "trend": 1037
     }
    },
    {
-    "candidates": 899,
-    "clean": 792,
+    "candidates": 873,
+    "clean": 618,
     "detector": "anomaly",
     "types": {
-     "acceleration": 40,
-     "anomaly": 830,
-     "trend": 29
+     "acceleration": 37,
+     "anomaly": 810,
+     "trend": 26
     }
    },
    {
-    "candidates": 452,
-    "clean": 381,
+    "candidates": 402,
+    "clean": 340,
     "detector": "acceleration",
     "types": {
-     "acceleration": 452
+     "acceleration": 402
     }
    },
    {
-    "candidates": 77,
+    "candidates": 72,
     "clean": 0,
     "detector": "cross_family",
     "types": {
-     "weak_signal": 77
+     "weak_signal": 72
     }
    },
    {
-    "candidates": 66,
-    "clean": 13,
+    "candidates": 71,
+    "clean": 11,
     "detector": "low_base_surge",
     "types": {
-     "weak_signal": 66
+     "weak_signal": 71
     }
    },
    {
-    "candidates": 60,
-    "clean": 55,
+    "candidates": 54,
+    "clean": 49,
     "detector": "jurisdiction_shift",
     "types": {
-     "weak_signal": 60
+     "weak_signal": 54
     }
    },
    {
-    "candidates": 47,
+    "candidates": 44,
     "clean": 28,
     "detector": "new_combination",
     "types": {
-     "weak_signal": 47
+     "weak_signal": 44
     }
    },
    {
-    "candidates": 42,
-    "clean": 42,
-    "detector": "divergence",
-    "types": {
-     "trend": 42
-    }
-   },
-   {
-    "candidates": 31,
+    "candidates": 44,
     "clean": 0,
     "detector": "new_term",
     "types": {
-     "weak_signal": 31
+     "weak_signal": 44
     }
    },
    {
-    "candidates": 13,
+    "candidates": 34,
+    "clean": 34,
+    "detector": "divergence",
+    "types": {
+     "trend": 34
+    }
+   },
+   {
+    "candidates": 14,
     "clean": 0,
     "detector": "cross_ring",
     "types": {
-     "weak_signal": 13
+     "weak_signal": 14
     }
    },
    {
@@ -4559,199 +5072,199 @@
    }
   ],
   "multiple_testing": {
-   "diverging": 42,
-   "pairs": 5130,
-   "series": 26999,
-   "trends_bh": 7007,
-   "trends_holm": 1295,
+   "diverging": 34,
+   "pairs": 5127,
+   "series": 26968,
+   "trends_bh": 6652,
+   "trends_holm": 1298,
    "windows": [
     {
-     "bh_05": 3692,
+     "bh_05": 3646,
      "hist_holm": [
-      122,
-      83,
-      158,
-      35,
-      34,
-      22,
-      48,
+      129,
+      91,
+      156,
       36,
-      23,
-      48,
+      34,
+      25,
+      45,
+      37,
+      28,
+      53,
       29,
-      78,
+      51,
       4,
-      13,
       15,
+      18,
+      10,
       14,
-      14,
-      15,
+      18,
       8,
-      17841
+      17819
      ],
      "hist_raw": [
-      5972,
-      1283,
-      1168,
-      1168,
-      334,
-      1171,
-      28,
-      1296,
-      438,
-      21,
-      1363,
-      1,
-      505,
-      1,
-      906,
-      468,
-      26,
-      523,
-      868,
-      1100
+      5779,
+      1286,
+      1126,
+      1089,
+      359,
+      1198,
+      43,
+      1374,
+      411,
+      31,
+      1386,
+      20,
+      527,
+      6,
+      894,
+      502,
+      55,
+      509,
+      933,
+      1092
      ],
      "hist_raw_fine": [
-      2670,
-      988,
-      104,
-      991,
-      14,
-      133,
+      2692,
+      888,
+      86,
+      947,
+      17,
+      120,
       8,
-      897,
-      156,
-      11
+      858,
+      148,
+      15
      ],
-     "holm_05": 122,
-     "raw_05": 5972,
-     "tested": 18640,
+     "holm_05": 129,
+     "raw_05": 5779,
+     "tested": 18620,
      "window": "w1"
     },
     {
-     "bh_05": 7575,
+     "bh_05": 7158,
      "hist_holm": [
-      1423,
-      462,
-      356,
-      136,
-      263,
-      84,
-      289,
-      51,
-      32,
-      115,
-      45,
-      236,
-      17,
-      25,
-      10,
-      73,
-      61,
-      17,
-      26,
-      14952
+      1420,
+      454,
+      364,
+      124,
+      249,
+      69,
+      291,
+      42,
+      44,
+      91,
+      52,
+      230,
+      33,
+      15,
+      15,
+      74,
+      63,
+      13,
+      237,
+      14774
      ],
      "hist_raw": [
-      9339,
-      1222,
-      1155,
-      735,
-      604,
-      266,
-      547,
+      8933,
+      1180,
+      1100,
+      685,
+      616,
+      268,
       583,
-      138,
-      566,
-      494,
-      129,
-      466,
-      262,
-      468,
-      131,
-      456,
-      140,
-      490,
-      482
+      649,
+      161,
+      688,
+      485,
+      161,
+      512,
+      311,
+      487,
+      176,
+      445,
+      171,
+      509,
+      534
      ],
      "hist_raw_fine": [
-      5956,
-      616,
-      568,
-      509,
-      529,
-      83,
-      455,
-      89,
-      101,
-      433
+      5735,
+      583,
+      512,
+      485,
+      546,
+      68,
+      434,
+      73,
+      71,
+      426
      ],
-     "holm_05": 1423,
-     "raw_05": 9339,
-     "tested": 18673,
+     "holm_05": 1420,
+     "raw_05": 8933,
+     "tested": 18654,
      "window": "w2"
     },
     {
-     "bh_05": 9409,
+     "bh_05": 8849,
      "hist_holm": [
-      3543,
-      505,
-      278,
-      243,
-      175,
-      133,
-      141,
-      132,
-      46,
-      130,
-      87,
-      31,
-      35,
-      123,
+      3460,
+      474,
+      266,
+      253,
+      166,
+      103,
+      167,
+      108,
+      57,
+      128,
+      103,
+      10,
+      45,
       116,
-      11,
-      43,
+      111,
+      12,
+      39,
       24,
-      126,
-      12588
+      129,
+      12707
      ],
      "hist_raw": [
-      10553,
-      1273,
-      758,
-      618,
-      479,
-      369,
-      568,
-      382,
-      392,
-      328,
-      222,
-      280,
-      297,
-      322,
-      120,
-      325,
-      325,
-      280,
-      142,
-      477
+      10055,
+      1221,
+      733,
+      730,
+      391,
+      421,
+      598,
+      408,
+      383,
+      426,
+      193,
+      348,
+      351,
+      336,
+      183,
+      272,
+      344,
+      359,
+      190,
+      536
      ],
      "hist_raw_fine": [
-      7574,
-      718,
-      580,
-      341,
-      314,
-      287,
-      294,
-      109,
-      227,
-      109
+      7273,
+      614,
+      557,
+      311,
+      336,
+      275,
+      242,
+      102,
+      253,
+      92
      ],
-     "holm_05": 3543,
-     "raw_05": 10553,
-     "tested": 18510,
+     "holm_05": 3460,
+     "raw_05": 10055,
+     "tested": 18478,
      "window": "w3"
     }
    ]
@@ -4776,12 +5289,12 @@
    {
     "clean": 0,
     "origin": "documents",
-    "weak_signal": 172
+    "weak_signal": 185
    },
    {
-    "clean": 90,
+    "clean": 84,
     "origin": "ip_rapid (class pairs)",
-    "weak_signal": 98
+    "weak_signal": 92
    },
    {
     "acceleration": 7,
@@ -4792,40 +5305,39 @@
     "weak_signal": 1
    },
    {
-    "acceleration": 216,
-    "anomaly": 278,
-    "clean": 1031,
+    "acceleration": 217,
+    "anomaly": 280,
+    "clean": 1036,
     "origin": "oecd_headline",
-    "trend": 537
+    "trend": 539
    },
    {
-    "acceleration": 123,
-    "anomaly": 455,
-    "clean": 755,
+    "acceleration": 97,
+    "anomaly": 357,
+    "clean": 576,
     "origin": "openalex_counts",
-    "trend": 270,
-    "weak_signal": 12
+    "trend": 269,
+    "weak_signal": 10
    },
    {
-    "acceleration": 70,
-    "anomaly": 61,
-    "clean": 36,
+    "acceleration": 45,
+    "anomaly": 137,
+    "clean": 2,
     "origin": "patent_cpc_counts",
-    "trend": 62,
-    "weak_signal": 1
+    "trend": 64
    }
   ],
   "rings": [
    {
     "rings": "(none)",
-    "trend": 42
+    "trend": 34
    },
    {
-    "acceleration": 70,
-    "anomaly": 61,
+    "acceleration": 45,
+    "anomaly": 137,
     "rings": "adjacent",
-    "trend": 59,
-    "weak_signal": 5
+    "trend": 62,
+    "weak_signal": 1
    },
    {
     "rings": "adjacent + core",
@@ -4833,35 +5345,35 @@
    },
    {
     "rings": "adjacent + core + wider_world",
-    "weak_signal": 53
+    "weak_signal": 58
    },
    {
-    "acceleration": 159,
-    "anomaly": 488,
+    "acceleration": 133,
+    "anomaly": 390,
     "rings": "adjacent + wider_world",
-    "trend": 435,
-    "weak_signal": 69
+    "trend": 441,
+    "weak_signal": 73
    },
    {
-    "acceleration": 216,
-    "anomaly": 278,
+    "acceleration": 217,
+    "anomaly": 280,
     "rings": "adjacent + wider_world + core",
-    "trend": 514
+    "trend": 516
    },
    {
     "acceleration": 7,
     "anomaly": 3,
     "rings": "core",
     "trend": 18,
-    "weak_signal": 103
+    "weak_signal": 97
    },
    {
     "rings": "core + wider_world",
-    "weak_signal": 14
+    "weak_signal": 12
    },
    {
     "rings": "wider_world",
-    "weak_signal": 33
+    "weak_signal": 40
    }
   ],
   "series_tested": [
@@ -4921,15 +5433,15 @@
     "trends": 24
    },
    {
-    "accelerations": 138,
-    "anomalies": 308,
+    "accelerations": 145,
+    "anomalies": 311,
     "frequency": "A",
     "level_changes": 0,
     "series": 4642,
     "source": "oecd_headline",
     "surges": 0,
     "testable": 2900,
-    "trends": 639
+    "trends": 640
    },
    {
     "accelerations": 0,
@@ -4954,116 +5466,116 @@
     "trends": 7
    },
    {
-    "accelerations": 87,
-    "anomalies": 266,
+    "accelerations": 69,
+    "anomalies": 239,
     "frequency": "A",
     "level_changes": 0,
     "series": 9344,
     "source": "openalex_counts",
-    "surges": 5,
-    "testable": 8100,
-    "trends": 218
+    "surges": 4,
+    "testable": 8099,
+    "trends": 221
    },
    {
-    "accelerations": 26,
-    "anomalies": 118,
+    "accelerations": 18,
+    "anomalies": 50,
     "frequency": "M",
-    "level_changes": 120,
-    "series": 9197,
+    "level_changes": 90,
+    "series": 9190,
     "source": "openalex_counts",
-    "surges": 7,
-    "testable": 5592,
+    "surges": 6,
+    "testable": 5589,
     "trends": 67
    },
    {
-    "accelerations": 64,
-    "anomalies": 71,
+    "accelerations": 40,
+    "anomalies": 147,
     "frequency": "A",
     "level_changes": 0,
-    "series": 1888,
+    "series": 1864,
     "source": "patent_cpc_counts",
-    "surges": 1,
-    "testable": 1206,
-    "trends": 80
+    "surges": 0,
+    "testable": 1190,
+    "trends": 79
    }
   ],
   "signalboost": {
-   "anomaly": 808,
-   "candidate_redundancy_groups": 1370,
-   "combinations_fading": 33,
-   "context_explained": 295,
-   "context_modelled": 18612,
-   "contextual": 101,
-   "coupled": 2,
-   "coupling_tested": 1558,
-   "decoupled": 0,
-   "horizon_long_sig": 1449,
-   "horizon_long_tested": 26528,
-   "horizon_medium_sig": 524,
-   "horizon_medium_tested": 12112,
-   "horizon_short_sig": 547,
-   "horizon_short_tested": 12339,
-   "horizon_structural": 1718,
-   "jurisdiction_fading": 26,
+   "anomaly": 792,
+   "candidate_redundancy_groups": 1425,
+   "combinations_fading": 27,
+   "context_explained": 255,
+   "context_modelled": 18593,
+   "contextual": 99,
+   "coupled": 1,
+   "coupling_tested": 1023,
+   "decoupled": 1,
+   "horizon_long_sig": 1481,
+   "horizon_long_tested": 26494,
+   "horizon_medium_sig": 485,
+   "horizon_medium_tested": 12094,
+   "horizon_short_sig": 498,
+   "horizon_short_tested": 12332,
+   "horizon_structural": 1677,
+   "jurisdiction_fading": 20,
    "jurisdiction_new": 14,
    "jurisdiction_rising": 20,
-   "redundancy_flagged": 4550,
-   "redundancy_groups": 2444,
-   "redundant_candidates": 977
+   "redundancy_flagged": 4519,
+   "redundancy_groups": 2751,
+   "redundant_candidates": 856
   },
   "subject_kinds": {
-   "combination": 114,
-   "concept": 156,
-   "pair": 42,
-   "series": 2322
+   "combination": 105,
+   "concept": 172,
+   "pair": 34,
+   "series": 2260
   },
   "types": {
    "acceleration": {
-    "candidates": 452,
-    "clean": 381,
+    "candidates": 402,
+    "clean": 340,
     "flags": {
-     "coverage": 71,
+     "coverage": 49,
      "duplicate": 0,
      "ingestion": 0,
      "label_drift": 0,
      "news_cycle": 0,
-     "source_break": 0
+     "source_break": 13
     }
    },
    "anomaly": {
-    "candidates": 830,
-    "clean": 733,
+    "candidates": 810,
+    "clean": 568,
     "flags": {
-     "coverage": 97,
+     "coverage": 196,
      "duplicate": 0,
      "ingestion": 0,
      "label_drift": 0,
      "news_cycle": 0,
-     "source_break": 0
+     "source_break": 48
     }
    },
    "trend": {
-    "candidates": 1068,
+    "candidates": 1071,
     "clean": 974,
     "flags": {
-     "coverage": 94,
+     "coverage": 96,
      "duplicate": 0,
      "ingestion": 0,
      "label_drift": 0,
      "news_cycle": 0,
-     "source_break": 0
+     "source_break": 3
     }
    },
    "weak_signal": {
-    "candidates": 284,
-    "clean": 103,
+    "candidates": 288,
+    "clean": 95,
     "flags": {
-     "coverage": 173,
-     "duplicate": 5,
+     "coverage": 185,
+     "duplicate": 7,
      "ingestion": 0,
      "label_drift": 0,
-     "news_cycle": 7,
-     "source_break": 176
+     "news_cycle": 5,
+     "source_break": 186
     }
    }
   }

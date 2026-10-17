@@ -1,5 +1,5 @@
-// The app shell: the levels of the mine (navigation), the data modes (public, practice, private), the Doors of
-// Durin (opening a private file in this tab), the lantern (light and dark), and a little whimsy.
+// The app shell: the sections (navigation), the data modes (public, practice, private), opening a private file in
+// this tab, the light and dark switch, and a little polish.
 
 import { disposeAll } from "./charts.js";
 import { closeDrawer, openCandidate } from "./dossier.js";
@@ -7,12 +7,12 @@ import { initPopover } from "./glossary.js";
 import { fetchJson, readBundle, setData, state } from "./state.js";
 import { el, longDate, svg } from "./util.js";
 import * as candidates from "./views/candidates.js";
-import * as forge from "./views/forge.js";
 import * as glossary from "./views/glossary.js";
-import * as lore from "./views/lore.js";
 import * as queue from "./views/queue.js";
+import * as ranking from "./views/ranking.js";
 import * as records from "./views/records.js";
 import * as start from "./views/start.js";
+import * as statistics from "./views/statistics.js";
 import * as time from "./views/time.js";
 
 const ICONS = {
@@ -23,19 +23,20 @@ const ICONS = {
   anvil: '<svg viewBox="0 0 24 24"><path d="M3 8h13a5 5 0 0 0 5-5v0M5 8c0 3 2 5 5 5h2c3 0 4-2 4-5M9 13l-2 6h10l-2-6M5 19h14"/></svg>',
   scroll: '<svg viewBox="0 0 24 24"><path d="M7 3h11a2 2 0 0 1 2 2v1h-4M7 3a2 2 0 0 0-2 2v12a2 2 0 0 1-2 2h11a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2M8 8h5M8 12h5"/></svg>',
   book: '<svg viewBox="0 0 24 24"><path d="M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6zM7 8h2M15 8h2"/></svg>',
-  rune: '<svg viewBox="0 0 24 24"><path d="M7 3v18M7 7l9-4M7 12l9 4v5M17 3v6"/></svg>',
+  glossary: '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h14M19 12h1"/></svg>',
 };
 
 const LEVELS = [
-  { id: "start", name: "Start here", rune: "The West-gate", icon: "door", view: start },
-  { id: "queue", name: "The review queue", rune: "Mithril worth the digging", icon: "gem", view: queue },
-  { id: "candidates", name: "All candidates", rune: "The deep delvings", icon: "pick", view: candidates },
-  { id: "time", name: "Change over time", rune: "The Mirrormere", icon: "mirror", view: time },
-  { id: "forge", name: "How ranking works", rune: "The forge", icon: "anvil", view: forge },
-  { id: "lore", name: "Statistics explained", rune: "Lore of the delvers", icon: "scroll", view: lore },
-  { id: "records", name: "Sources and limits", rune: "The Chamber of Mazarbul", icon: "book", view: records },
-  { id: "glossary", name: "Glossary", rune: "Runes decoded", icon: "rune", view: glossary },
+  { id: "start", name: "Start here", sub: "What Moria is", icon: "door", view: start },
+  { id: "queue", name: "The review queue", sub: "The 40 for review", icon: "gem", view: queue },
+  { id: "candidates", name: "All candidates", sub: "Everything raised", icon: "pick", view: candidates },
+  { id: "time", name: "Change over time", sub: "Series and fits", icon: "mirror", view: time },
+  { id: "ranking", name: "How ranking works", sub: "Scores and a what-if", icon: "anvil", view: ranking },
+  { id: "statistics", name: "Statistics explained", sub: "Playgrounds", icon: "scroll", view: statistics },
+  { id: "records", name: "Sources and limits", sub: "Data and tests", icon: "book", view: records },
+  { id: "glossary", name: "Glossary", sub: "Every term", icon: "glossary", view: glossary },
 ];
+const OLD_ROUTES = { forge: "ranking", lore: "statistics" }; // links from before the sections were renamed
 
 const main = document.getElementById("main");
 let currentView = null;
@@ -45,9 +46,9 @@ let currentView = null;
 function buildNav() {
   const nav = document.getElementById("nav");
   LEVELS.forEach((l, i) => {
-    nav.append(el("li", el("a", { href: `#/${l.id}`, "data-level": l.id, title: `Level ${i + 1}: ${l.rune}` },
+    nav.append(el("li", el("a", { href: `#/${l.id}`, "data-level": l.id, title: `${i + 1}. ${l.name}: ${l.sub}` },
       el("span.lvl-ico", svg(ICONS[l.icon])),
-      el("span.lvl-text", el("span.lvl-name", l.name), el("span.lvl-rune", l.rune)))));
+      el("span.lvl-text", el("span.lvl-name", l.name), el("span.lvl-sub", l.sub)))));
   });
 }
 
@@ -57,7 +58,8 @@ export function go(route) {
 
 function parse() {
   const h = location.hash.replace(/^#\/?/, "");
-  const [name, ...rest] = h.split("/");
+  const [given, ...rest] = h.split("/");
+  const name = OLD_ROUTES[given] || given;
   return { name: LEVELS.some((l) => l.id === name) ? name : "start", arg: rest.join("/") || null };
 }
 
@@ -79,7 +81,7 @@ function render() {
     level.view.render(root, { go, open: openCandidate, arg, rerender: render });
   } catch (e) {
     console.error(e);
-    root.append(el("div.card", el("h3", "Something went wrong drawing this level"), el("p.muted", String(e.message || e))));
+    root.append(el("div.card", el("h3", "Something went wrong drawing this section"), el("p.muted", String(e.message || e))));
   }
   document.title = `${level.name} · Moria dashboard`;
 }
@@ -110,15 +112,15 @@ function updateChrome() {
     practice.hidden = false;
     banner.replaceChildren(
       svg('<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'),
-      el("span", "Public view: counts only. The signals themselves (their names, evidence and charts) stay private. Open the Doors with your private file to see them, or try the practice data."),
-      el("button.btn.btn-small", { type: "button", onclick: () => pickFile() }, "Open the Doors"));
+      el("span", "Public view: counts only. The signals themselves (their names, evidence and charts) stay private. Open your private file to see them, or try the practice data."),
+      el("button.btn.btn-small", { type: "button", onclick: () => pickFile() }, "Open private file"));
   } else if (state.mode === "practice") {
     rail.textContent = "Practice data: invented";
     practice.hidden = true;
     mode.replaceChildren(el("span.dot"), "Practice data");
     banner.replaceChildren(
       el("strong", "Practice data."),
-      el("span", "Every signal, chart, title and dossier here is invented, to show how the dashboard works: none of it is a finding. Only what's about Moria itself (its sources, settings and self-tests, on the Sources and limits level) is real."),
+      el("span", "Every signal, chart, title and dossier here is invented, to show how the dashboard works: none of it is a finding. Only what's about Moria itself (its sources, settings and self-tests, in Sources and limits) is real."),
       el("button.btn.btn-small", { type: "button", onclick: () => backToPublic() }, "Back to the real scan"));
   } else {
     rail.textContent = "Private file open in this tab";
@@ -144,7 +146,7 @@ export async function loadPractice() {
     setData(b, "practice");
     updateChrome();
     render();
-    toast("Practice data loaded: dig in! Everything here is invented.");
+    toast("Practice data loaded. Everything here is invented.");
   } catch (e) {
     toast(`The practice data couldn't be loaded (${e.message}).`, true);
   }
@@ -163,7 +165,7 @@ export async function openFile(file) {
     await new Promise((r) => setTimeout(r, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 900));
     updateChrome();
     render();
-    toast(`The Doors open: ${b.candidates.length.toLocaleString("en-AU")} candidates from the scan of ${longDate(b.as_of)}.`);
+    toast(`Private file opened: ${b.candidates.length.toLocaleString("en-AU")} candidates from the scan of ${longDate(b.as_of)}.`);
   } catch (e) {
     toast(e.message || String(e), true);
   }
@@ -206,19 +208,6 @@ function theme(next) {
   }
 }
 
-function mellon() {
-  let typed = "";
-  document.addEventListener("keydown", (e) => {
-    if (e.target.closest?.("input, textarea, select") || e.key.length !== 1) return;
-    typed = (typed + e.key.toLowerCase()).slice(-6);
-    if (typed === "mellon") {
-      typed = "";
-      toast("Mellon! Speak, friend, and enter: choose your private file.");
-      pickFile();
-    }
-  });
-}
-
 function dropAnywhere() {
   let depth = 0;
   document.addEventListener("dragenter", (e) => {
@@ -252,7 +241,6 @@ async function boot() {
   theme(saved || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
   buildNav();
   initPopover();
-  mellon();
   dropAnywhere();
   document.addEventListener("click", sparkle);
   document.getElementById("btn-theme").addEventListener("click", () => {
@@ -265,7 +253,7 @@ async function boot() {
     openFile(e.target.files?.[0]);
     e.target.value = "";
   });
-  main.replaceChildren(el("div.loading", svg('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 1v3M9 4h6l2 4v9l-2 3H9l-2-3V8z"/><path d="M12 10c1.4 1.4 2 2.5 2 3.5a2 2 0 0 1-4 0c0-1 .6-2.1 2-3.5z" fill="#f2b134" stroke="none"/></svg>'), "Lighting the lanterns…"));
+  main.replaceChildren(el("div.loading", svg('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 1v3M9 4h6l2 4v9l-2 3H9l-2-3V8z"/><path d="M12 10c1.4 1.4 2 2.5 2 3.5a2 2 0 0 1-4 0c0-1 .6-2.1 2-3.5z" fill="#f2b134" stroke="none"/></svg>'), "Loading the scan…"));
   try {
     state.pub = await fetchJson("data/public.json");
   } catch (e) {

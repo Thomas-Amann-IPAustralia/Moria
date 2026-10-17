@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 from pathlib import Path
@@ -449,9 +450,18 @@ class SeriesDetectConfig(Strict):
     divergence_reference: dict[str, str] = {}
     scopes: dict[str, list[str]] = {}
     exclude_dims: list[DimsRule] = []
+    # series left out by id (regular expressions): index-only classification schemes counted twice (D-032)
+    exclude_series: list[str] = []
+    # an OpenAlex count as a share of its parent in the taxonomy (topic of subfield, subfield of field, field of
+    # domain, domain of all works: config/openalex_taxonomy.yaml), so a shift in a whole field shows once (D-032)
+    openalex_parent_share: bool = False
 
-    def tested(self, source: str, scope: str | None, dims: dict) -> bool:
+    def tested(self, source: str, scope: str | None, dims: dict, series_id: str | None = None) -> bool:
+        import re
+
         if source in self.scopes and scope not in self.scopes[source]:
+            return False
+        if series_id is not None and any(re.search(p, series_id) for p in self.exclude_series):
             return False
         return not any(r.source == source and all(dims.get(k) == v for k, v in r.dims.items())
                        for r in self.exclude_dims)  # fmt: skip
@@ -474,6 +484,8 @@ class ClusterConfig(Strict):
     batch: int
     sample: int
     name_terms: int
+    name_title: bool = False  # a cluster named by its representative item's title as well (D-032)
+    name_title_terms: int = 3  # and this many of its keyphrases
 
 
 class NoveltyConfig(Strict):
@@ -504,7 +516,23 @@ class DocumentsDetectConfig(Strict):
     novelty: NoveltyConfig
     ipr_window_months: int
     ipr_baseline_months: int
+    ipr_recent_months: int = 0  # IP RAPID pairs: the latest baseline months compared too (D-032)
     ipr_min_applicants: int
+
+
+class SeriesBreak(Strict):
+    """A dated break in some series of a source (a reclassification): source_break flags a series candidate whose id
+    matches `pattern` and whose window crosses `date` (D-032)."""
+
+    date: str  # YYYY-MM-DD
+    pattern: str  # a regular expression searched in the series id
+    note: str
+
+
+class SharedBreak(Strict):
+    min_series: int = 0  # 0: off
+    factor: float = 4.0
+    sources: list[str] = []  # indexes whose coverage can change at once; statistics share real shocks (2020-21)
 
 
 class ArtefactsConfig(Strict):
@@ -512,6 +540,8 @@ class ArtefactsConfig(Strict):
     duplicate_ratio: float
     news_cycle_days: int
     primary_families: list[Family]
+    series_breaks: list[SeriesBreak] = []
+    shared_break: SharedBreak = SharedBreak()
 
 
 class ShortHorizonConfig(Strict):
@@ -598,6 +628,7 @@ class RelationshipsConfig(Strict):
 class RedundancyConfig(Strict):
     min_corr: float
     min_points: int
+    within: Literal["frequency", "source"] = "frequency"  # series grouped across sources, or within one (D-032)
 
 
 class InjectionsConfig(Strict):
@@ -664,6 +695,31 @@ class DetectConfig(Strict):
         return self.new_detectors.get(detector, False)
 
 
+class OpenAlexTaxonomy(Strict):
+    """config/openalex_taxonomy.yaml (scripts/openalex_taxonomy.py): each topic's subfield, each field's domain."""
+
+    version: int
+    fields: dict[str, str]
+    topics: dict[str, str]
+
+    def parent(self, level: str, oid: str) -> tuple[str, str] | None:
+        """(level, id) of a taxonomy node's parent, or None for a domain (its parent is the total)."""
+        if level == "topic":
+            sub = self.topics.get(oid)
+            return ("subfield", sub) if sub else None
+        if level == "subfield":
+            return ("field", oid[:2]) if len(oid) == 4 else None
+        if level == "field":
+            dom = self.fields.get(oid)
+            return ("domain", dom) if dom else None
+        return None
+
+
+@functools.cache
+def load_openalex_taxonomy(config_dir: Path = CONFIG_DIR) -> OpenAlexTaxonomy:
+    return OpenAlexTaxonomy.model_validate(_load_yaml(config_dir / "openalex_taxonomy.yaml"))
+
+
 def load_detect(config_dir: Path = CONFIG_DIR) -> DetectConfig:
     return DetectConfig.model_validate(_load_yaml(config_dir / "detect.yaml"))
 
@@ -724,6 +780,7 @@ class RankConfig(Strict):
     novelty: dict[str, float]
     known_trend_sim: float
     known_trend_factor: float
+    cold_start_days: int = 0  # document weak signals held until their sources have this much baseline (D-032)
     rings: RingMaps
 
     @model_validator(mode="after")
@@ -749,6 +806,8 @@ class QueueConfig(Strict):
     third_order_max: float
     source_max: float
     sensitivity: list[float]
+    # the dossiers' own checks that lower a place in the queue, as the artefact flags do (D-032)
+    dossier_penalty: dict[Literal["concentrated_works", "reclassified", "few_applicants"], float] = {}
 
     @model_validator(mode="after")
     def _shares(self) -> QueueConfig:

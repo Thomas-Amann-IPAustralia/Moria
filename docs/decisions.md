@@ -2346,4 +2346,116 @@ CSV download neutralises spreadsheet formulas.
      would rather the weekly workflow publish them, that needs the workflow to commit to `main`, or a Pages
      deployment from the workflow: your call.
 
-Next free decision number: D-031.
+## D-031: a review of the first queue; the dashboard's Tolkien references dialled back (2026-10-17)
+
+**Asked by the owner:** fewer Tolkien references in the dashboard; and, more importantly, a review of the signals
+coming through and of how effective the system is at its goal.
+
+**The dashboard.** The name Moria, the gem icons and the palette stay. The section subtitles, Durin's Bane and the
+Balrogs, the doors' inscription and the 'mellon' shortcut, "Open the Doors" (now "Open private file") and the Cinzel
+font go; two sections are renamed in the address bar (`#/ranking`, `#/statistics`; the old links still work). The
+practice data's places are invented, no longer Middle-earth's (`dashboard/data/practice.json` rebuilt).
+
+**The review** (Claude's; the full note names candidates, so it is in the bucket at
+`interpretation/reviews/2026-10-17-signal-review.md`). Of the 40 queued at the scan of 2026-10-15: about 8 worth a
+reviewer's time (2 of them restating a known trend), 9 plausible but weak, 6 macro-economic series with no evident
+path to the IP system, 17 artefacts. The artefacts' causes, by queue places:
+1. **The trailing edge of research and patent counts (11).** OpenAlex's recent months differ in make-up (whole
+   fields' shares of works doubled within a year; every monthly anomaly falls in the latest month; no lag is set);
+   surges of a dozen works in one venue; Australian-scope patent counts by priority year still filling in beyond the
+   2-year lag; a subclass emptied by reclassification; an indexing scheme counted as a technology.
+2. **IP RAPID by class against a five-year baseline (4).** A step four years ago still fires (the innovation patents'
+   closure in 2021); a reclassification of old applications; one firm's filings.
+3. **The document arm's cold start (3).** Most document sources were onboarded between 11 and 15 October, so their
+   baselines are empty: every document candidate is flagged, "new" means new to Moria, and cluster labels (top
+   keyphrases) are hard to read. The sources nearest the IP system yield no candidate yet.
+4. **No relevance in the ranking (6).** Known (D-029); the wider-world quota fills with the strongest macro series.
+5. **Plumbing.** The dossier's checks (`concentrated_works`, `reclassified`, `few_applicants`) are computed after the
+   ranking and don't move the queue (7 of the 40 carry one); redundancy groups join unrelated annual series that
+   share the 2020-21 shocks (a correlation of 0.8 over 12 to 16 points among 4,550 series).
+
+**Claude's assessment:** sound and auditable as machinery; not yet effective as a detector (about 20% of the queue
+worth reading; nothing from the core ring's documents; the early-warning view drawn to the least reliable points).
+
+**Recommended (not adopted; each to be measured at the scan of 2026-10-15 before the owner decides):** dossier checks
+as flag penalties, the queue re-picked after the dossiers; document weak signals held from the queue until their
+sources have about 90 days of baseline; OpenAlex's latest one or two months dropped and topics tested within their
+field; patent lags of 4 years (Australian scope) and 3 (world), indexing schemes left out, a falling subclass with a
+rising successor flagged; IP RAPID's classes also compared with the latest 12 to 24 months; redundancy within a
+source or dataflow only; cluster labels from a representative title. **For the owner:** a relevance list of the
+statistics with a path to the IP system (now) and a classifier on the first round's labels (after); the wider-world
+quota; the first review round as calibration, with artefacts marked as such.
+
+**Spend:** $0.
+
+## D-032: the review's fixes built and run; backfill for dated sources; IPGOD and IPLORD not added (2026-10-17)
+
+**Asked by the owner:** build the fixes D-031 recommended; consider backfilling for a longer history; consider whether
+IPGOD and IPLORD are worth adding beside IP RAPID.
+
+**Built** (each a setting, adopted at the owner's request to build them; the tests in `tests/test_review_fixes.py`):
+1. **The dossiers' checks reach the queue** (`queue.dossier_penalty`: concentrated works 0.5, reclassified 0.5, few
+   applicants 0.6), listed in the queue's `dossier_flags`; the dashboard's what-if ports it.
+2. **Document weak signals wait for a baseline** (`rank.cold_start_days: 90`): held from the shortlist and the queue
+   (shown, never hidden) unless their window items from sources with 90 days of history before the window still make
+   a weak signal. Backfilled history counts. 162 held at the scan of 2026-10-16.
+3. **OpenAlex:** a count is tested as a share of its parent in the taxonomy (topic of subfield, subfield of field,
+   field of domain, domain of all works; `config/openalex_taxonomy.yaml`, 4,516 topics, from
+   `scripts/openalex_taxonomy.py`); the latest 2 months are lagged; the coverage check still reads all works.
+4. **Patent counts by priority year:** lags of 4 years (Australian members) and 3 (worldwide, and the OECD's patent
+   flows); staleness counts from a series' lag; index-only CPC schemes left out (`series.exclude_series`); the
+   reclassifications of G06K into G06V and of H01L into H10 flag `source_break` (`artefacts.series_breaks`, dated for
+   each source's own dating).
+5. **IP RAPID pairs** (classes and applicant countries) are also compared with the latest 24 months of the baseline
+   (`documents.ipr_recent_months`): a pair rises above, or fades below, those too, so a step years ago no longer fires.
+6. **Redundancy groups within one source** (`redundancy.within: source`).
+7. **Clusters named by a representative title** (the window item nearest the centre) and three keyphrases.
+8. **Added in measuring:** a change point that many of a source's series share flags `source_break`
+   (`artefacts.shared_break`: at least 10 series and 4 times the median month; OpenAlex and GDELT only, since
+   statistics share real shocks). OpenAlex's monthly series crowd into 2025-11 (54 against about 5 a month) and into
+   the latest months a change point can take.
+
+**Measured** (the scan and review of 2026-10-16, from clean commits, against the queue of 2026-10-15; the private note
+names them): the D-031 queue's 17 artefacts: 16 left; the one that stays is a recent fall, now confirmed against
+the latest months. Its 8 worth a look: all stay. Its 6 off-mission macro series: all stay. 162 document weak signals
+held; OpenAlex monthly accelerations 33 to 28 and anomalies 205 to 127 among the candidates; candidates in redundancy
+groups 1,440 to 1,261. Claude's reading of the new 40: about 12 worth a reviewer's time (2 restating a known trend,
+against 8), 14 plausible but weak, 14 with no evident path to the IP system (the six macro series, six OpenAlex topics
+and a population count in the wider world's places, one generic phrase), and no evident artefact (against 17). The
+noise that is left sits in the wider world's places: relevance is now the main limit.
+
+**Still open** (not built; for the owner or a later session):
+- **Relevance** (D-031 item 8) is the largest remaining gap: the six macro series D-031 called off-mission are still
+  queued, and OpenAlex topics with no path to IP fill the wider world's places. The owner's list of IP-relevant
+  statistics, then a classifier on the first round's labels.
+- The **wider-world quota** (D-031 item 9).
+- The **coverage check on annual patent counts** flags almost every candidate (244 of 246): the family total grows
+  more than 25% over an 8-year window. A threshold per frequency, or against the trend, would fix it.
+- Generic **new terms** (a two-word stock phrase) pass the new-term detector.
+
+**Backfill.** `moria backfill <source> --from D [--to D] [--max-days N]` collects missing past days, newest first, for
+the adapters that ask their source for a day (GDELT's GKG files, back to 2015; the Federal Register of Legislation);
+`.github/workflows/backfill.yml` runs it by hand, in the daily collection's queue, then normalises. GDELT takes about
+1.6 minutes a day (about 4,000 matched documents), so 150 days fit one run; the weekly `prepare` embeds the new titles
+(short texts: about 100 a second measured). Recommended: GDELT from 2024-10-01 to its first collection (about 740
+days, five runs), which gives the document detectors their 730-day baseline and GDELT's 284 daily volume series two
+years of history (today none is testable). Not built, assessed: feeds return what they hold today; ASPI's WordPress
+feed pages back to 2016 (`?paged=N`); gov.uk's search API holds UKIPO's 744 news items back to 1981; the Federal
+Register's API every USPTO document since 1994; arXiv's API any submission month. Each needs a small adapter change.
+The Wayback Machine's feed snapshots would be a general route, but archive.org refuses this session (untested from a
+runner). The Conversation, the Lowy Interpreter and UN News ignore paging.
+
+**IPGOD and IPLORD: not added (Claude's recommendation).** data.gov.au's catalogue (2026-10-17): IP RAPID is "a
+weekly updated version of IP Australia's open data product, previously released under the name IPGOD"; IPGOD's last
+release (2022) runs to April 2022, annual, CC BY 2.5, and holds the same tables. IPLORD (2021 release, CC BY 4.0) is
+an applicant-by-financial-year view built from IPGOD, 1904 to 2020: filings, grants, retirements and enforceable
+stock by right, with names, states, postcodes and ABNs where known. Everything it offers can be derived from IP RAPID
+(which Moria already holds weekly), it stops in 2020, and it names individuals with their postcodes (Moria hashes
+them and drops postcodes, D-011). One use worth keeping in mind: IPGOD's yearly releases (2014 to 2022) are past
+vintages of the register, so a hindsight run could see what was classified when, instead of today's reclassified
+state. That is for the hindsight set, not the scan.
+
+**Spend:** $0 (OpenAlex: about 25 list calls for the taxonomy and the dossiers' sample works, within the free daily
+budget; the decision model and the encoder are free).
+
+Next free decision number: D-033.

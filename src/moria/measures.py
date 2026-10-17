@@ -7,9 +7,10 @@ then (the earliest vintage when none is: backfilled history has no true first si
 contains `as_of` (never complete), the source's lagged periods (`config/detect.yaml`) and IP RAPID's release month.
 
 **Rates per source volume.** A count is tested as its share of the source's volume in the same period (design §8.3):
-an OpenAlex topic over all works in the same scope and period, a CPC subclass over all subclasses, a GDELT query
-group over every document, an IP RAPID split over all applications of that right. Counts are tested on a log scale
-(the slope is a growth rate); statistics (ABS, OECD) on their own scale.
+an OpenAlex topic over its subfield, a subfield over its field, a field over its domain and a domain over all works in
+the same scope and period (`openalex_parent_share`, D-032: a shift in a whole field shows once), a CPC subclass over
+all subclasses, a GDELT query group over every document, an IP RAPID split over all applications of that right.
+Counts are tested on a log scale (the slope is a growth rate); statistics (ABS, OECD) on their own scale.
 
 Per series:
 - **trend** (design §8.2): Theil-Sen slope with Sen's interval and Mann-Kendall's test in three windows (12, 24 and
@@ -248,7 +249,7 @@ def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date,
             "SELECT series_id, source, label, unit, scope, dimensions, family, rings FROM read_parquet(?)",
             [series_path.as_posix()],
         ).fetchall()
-        metas = {r[0]: r for r in meta_rows if r[1] in sources and cfg.series.tested(r[1], r[4], _dims(r[5]))
+        metas = {r[0]: r for r in meta_rows if r[1] in sources and cfg.series.tested(r[1], r[4], _dims(r[5]), r[0])
                  and (only is None or r[0] in only)}  # fmt: skip
         if not metas:
             continue
@@ -279,6 +280,8 @@ def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date,
                     "family": m[6],
                     "rings": list(m[7]),
                 }
+                if m[1] == "openalex_counts" and cfg.series.openalex_parent_share:
+                    meta["parent"] = openalex_parent(sid)
                 s = out[sid] = Series(sid, m[1], kind, meta)
             elif s.kind != kind:
                 continue  # one period kind per series: the first seen
@@ -287,6 +290,22 @@ def load_series(paths: list[tuple[Path, Path]], cfg: DetectConfig, as_of: date,
         cur = current_index(s.kind, as_of)
         s.points = {i: v for i, v in s.points.items() if i < cur}
     return {k: v for k, v in out.items() if v.points}
+
+
+def openalex_parent(series_id: str) -> str:
+    """The series of an OpenAlex count's parent in the taxonomy, in the same scope and period kind (D-032): a topic's
+    subfield, a subfield's field, a field's domain; a domain's (or an unknown node's) parent is all works."""
+    from .config import load_openalex_taxonomy
+
+    parts = series_id.split("|")
+    level, scope, kind = parts[1], parts[-2], parts[-1]
+    up = load_openalex_taxonomy().parent(level, parts[2]) if len(parts) == 5 else None
+    return f"openalex_counts|{up[0]}|{up[1]}|{scope}|{kind}" if up else f"openalex_counts|total|{scope}|{kind}"
+
+
+def _openalex_total(series_id: str) -> str:
+    parts = series_id.split("|")
+    return f"openalex_counts|total|{parts[-2]}|{parts[-1]}"
 
 
 def _dims(text: str | None) -> dict:
@@ -308,7 +327,7 @@ def role(s: Series) -> tuple[str, str | None, str]:
         level, scope, kind = parts[1], parts[-2], parts[-1]
         if level == "total":
             return "log_count", None, "total"
-        return "log_share", f"openalex_counts|total|{scope}|{kind}", level
+        return "log_share", s.meta.get("parent") or f"openalex_counts|total|{scope}|{kind}", level
     if src == "patent_cpc_counts":
         return "log_share", f"patent_cpc_counts|*|{parts[-1]}", "cpc"
     if src == "gdelt_news":
@@ -371,12 +390,20 @@ class Group:
     groups: list[str]
     excluded: np.ndarray  # columns of excluded calendar months
     valid: np.ndarray | None = None  # rows day 4 tests (data, not stale, enough volume)
+    lags: np.ndarray | None = None  # each row's lagged periods (config/detect.yaml): staleness counts from there
+    volume: np.ndarray | None = None  # the source's own volume per period, where the denominator is a parent (D-032)
+
+    def lag_of(self, rows: np.ndarray | None = None) -> np.ndarray:
+        lags = self.lags if self.lags is not None else np.zeros(len(self.ids), dtype=int)
+        return lags if rows is None else lags[rows]
 
 
 def build_group(source: str, kind: str, members: list[Series], all_series: dict[str, Series], cfg: DetectConfig,
                 as_of: date) -> Group | None:  # fmt: skip
     sc = cfg.series
     roles = [role(s) for s in members]
+    if source == "openalex_counts":  # a parent the source doesn't list (no works in that scope): all works instead
+        roles = [(t, d if d is None or d in all_series else _openalex_total(d), f) for t, d, f in roles]
     cur = current_index(kind, as_of)
     lo = min(min(s.points) for s in members)
     hi = cur - 1
@@ -422,8 +449,19 @@ def build_group(source: str, kind: str, members: list[Series], all_series: dict[
     if kind == "M" and months:
         excluded = np.array([(lo + c) % 12 + 1 in months for c in range(t)])
         y[:, excluded] = np.nan
+    lags = np.array([sc.lag(s.series_id) for s in members], dtype=int)
+    # the coverage check reads the source's volume: for an OpenAlex count tested against its parent, all works
+    volume = denom.copy()
+    for k, (_, dname, _) in enumerate(roles):
+        total = _openalex_total(dname) if source == "openalex_counts" and dname else None
+        if total and total != dname and total in all_series:
+            volume[k] = np.nan
+            for i, v in all_series[total].points.items():
+                if lo <= i <= hi:
+                    volume[k, i - lo] = v
     return Group(source, kind, [s.series_id for s in members], members, lo, counts, y, denom, last,
-                 [x[0] for x in roles], [x[1] for x in roles], [x[2] for x in roles], excluded)  # fmt: skip
+                 [x[0] for x in roles], [x[1] for x in roles], [x[2] for x in roles], excluded,
+                 lags=lags, volume=volume)  # fmt: skip
 
 
 # ------------------------------------------------------------------------------------------------------- measures
@@ -458,7 +496,7 @@ def _measure(g: Group, cfg: DetectConfig, as_of: date, counts: dict) -> list[dic
     kind, widths = g.kind, sc.windows[g.kind]
     r = len(g.ids)
     cur = current_index(kind, as_of)
-    stale = g.last < (cur - 1 - sc.stale_after[kind])
+    stale = g.last < (cur - 1 - g.lag_of() - sc.stale_after[kind])
     is_count = np.array([t != "level" for t in g.transform])
     has_data = g.last >= g.base
     mats = []
@@ -655,6 +693,11 @@ def _surge(g: Group, valid, rows, index, cfg: DetectConfig) -> None:
     x1, x0 = cnt[:, bl:].sum(axis=1), cnt[:, :bl].sum(axis=1)
     e1, e0 = den[:, bl:].sum(axis=1), den[:, :bl].sum(axis=1)
     p, ratio = stats.poisson_rate_test(x1, e1, x0, e0)
+    if g.volume is not None:  # the coverage check's volume: the source's own (all works for OpenAlex, D-032)
+        vol = aligned(g.volume, g.last, g.base, w + bl)
+        v1, v0 = np.nansum(vol[:, bl:], axis=1), np.nansum(vol[:, :bl], axis=1)
+    else:
+        v1, v0 = e1, e0
     with np.errstate(all="ignore"):
         expected = x0 * e1 / e0
     for k in np.nonzero(ok)[0]:
@@ -663,14 +706,15 @@ def _surge(g: Group, valid, rows, index, cfg: DetectConfig) -> None:
         row.update(surge_window=f"{first}/{index_label(g.kind, int(g.last[k]))}", surge_count=_f(x1[k]),
                    surge_baseline=_f(x0[k]), surge_expected=_f(expected[k]), surge_ratio=_f(ratio[k]),
                    surge_p=_f(p[k]) if x1[k] >= sv.min_count and expected[k] <= sv.max_expected else None,
-                   surge_volume_change=_f((e1[k] / w) / (e0[k] / bl) - 1) if e0[k] > 0 else None)  # fmt: skip
+                   surge_volume_change=_f((v1[k] / w) / (v0[k] / bl) - 1) if v0[k] > 0 else None)  # fmt: skip
 
 
 def _volume(g: Group, valid, rows, index, cfg: DetectConfig) -> None:
     """The source's volume (the denominator, or the count itself for a total) over the shortest window against the
     window before it, for the coverage check (design §8.3)."""
     w = cfg.series.windows[g.kind][0]
-    vol = np.where(np.array([d is None for d in g.denominators])[:, None], g.counts, g.denom)
+    own = g.volume if g.volume is not None else g.denom
+    vol = np.where(np.array([d is None for d in g.denominators])[:, None], g.counts, own)
     mat = aligned(vol, g.last, g.base, 2 * w)
     for k in np.nonzero(valid)[0]:
         prev, now = mat[k, :w], mat[k, w:]
@@ -789,7 +833,7 @@ def divergence(groups: dict[tuple[str, str], Group], rows: list[dict], cfg: Dete
                 np.where(g.counts[r_idx] > 0, g.counts[r_idx], np.nan)
             )
         d = np.where(level, ratio, g.y[a_idx] - g.y[r_idx])
-        stale = last < (cur - 1 - sc.stale_after[kind])
+        stale = last < (cur - 1 - np.maximum(g.lag_of(a_idx), g.lag_of(r_idx)) - sc.stale_after[kind])
         # volume: Australia's counts must be big enough to rate (counts) in the shortest window
         cnt = aligned(g.counts[a_idx], last, g.base, widths[0])
         mc = _nanmean(cnt)
@@ -982,21 +1026,24 @@ def flagged(r: dict) -> bool:
 
 
 def redundancy(groups: dict[tuple[str, str], Group], rows: list[dict], cfg: DetectConfig) -> list[dict]:
-    """Flagged series of one frequency whose first differences correlate at least `min_corr` (absolute, over the
-    common periods of the longest trend window, at least `min_points` of them) share a group (average linkage).
-    Sets each row's `redundancy_group`; returns one row per flagged series."""
+    """Flagged series of one frequency (and, with `within: source`, one source) whose first differences correlate at
+    least `min_corr` (absolute, over the common periods of the longest trend window, at least `min_points` of them)
+    share a group (average linkage). Sets each row's `redundancy_group`; returns one row per flagged series.
+
+    Within a source (D-032): across sources, annual series of 12 to 16 points that share the 2020-21 shocks correlated
+    by chance often enough among thousands that unrelated subjects were grouped (D-031)."""
     from scipy.cluster.hierarchy import fcluster, linkage
 
     rc = cfg.redundancy
     by_id = {r["series_id"]: r for r in rows}
     want = {r["series_id"] for r in rows if flagged(r)}
-    per_kind: dict[str, list[tuple[str, int, np.ndarray]]] = defaultdict(list)
-    for (_, kind), g in groups.items():
+    per_kind: dict[tuple[str, str], list[tuple[str, int, np.ndarray]]] = defaultdict(list)
+    for (source, kind), g in groups.items():
         for k, sid in enumerate(g.ids):
             if sid in want:
-                per_kind[kind].append((sid, g.base, g.y[k]))
+                per_kind[(source if rc.within == "source" else "", kind)].append((sid, g.base, g.y[k]))
     out = []
-    for kind, members in sorted(per_kind.items()):
+    for (_, kind), members in sorted(per_kind.items()):
         members.sort(key=lambda m: m[0])
         w = cfg.series.windows[kind][-1] + 1
         end = max(base + len(y) for _, base, y in members)

@@ -1,5 +1,5 @@
-// Level 3, the deep delvings: every candidate the detectors raised. Public: where they came from and where they
-// went, their flags, their detectors and their scores. With the Doors open: a map of every candidate (choose the
+// All candidates: every candidate the detectors raised. Public: where they came from and where they
+// went, their flags, their detectors and their scores. With the private file open: a map of every candidate (choose the
 // axes) and a table to search, filter and sort; click any one for its drawer.
 
 import { flagChip, needsPrivate, ringTag, typeTag } from "../bits.js";
@@ -14,14 +14,14 @@ const SYMBOLS = { trend: "circle", acceleration: "triangle", weak_signal: "diamo
 export function render(root, ctx) {
   const d = state.data;
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "The deep delvings"),
+    el("div.eyebrow", "Everything the detectors raised"),
     el("h1", "All candidates", tip("candidate")),
     el("p.lede", `Every candidate the detectors raised in the scan: ${n(d.funnel.candidates)} of them, from ${n(d.funnel.series)} series and the last ${d.documents.window_days} days of documents. Most will never reach the queue; this is where to see why.`))));
   if (hasDetail()) root.append(explorer(ctx));
   root.append(el("div.section", el("h2", "Where they came from, and where they went")), flow(d));
   root.append(el("div.grid.g-21.mt", flags(d), detectors(d)));
   root.append(el("div.section", el("h2", "How they scored", tip("score"))), scoresCard(d));
-  if (!hasDetail()) root.append(needsPrivate("To search every candidate by name, map them and open their evidence, open the Doors with your private file.", { pickFile, loadPractice }));
+  if (!hasDetail()) root.append(needsPrivate("To search every candidate by name, map them and open their evidence, open your private file.", { pickFile, loadPractice }));
 }
 
 // ----------------------------------------------------------------------------------------------- public charts
@@ -139,7 +139,7 @@ function scoresCard(d) {
   };
   draw();
   return el("div", host,
-    el("p.small.muted.mt", "Why isn't the queue simply the top 40? Because of the ring quotas, the source cap and one-per-redundancy-group: a high score in a crowded ring can lose its place to a lower one in an emptier ring. See ", el("a", { href: "#/forge" }, "how ranking works"), "."));
+    el("p.small.muted.mt", "Why isn't the queue simply the top 40? Because of the ring quotas, the source cap and one-per-redundancy-group: a high score in a crowded ring can lose its place to a lower one in an emptier ring. See ", el("a", { href: "#/ranking" }, "how ranking works"), "."));
 }
 
 // ---------------------------------------------------------------------------------------------- the explorer

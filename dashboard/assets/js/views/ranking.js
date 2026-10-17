@@ -1,4 +1,4 @@
-// Level 5, the forge: how a candidate's score is made, how the queue is picked, and a what-if playground that
+// How ranking works: how a candidate's score is made, how the queue is picked, and a what-if playground that
 // re-runs Moria's own ranking (ported line for line) under your settings. It first proves itself: at Moria's
 // settings it must reproduce the real shortlist and queue. Nothing here changes Moria.
 
@@ -13,9 +13,9 @@ import { debounce, el, fmt, key, n, pct, RING_SHORT, RINGS, title, TYPE_NAMES, T
 export function render(root, ctx) {
   const d = state.data;
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "The forge"),
+    el("div.eyebrow", "Scores and a what-if"),
     el("h1", "How ranking works"),
-    el("p.lede", "How Moria turns thousands of candidates into a queue of 40: what each score is made of, the rules of the pick, and a forge where you can change the settings and watch the queue change. It's a what-if: Moria itself is never changed."))));
+    el("p.lede", "How Moria turns thousands of candidates into a queue of 40: what each score is made of, the rules of the pick, and a what-if where you can change the settings and watch the queue change. It's a what-if: Moria itself is never changed."))));
   root.append(recipe(d));
   if (hasDetail()) root.append(playground(ctx));
   else {
@@ -44,7 +44,7 @@ function recipe(d) {
       el("p.small.muted", "Places a ring can't fill pass to the others. ", tip("pass")))));
 }
 
-// ------------------------------------------------------------------------------------------------- the forge
+// ----------------------------------------------------------------------------------------------- the what-if
 
 const SLIDERS = [
   { group: "Early-warning weights", items: [["weights.early_warning.strength", "Strength", 0, 3, 0.1], ["weights.early_warning.novelty", "Novelty", 0, 3, 0.1], ["weights.early_warning.lead", "Lead time", 0, 3, 0.1]], open: true, term: "views" },
@@ -74,7 +74,7 @@ function playground(ctx) {
   const sameQueue = realQueue.length === real.queue.length && real.queue.every((p, i) => p.id === realQueue[i]);
   const sameShort = realShort.length === real.shortlist.length && real.shortlist.every((p, i) => p.id === realShort[i]);
   const proof = el(`div.callout.${sameQueue && sameShort ? "good" : "warn"}.mb`, el("div.c-ico", sameQueue && sameShort ? "✓" : "!"), el("div",
-    el("h4", sameQueue && sameShort ? "The forge is true to Moria" : "The forge doesn't quite match Moria"),
+    el("h4", sameQueue && sameShort ? "The what-if reproduces Moria's queue" : "The what-if doesn't quite match Moria"),
     el("p.small", sameQueue && sameShort
       ? `At Moria's own settings, this playground re-ran the ranking in your browser and picked exactly the same shortlist (${realShort.length}) and queue (${realQueue.length}), in the same order. So what you see when you move a slider is what Moria would do.`
       : `At Moria's own settings it reproduced ${real.queue.filter((p) => realQueue.includes(p.id)).length} of ${realQueue.length} queue places. Treat the what-if as approximate.`)));
@@ -161,7 +161,7 @@ function playground(ctx) {
     });
   };
   requestAnimationFrame(compute);
-  return el("div.section", el("h2", "The forge: try your own settings"), proof, el("div.forge", panel, out));
+  return el("div.section", el("h2", "What-if: try your own settings"), proof, el("div.whatif", panel, out));
 }
 
 /** Keep the ring quotas adding up to 1: the others shrink or grow in proportion when one moves. */

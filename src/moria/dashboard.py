@@ -49,6 +49,7 @@ from .monitor import COMMAND as MONITOR
 from .pathways import COMMAND as PATHWAYS
 from .pathways import EVAL as EVAL_PATHWAYS
 from .queue import COMMAND as QUEUE
+from .queue import dossier_flags
 from .rank import COMMAND as RANK
 from .rank import VIEWS, failed, files_of, largest_remainder, manifest_of
 from .records import canonical_json, sha256_hex
@@ -147,6 +148,8 @@ class Inputs:
             self.incidents = read_rows(mf["incidents.parquet"]) if "incidents.parquet" in mf else []
         self.events = events(store)
         self.register = state(self.events)
+        # the shortlist's dossier checks that the queue may weigh (queue.dossier_penalty, D-032)
+        self.dossier_flags = dossier_flags(store, self.queue_m["params"]["dossier_run"])
 
     def runs(self) -> dict[str, dict | None]:
         return {c: _run_ref(m) for c, m in (
@@ -441,7 +444,8 @@ def config_part(review: ReviewConfig, detect_cfg: DetectConfig, cards: dict[str,
                  "scope": rc.scope.model_dump(), "lead": rc.lead, "novelty": rc.novelty,
                  "known_trend_sim": rc.known_trend_sim, "known_trend_factor": rc.known_trend_factor},
         "queue": {"size": qc.size, "views": qc.views, "rings": qc.rings, "third_order_max": qc.third_order_max,
-                  "source_max": qc.source_max, "sensitivity": qc.sensitivity},
+                  "source_max": qc.source_max, "sensitivity": qc.sensitivity,
+                  "dossier_penalty": qc.dossier_penalty},
         "detect": {"alpha": sc.alpha, "trend_min_windows": sc.trend_min_windows, "windows": sc.windows,
                    "min_coverage": sc.min_coverage, "min_mean_count": sc.min_mean_count,
                    "anomaly_alpha": sc.anomaly_alpha, "anomaly_min_change": sc.anomaly_min_change,
@@ -668,6 +672,7 @@ def candidate_rows(inp: Inputs) -> list[dict]:
             "subject": c["subject"], "source": r["source"], "sources": list(c["sources"]),
             "families": list(c["families"]), "rings": list(c["rings"]), "detectors": list(c["detectors"]),
             "flags": list(r["flags"]), "checks": {k: a.get(k) for k in CHECKS},
+            "dossier_flags": list(getattr(inp, "dossier_flags", {}).get(cid, [])), "held": bool(r.get("held")),
             "ring": r["ring"], "ring_basis": r["ring_basis"], "views": list(r["views"]),
             "redundancy_group": c["redundancy_group"], "redundancy_size": c["redundancy_size"],
             "corroboration": c["corroboration"], "direction": c["direction"], "scope": c["scope"],

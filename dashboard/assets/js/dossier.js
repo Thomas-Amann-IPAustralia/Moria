@@ -443,7 +443,7 @@ function ranking(c) {
     eq.append(el("span.op", `)^(1/${parts.length})`), el("span.op", "×"), el("span.term-box", `factors ${fmt(c.factors.scope * c.factors.type * c.factors.flags * c.factors.context, 3)}`), el("span.op", "="),
       el("span.term-box.result", num("score", c.scores[view], fmt(c.scores[view], 3))));
     wrap.append(el("div.card.flat.mt", el("h3", `${VIEW_NAMES[view]} score`, tip("geomean")), eq,
-      el("p.small.muted.mt", "Equal weights shown; the forge lets you change them and watch the queue move.")));
+      el("p.small.muted.mt", "Equal weights shown; the what-if in How ranking works lets you change them and watch the queue move.")));
   }
   wrap.append(el("p.mt", c.queue ? `Picked for the queue at place ${c.queue.rank}, by the ${VIEW_NAMES[c.queue.view]} view (pass ${c.queue.pass}).` : c.shortlist ? `Shortlisted at place ${c.shortlist.rank}, but not picked for the queue of 40.` : "Not shortlisted: its scores fell below the 100 picked under the ring quotas.", " ", tip("pass")));
   return wrap;

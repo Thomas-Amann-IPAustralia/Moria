@@ -1,17 +1,15 @@
-/* Moria dashboard. Desktop layout: a dark "mine shaft" rail of levels on the left, the content on the right.
+/* Moria dashboard. Desktop layout: a dark rail of sections on the left, the content on the right.
    Colours are tokens: the four candidate types are gems (validated categorical slots 1 to 4), the rings an ordinal
-   violet ramp ("mithril"), checks the status palette with an icon and a label. Light is daylight at the West-gate;
-   dark is deep in the mine. */
+   violet ramp (the "mithril" tokens), checks the status palette with an icon and a label. */
 
 @font-face { font-family: "Fredoka"; src: url("fonts/fredoka-latin-wght-normal.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
 @font-face { font-family: "Nunito"; src: url("fonts/nunito-latin-wght-normal.woff2") format("woff2"); font-weight: 200 1000; font-display: swap; }
 @font-face { font-family: "Nunito"; src: url("fonts/nunito-latin-wght-italic.woff2") format("woff2"); font-weight: 200 1000; font-style: italic; font-display: swap; }
-@font-face { font-family: "Cinzel"; src: url("fonts/cinzel-latin-600-normal.woff2") format("woff2"); font-weight: 600; font-display: swap; }
 
 :root {
   --f-display: "Fredoka", "Nunito", system-ui, sans-serif;
   --f-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-rune: "Cinzel", Georgia, serif;
+  --f-label: "Fredoka", "Nunito", system-ui, sans-serif;
   --f-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
   --bg: #f6f4fc;
@@ -143,10 +141,8 @@ code, .mono { font-family: var(--f-mono); font-size: .88em; }
 .brand-door { width: 44px; height: 50px; flex: none; }
 .door-arch { fill: none; stroke: #c9c1ff; stroke-width: 3.5; stroke-linecap: round; }
 .door-line { fill: none; stroke: rgba(201, 193, 255, .45); stroke-width: 1.5; }
-.door-star { fill: var(--gold); filter: drop-shadow(0 0 6px rgba(242, 177, 52, .8)); transform-origin: 32px 29px; animation: twinkle 4s ease-in-out infinite; }
-.brand:hover .door-star { animation-duration: 1.2s; }
 .brand-text { display: flex; flex-direction: column; }
-.brand-name { font-family: var(--f-rune); font-size: 1.55rem; letter-spacing: .14em; color: #f3f0ff; line-height: 1.1; }
+.brand-name { font-family: var(--f-display); font-size: 1.55rem; letter-spacing: .06em; color: #f3f0ff; line-height: 1.1; }
 .brand-tag { font-size: .8rem; color: #b6addf; letter-spacing: .04em; }
 @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .65; transform: scale(.86); } }
 
@@ -169,7 +165,7 @@ code, .mono { font-family: var(--f-mono); font-size: .88em; }
 .levels a[aria-current="page"] .lvl-ico svg { stroke: #ffe2a3; }
 .lvl-text { display: flex; flex-direction: column; line-height: 1.25; }
 .lvl-name { font-family: var(--f-display); font-weight: 500; font-size: 1rem; }
-.lvl-rune { font-family: var(--f-rune); font-size: .68rem; letter-spacing: .07em; color: #b6a6ff; opacity: .9; }
+.lvl-sub { font-family: var(--f-label); font-size: .7rem; letter-spacing: .02em; color: #b6a6ff; opacity: .9; }
 @keyframes wiggle { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-12deg); } 60% { transform: rotate(9deg); } }
 
 .rail-foot { margin-top: auto; padding: 10px 8px 0; }
@@ -248,7 +244,7 @@ input[type="checkbox"] { accent-color: var(--mithril); width: 16px; height: 16px
 .view { animation: rise .45s cubic-bezier(.2, .8, .3, 1); }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .view-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 22px; }
-.eyebrow { font-family: var(--f-rune); font-size: .78rem; letter-spacing: .12em; color: var(--gold-ink); text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.eyebrow { font-family: var(--f-label); font-weight: 600; font-size: .76rem; letter-spacing: .08em; color: var(--gold-ink); text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
 .eyebrow::before { content: ""; width: 18px; height: 2px; background: var(--gold); border-radius: 2px; }
 .lede { font-size: 1.08rem; color: var(--ink-2); max-width: 70ch; }
 .grid { display: grid; gap: 18px; }
@@ -328,7 +324,7 @@ input[type="checkbox"] { accent-color: var(--mithril); width: 16px; height: 16px
 .callout p:last-child { margin-bottom: 0; }
 .callout h4 { margin-bottom: .2em; }
 
-/* the explainer callouts: a dotted term, a little rune-dot; the popover */
+/* the explainer callouts: a dotted term, a little dot; the popover */
 .term { border-bottom: 2px dotted color-mix(in srgb, var(--mithril) 60%, transparent); cursor: help; text-decoration: none; color: inherit; }
 .term:hover, .term:focus-visible { background: var(--mithril-wash); border-radius: 4px; border-bottom-style: solid; }
 .tipdot {
@@ -363,23 +359,20 @@ table.data tr.click { cursor: pointer; }
 table.data tr.click:hover td { background: var(--mithril-wash); }
 table.data tr:last-child td { border-bottom: 0; }
 
-/* the Doors of Durin */
+/* opening the private file */
 .doors { position: relative; display: grid; grid-template-columns: 220px 1fr; gap: 26px; align-items: center; overflow: hidden; }
 .doors-art { width: 220px; height: 240px; }
 .doors-art .arch { fill: none; stroke: var(--mithril-2); stroke-width: 3; }
-.doors-art .runes { font-family: var(--f-rune); font-size: 8.5px; letter-spacing: .14em; fill: var(--mithril); }
-.doors-art .tree { fill: none; stroke: var(--mithril-2); stroke-width: 1.4; stroke-linecap: round; }
 .doors-art .leaf-l, .doors-art .leaf-r { fill: var(--surface-2); stroke: var(--mithril-2); stroke-width: 1.5; transition: transform 1.2s cubic-bezier(.6, 0, .2, 1); }
 .doors-art .leaf-l { transform-origin: 40px 230px; }
 .doors-art .leaf-r { transform-origin: 180px 230px; }
-.doors-art .star { fill: var(--gold); transform-origin: 110px 98px; animation: twinkle 3s infinite; }
 .doors-art .glow { fill: var(--gold); opacity: 0; transition: opacity 1s ease .3s; }
 .doors.open .leaf-l { transform: perspective(300px) rotateY(70deg); }
 .doors.open .leaf-r { transform: perspective(300px) rotateY(-70deg); }
 .doors.open .glow { opacity: .35; }
 .dropzone { border: 2px dashed var(--line-strong); border-radius: var(--radius); padding: 18px; text-align: left; transition: all .2s ease; }
 .dropzone.over { border-color: var(--gold); background: var(--gold-wash); transform: scale(1.01); }
-.inscription { font-family: var(--f-rune); letter-spacing: .1em; color: var(--mithril-ink); font-size: 1rem; }
+.inscription { font-family: var(--f-display); font-weight: 600; color: var(--mithril-ink); font-size: 1.05rem; }
 ol.steps { margin: 6px 0 0; padding-left: 1.3em; color: var(--ink-2); }
 ol.steps li { margin-bottom: 3px; }
 
@@ -459,8 +452,8 @@ ul.items .meta { font-size: .8rem; color: var(--muted); display: flex; flex-wrap
 .rings-svg circle.ring { transition: stroke-width .2s ease; cursor: pointer; }
 .rings-svg g:hover circle.ring { stroke-width: 6; }
 
-/* forge */
-.forge { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: start; }
+/* the ranking what-if */
+.whatif { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: start; }
 .sliders { position: sticky; top: 86px; max-height: calc(100vh - 110px); overflow-y: auto; }
 .slider { display: grid; grid-template-columns: 1fr 52px; gap: 2px 10px; align-items: center; margin: 6px 0 10px; }
 .slider label { font-size: .88rem; font-weight: 700; color: var(--ink-2); }
@@ -483,7 +476,7 @@ details.group[open] summary::after { transform: rotate(45deg); }
 .equation .op { color: var(--muted); font-size: 1.2rem; }
 .equation .result { background: var(--mithril); color: #fff; }
 
-/* lore playgrounds */
+/* statistics playgrounds */
 .playground { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 18px; align-items: start; }
 .dots-grid { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--surface-2); }
 .legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: .85rem; color: var(--ink-2); }

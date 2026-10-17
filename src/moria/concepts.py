@@ -151,6 +151,9 @@ COMBINATIONS = pa.schema(
         ("p_fade", F64),
         ("p_fade_holm", F64),
         ("fading", pa.bool_()),  # an established pair that broke down
+        ("recent", pa.int32()),  # IP RAPID: the pair's count in the latest months before the window (D-032)
+        ("expected_recent", F64),  # the window's count at the recent months' lift
+        ("p_recent", F64),  # the window against the recent months: rising above them, or fading below them
     ]
 )
 NOVELTY = pa.schema(
@@ -260,7 +263,8 @@ def load_items(files: dict, cards: dict[str, SourceCard], as_of: date, cfg: Dete
             tags[r["item_id"]] = r
     items, volumes = [], {}
     for source, path in sorted(files["documents"].items()):
-        rows = read_rows(path, ["item_id", "source", "family", "observable_at", "observable_basis", "first_seen_at"])
+        rows = read_rows(path, ["item_id", "source", "family", "observable_at", "observable_basis", "first_seen_at",
+                                "title"])  # fmt: skip
         if not rows:
             continue
         onboarded = min(r["first_seen_at"] for r in rows)
@@ -285,7 +289,8 @@ def load_items(files: dict, cards: dict[str, SourceCard], as_of: date, cfg: Dete
             grp = groups.get(r["item_id"], r["item_id"])
             items.append({"item_id": r["item_id"], "source": source, "family": r["family"], "ring": ring,
                           "grp": grp, "period": period, "observable_at": at, "first_seen_at": r["first_seen_at"],
-                          "term_groups": t.get("term_groups") or [], "tagger": t.get("tagger")})  # fmt: skip
+                          "term_groups": t.get("term_groups") or [], "tagger": t.get("tagger"),
+                          "title": r.get("title")})  # fmt: skip
             vol["window_items" if period == "w" else "baseline_items"] += 1
             vol["_wg" if period == "w" else "_bg"].add(grp)
         span_start = max(b_start, coverage) if coverage else w_start
@@ -343,12 +348,33 @@ def fit_clusters(
     sizes = defaultdict(int)
     for c in assign.values():
         sizes[c] += 1
+    # the representative title (D-032): the window item nearest its cluster's centre, else any item
+    by_id = {i["item_id"]: i for i in items}
+    near: dict[str, tuple[int, float, str]] = {}
+    dist = np.linalg.norm(vec - km.cluster_centers_[labels], axis=1)
+    for n_, (i, c) in enumerate(zip(ids, labels, strict=True)):
+        key = f"cl:{int(c):03d}"
+        rank = (0 if by_id[i]["period"] == "w" else 1, float(dist[n_]), i)
+        if by_id[i].get("title") and (key not in near or rank < near[key]):
+            near[key] = rank
     for c in sorted(sizes):
         scored = sorted(((cnt * np.log(1 + n / df[p]), p) for p, cnt in terms[c].items()), reverse=True)
-        rows.append({"cluster": c, "size": sizes[c], "label": "; ".join(p for _, p in scored[: cc.name_terms]),
+        top = [p for _, p in scored[: cc.name_terms]]
+        title = by_id[near[c][2]]["title"] if cc.name_title and c in near else None
+        rows.append({"cluster": c, "size": sizes[c], "label": cluster_label(title, top, cc.name_title_terms),
                      "families": sorted(f for f in members[c] if f)})  # fmt: skip
     vectors = dict(zip(ids, vec, strict=True))
     return assign, rows, vectors
+
+
+def cluster_label(title: str | None, terms: list[str], with_title: int) -> str:
+    """A cluster's name: its representative item's title and its first keyphrases (D-032; the keyphrases alone were
+    hard to read, D-031), or its keyphrases when no item has a title."""
+    if not title:
+        return "; ".join(terms)
+    title = " ".join(title.split())
+    title = title if len(title) <= 100 else title[:97].rstrip() + "..."
+    return f"{title} (and similar: {'; '.join(terms[:with_title])})" if terms[:with_title] else title
 
 
 # -------------------------------------------------------------------------------------------------- the indicators
@@ -514,16 +540,20 @@ def class_pairs(files: dict, as_of: date, cfg: DetectConfig) -> list[dict]:
 
     w_start = shift(last.year, last.month, dc.ipr_window_months - 1)
     b_start = shift(last.year, last.month, dc.ipr_window_months + dc.ipr_baseline_months - 1)
+    r_start = shift(last.year, last.month, dc.ipr_window_months + dc.ipr_recent_months - 1)
     con = duckdb.connect()
     pp, cp = paths["class_pairs.parquet"].as_posix(), paths["class_counts.parquet"].as_posix()
     per = f"CASE WHEN period BETWEEN '{w_start}' AND '{w_end}' THEN 'w' WHEN period >= '{b_start}' AND period < " \
           f"'{w_start}' THEN 'b' END"  # fmt: skip
+    rec = f"period >= '{r_start}' AND period < '{w_start}'"  # the latest months of the baseline (D-032)
     counts = {(r[0], r[1], r[2], r[3]): r[4] for r in con.execute(
         f"SELECT scheme, \"right\", \"class\", {per} AS q, sum(applications) FROM read_parquet('{cp}') "
-        f"WHERE {per} IS NOT NULL GROUP BY ALL").fetchall()}  # fmt: skip
+        f"WHERE {per} IS NOT NULL GROUP BY ALL UNION ALL SELECT scheme, \"right\", \"class\", 'r', "
+        f"sum(applications) FROM read_parquet('{cp}') WHERE {rec} GROUP BY ALL").fetchall()}  # fmt: skip
     rows = con.execute(
         f"""SELECT scheme, "right", class_a, class_b, coalesce(sum(applications) FILTER ({per} = 'w'), 0) AS w,
                    coalesce(sum(applications) FILTER ({per} = 'b'), 0) AS b,
+                   coalesce(sum(applications) FILTER ({rec}), 0) AS r,
                    coalesce(min(applicant_min) FILTER ({per} = 'w') <> max(applicant_max) FILTER ({per} = 'w'),
                             false) AS two,
                    coalesce(min(applicant_min) FILTER ({per} = 'b') <> max(applicant_max) FILTER ({per} = 'b'),
@@ -537,11 +567,13 @@ def class_pairs(files: dict, as_of: date, cfg: DetectConfig) -> list[dict]:
     sql = f'SELECT scheme, "right", "class", min(period) FROM read_parquet(\'{cp}\') GROUP BY ALL'
     first = {(r[0], r[1], r[2]): r[3] for r in con.execute(sql).fetchall()}
     out = []
-    for scheme, right, a, b, w, bg, two, two_b in rows:
-        g = {(k, q): counts.get((scheme, right, k, q), 0) for k in (a, b, "*") for q in ("w", "b")}
+    for scheme, right, a, b, w, bg, rc_, two, two_b in rows:
+        g = {(k, q): counts.get((scheme, right, k, q), 0) for k in (a, b, "*") for q in ("w", "b", "r")}
         r = _combination(scheme, a, b, int(w), int(bg), g[(a, "w")], g[(b, "w")], g[(a, "b")], g[(b, "b")],
                          g[("*", "w")], g[("*", "b")], 2 if two else 1)  # fmt: skip
         r["baseline_sources"] = 2 if two_b else 1
+        if dc.ipr_recent_months:
+            r["_recent"] = (int(rc_), g[(a, "r")], g[(b, "r")], g[("*", "r")])
         r["_right"] = right
         r["classes_since"] = max(first.get((scheme, right, a), ""), first.get((scheme, right, b), ""))
         r["new_class"] = r["classes_since"] > b_start
@@ -565,19 +597,24 @@ def country_pairs(files: dict, as_of: date, cfg: DetectConfig) -> list[dict]:
 
     w_end, w_start = shift(0), shift(dc.ipr_window_months - 1)
     b_start = shift(dc.ipr_window_months + dc.ipr_baseline_months - 1)
+    r_start = shift(dc.ipr_window_months + dc.ipr_recent_months - 1)
     per = f"CASE WHEN period BETWEEN '{w_start}' AND '{w_end}' THEN 'w' WHEN period >= '{b_start}' AND period < " \
           f"'{w_start}' THEN 'b' END"  # fmt: skip
+    rec = f"period >= '{r_start}' AND period < '{w_start}'"  # the latest months of the baseline (D-032)
     path = paths["country_classes.parquet"].as_posix()
     con = duckdb.connect()
     totals = {(r[0], r[1], r[2], r[3], r[4]): r[5] for r in con.execute(
         f"SELECT scheme, \"right\", country, \"class\", {per} AS q, sum(applications) FROM read_parquet('{path}') "
-        f"WHERE {per} IS NOT NULL AND (country = '*' OR \"class\" = '*') GROUP BY ALL").fetchall()}  # fmt: skip
+        f"WHERE {per} IS NOT NULL AND (country = '*' OR \"class\" = '*') GROUP BY ALL UNION ALL SELECT scheme, "
+        f"\"right\", country, \"class\", 'r', sum(applications) FROM read_parquet('{path}') WHERE {rec} AND "
+        f"(country = '*' OR \"class\" = '*') GROUP BY ALL").fetchall()}  # fmt: skip
     first = {(r[0], r[1], r[2]): r[3] for r in con.execute(
         f"SELECT scheme, \"right\", \"class\", min(period) FROM read_parquet('{path}') WHERE country = '*' "
         "GROUP BY ALL").fetchall()}  # fmt: skip
     rows = con.execute(
         f"""SELECT scheme, "right", country, "class", coalesce(sum(applications) FILTER ({per} = 'w'), 0) AS w,
                    coalesce(sum(applications) FILTER ({per} = 'b'), 0) AS b,
+                   coalesce(sum(applications) FILTER ({rec}), 0) AS r,
                    coalesce(min(applicant_min) FILTER ({per} = 'w') <> max(applicant_max) FILTER ({per} = 'w'),
                             false),
                    coalesce(min(applicant_min) FILTER ({per} = 'b') <> max(applicant_max) FILTER ({per} = 'b'),
@@ -586,7 +623,7 @@ def country_pairs(files: dict, as_of: date, cfg: DetectConfig) -> list[dict]:
             HAVING w >= {int(dc.combination_min_items)} OR b >= {int(rc.fade_min_baseline)} ORDER BY 1, 2, 3, 4"""
     ).fetchall()
     out = []
-    for scheme, right, c, k, w, bg, two, two_b in rows:
+    for scheme, right, c, k, w, bg, rc_, two, two_b in rows:
 
         def t(cc, kk, q, scheme=scheme, right=right):
             return totals.get((scheme, right, cc, kk, q), 0)
@@ -595,6 +632,8 @@ def country_pairs(files: dict, as_of: date, cfg: DetectConfig) -> list[dict]:
                          t(c, "*", "b"), t("*", k, "b"), t("*", "*", "w"), t("*", "*", "b"),
                          2 if two else 1)  # fmt: skip
         r["baseline_sources"] = 2 if two_b else 1
+        if dc.ipr_recent_months:
+            r["_recent"] = (int(rc_), t(c, "*", "r"), t("*", k, "r"), t("*", "*", "r"))
         r["_right"] = right
         r["classes_since"] = first.get((scheme, right, k), "")
         r["new_class"] = r["classes_since"] > b_start
@@ -640,6 +679,30 @@ def decide_combinations(rows: list[dict], cfg: DetectConfig) -> None:
                            and min(r["a_window"] or 0, r["b_window"] or 0) >= rc.fade_min_each_window
                            and (r["expected_window"] or 0) >= rc.fade_min_expected
                            and (not np.isfinite(rv) or rv <= rc.fade_ratio))  # fmt: skip
+        recent_check(r, dc.alpha)
+
+
+def recent_check(r: dict, alpha: float) -> None:
+    """IP RAPID's pairs against the latest months before the window as well as the whole baseline (D-032): a step that
+    happened years ago (the innovation patents' closure in 2021, D-031) is in the baseline but not in the latest months,
+    so a pair rises only above them too, and fades only below them too."""
+    got = r.pop("_recent", None)
+    r["recent"], r["expected_recent"], r["p_recent"] = None, None, None
+    if got is None:
+        return
+    pair, a, b, n = got
+    nw = r["window_exposure"]
+    r["recent"] = pair
+    if r["rising"]:
+        p = stats.poisson_rate_test([r["window"]], [nw], [pair], [n])[0][0] if n and nw else np.nan
+        r["p_recent"] = _f(p)
+        r["rising"] = bool(np.isfinite(p) and p < alpha)
+    if r["fading"]:
+        lift = pair * n / (a * b) if pair and a and b else 0.0
+        expected = lift * (r["a_window"] or 0) * (r["b_window"] or 0) / nw if nw else 0.0
+        p = stats.poisson_lower([r["window"]], [expected])[0] if expected > 0 else np.nan
+        r["expected_recent"], r["p_recent"] = _f(expected), _f(p)
+        r["fading"] = bool(np.isfinite(p) and p < alpha)
 
 
 def novel_items(items: list[dict], vectors: dict[str, np.ndarray], kp_rows: dict[str, list[str]],
@@ -693,8 +756,12 @@ def novel_items(items: list[dict], vectors: dict[str, np.ndarray], kp_rows: dict
             for i, _ in ms:
                 for p in kp_rows.get(i["item_id"], []):
                     terms[p] += 1
-            top = sorted(terms.items(), key=lambda t: (-t[1], t[0]))[: dc.clusters.name_terms]
-            label = "; ".join(p for p, _ in top)
+            top = [p for p, _ in sorted(terms.items(), key=lambda t: (-t[1], t[0]))[: dc.clusters.name_terms]]
+            centre = np.mean([vectors[i["item_id"]] for i, _ in ms], axis=0)
+            titled = [(float(np.linalg.norm(vectors[i["item_id"]] - centre)), i["item_id"], i["title"])
+                      for i, _ in ms if i.get("title")]  # fmt: skip
+            title = min(titled)[2] if titled and dc.clusters.name_title else None
+            label = cluster_label(title, top, dc.clusters.name_title_terms)
             out.append({"micro": key, "family": fam, "items": len(ms), "groups": len(grps), "sources": srcs,
                         "label": label, "mean_score": float(np.mean([s for _, s in ms])),
                         "baseline_size": len(base)})  # fmt: skip

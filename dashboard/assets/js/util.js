@@ -166,7 +166,7 @@ export function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
 }
 
-/** A seeded random number generator (mulberry32), so playgrounds can be dug again identically. */
+/** A seeded random number generator (mulberry32), so playgrounds can be drawn again identically. */
 export function rng(seed) {
   let a = seed >>> 0;
   return () => {

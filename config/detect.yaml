@@ -35,8 +35,15 @@ series:
   # Trailing periods dropped as incomplete, beyond the period that contains as_of (never complete). A series id
   # matching a prefix uses the first match.
   lags:
-    - {prefix: "patent_cpc_counts|", periods: 2}                      # 18 months to publication (the card)
-    - {prefix: "oecd_headline|OECD.STI.PIE:DSD_PATENTS", periods: 2}  # patents by priority fill in for about 3 years
+    # Patent families by priority year fill in for years: publication at 18 months, an Australian member after the
+    # national phase (30 or 31 months) and its publication. With 2 years' lag the last year tested was still about a
+    # third short for Australia (D-031), so 4 for Australian members and 3 worldwide (D-032).
+    - {pattern: '^patent_cpc_counts\|[^|]+\|au$', periods: 4}
+    - {prefix: "patent_cpc_counts|", periods: 3}
+    - {prefix: "oecd_headline|OECD.STI.PIE:DSD_PATENTS", periods: 3}  # patents by priority fill in for about 3 years
+    # OpenAlex's latest months are still being indexed, and what arrives first is not a sample of the month (D-031:
+    # every monthly anomaly fell in the latest month), so the last 2 months are left out (D-032)
+    - {pattern: '^openalex_counts\|.*\|month$', periods: 2}
     # IP RAPID designs: a release's last month holds no Locarno class or Australian applicant yet (D-022)
     - {pattern: '^ip_rapid_metrics\|[a-z_]+\|design', periods: 2}
   exclude_months:            # calendar months left out of monthly series
@@ -49,6 +56,11 @@ series:
                     ISR, TWN]
   exclude_dims:              # series left out: the same indicator is also published in a comparable unit
     - {source: oecd_headline, dims: {UNIT_MEASURE: XDC}}   # national currency at current prices (inflation; USD PPP too)
+  # Series left out by id: CPC subclasses that are only indexing schemes (a family's main classes also count it), and
+  # the legacy US cross-reference art collections (D-032). Y02 and Y04 (climate and smart-grid tagging) stay.
+  exclude_series:
+    - '^patent_cpc_counts\|(A23V|B29K|B29L|B60Y|C12R|F05B|F05C|F05D|F21W|F21Y|Y10S|Y10T)\|'
+  openalex_parent_share: true    # an OpenAlex count as a share of its parent in the taxonomy (D-032)
 
 documents:
   window_days: 91            # the weak-signal window ends at as_of
@@ -66,7 +78,9 @@ documents:
   combination_min_items: 3
   combination_min_each_before: 3  # each phrase of a new pair already appeared this often in the baseline
   combination_lift_ratio: 2.0     # a rising pair: its lift at least doubled
-  clusters: {k: 200, seed: 20261014, batch: 4096, sample: 60000, name_terms: 5}
+  # a cluster's name: its representative item's title (nearest its centre, a window item first) and 3 keyphrases
+  clusters: {k: 200, seed: 20261014, batch: 4096, sample: 60000, name_terms: 5, name_title: true,
+             name_title_terms: 3}
   novelty:
     neighbours: 20
     min_baseline: 500        # items a family's baseline needs before its novelty is scored
@@ -75,6 +89,7 @@ documents:
     micro_distance: 0.25     # cosine distance at which novel items join one micro-cluster (average linkage)
   ipr_window_months: 12      # IP RAPID class pairs: the window, and the baseline before it
   ipr_baseline_months: 60
+  ipr_recent_months: 24      # and the latest 24 of them: a pair rises above, or fades below, these too (D-032)
   ipr_min_applicants: 2      # a class pair's applications come from at least this many applicants
 
 artefacts:
@@ -82,6 +97,26 @@ artefacts:
   duplicate_ratio: 2.0       # raw items over de-duplicated items
   news_cycle_days: 14        # a news-only burst inside this span, with no primary source
   primary_families: [research, patent, policy, legal, statistics, ipa_internal]
+  # Reclassifications: a class emptied into new ones moves its counts, not its activity (D-031). A series candidate
+  # on these classes whose window crosses the date is flagged source_break (D-032). Patent families by priority year
+  # (patent_cpc_counts) carry their classes at publication, about 18 months on, so a change takes effect there from
+  # priority years about 18 months before it; IP RAPID's classes are dated by the month they became observable.
+  # A change point many of a source's series share (one frequency): at least min_series of them, and factor times the
+  # median period's count, flag source_break on the candidates that rest on it (D-032: 54 OpenAlex monthly series
+  # changed slope in 2025-11, against about 5 a month). Indexes only: the ABS's and the OECD's series crowd into 2020
+  # and 2021 too, with the pandemic, which is a real shock, not a change in the source.
+  shared_break: {min_series: 10, factor: 4, sources: [openalex_counts, gdelt_news]}
+  series_breaks:
+    - {date: "2020-07-01", pattern: '^patent_cpc_counts\|(G06K|G06V)\|',
+       note: "CPC 2022.01: image and video recognition moved from G06K 9 to the new G06V (priority years from mid-2020)"}
+    - {date: "2022-01-01", pattern: '^ip_rapid_metrics\|.*\|(G06K|G06V)$',
+       note: "IPC 2022.01: image and video recognition moved from G06K 9 to the new G06V"}
+    - {date: "2021-07-01", pattern: '^patent_cpc_counts\|(H01L|H10B|H10K|H10N)\|',
+       note: "CPC 2023.01: memory, organic and other solid-state devices moved from H01L to H10B, H10K and H10N (priority years from mid-2021)"}
+    - {date: "2023-01-01", pattern: '^ip_rapid_metrics\|.*\|(H01L|H10B|H10K|H10N)$',
+       note: "IPC 2023.01: memory, organic and other solid-state devices moved from H01L to H10B, H10K and H10N"}
+    - {date: "2025-01-01", pattern: '^ip_rapid_metrics\|.*\|(H01L|H10D|H10F|H10H)$',
+       note: "IPC 2025.01: semiconductor devices, photovoltaics and light-emitting devices moved from H01L to H10D, H10F and H10H"}
 
 # ---------------------------------------------------------------------------------------------------------------------
 # The SignalBoost proposal (docs/SignalBoost-Proposal.md; D-025). Every scan measures these; `moria eval detectors`
@@ -147,6 +182,9 @@ redundancy:
   # least this strongly over the longest trend window share a redundancy group (average linkage).
   min_corr: 0.8
   min_points: 12
+  # Within one source (D-032): across sources, annual series of 12 to 16 points sharing the 2020-21 shocks were
+  # grouped by chance (mining profits with a population; D-031)
+  within: source
 
 evaluation:
   # `moria eval detectors`: injections into real series, null series built from their own noise, artefacts, and a

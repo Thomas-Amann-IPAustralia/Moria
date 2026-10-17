@@ -1,4 +1,4 @@
-// Level 6, the lore of the delvers: the statistics, learnt by playing. Three playgrounds use the same tests as Moria
+// Statistics explained: the statistics, learnt by playing. Three playgrounds use the same tests as Moria
 // (ported in stats.js) on made-up data; the real scan's p-values sit beside them.
 
 import { axis, chart, chartCard, dataTable, tipHtml, tokens } from "../charts.js";
@@ -11,17 +11,17 @@ import { css, el, fmt, gaussian, n, pct, pval, rng } from "../util.js";
 export function render(root) {
   const d = state.data;
   root.append(el("div.view-head", el("div",
-    el("div.eyebrow", "Lore of the delvers"),
+    el("div.eyebrow", "Playgrounds"),
     el("h1", "Statistics explained"),
     el("p.lede", "The ideas behind Moria's numbers, learnt by playing with made-up data. Each playground runs the same tests Moria runs (ported from its code), so what you see here is how the real detectors behave."))));
-  root.append(el("div.section", el("h2", "1. Dig a series: is it a trend?", tip("trend"))), digSeries(d));
-  root.append(el("div.section", el("h2", "2. Durin's Bane: why delving too greedily wakes false alarms", tip("multiple_testing"))), bane(d));
+  root.append(el("div.section", el("h2", "1. Make a series: is it a trend?", tip("trend"))), digSeries(d));
+  root.append(el("div.section", el("h2", "2. Multiple testing: why testing thousands of series raises false alarms", tip("multiple_testing"))), bane(d));
   root.append(pvalues(d));
   root.append(el("div.section", el("h2", "3. Rare finds: when is a small count a surge?", tip("low_base_surge"))), surge(d));
   root.append(el("div.section", el("h2", "Moria's rules at a glance")), rules(d));
 }
 
-// ------------------------------------------------------------------------------------------------ 1. dig a series
+// ----------------------------------------------------------------------------------------------- 1. make a series
 
 function labels(n_) {
   const out = [];
@@ -86,7 +86,7 @@ function digSeries(d) {
         el("thead", el("tr", el("th", term("windows", "Window")), el("th.n", term("theil_sen", "Slope a year")), el("th.n", term("ci", "95% range")), el("th.n", term("p_value", "p (Mann-Kendall)")), el("th", "Significant?"))),
         el("tbody", ...rows.map((r) => el("tr", el("td", r.w), el("td.n", fmt(r.slope, 3)), el("td.n", `${fmt(r.lo, 3)} to ${fmt(r.hi, 3)}`), el("td.n", num("p_value", r.p, pval(r.p))), el("td", r.sig ? "yes" : "no")))))),
       el("p.small.mt", `A trend needs 2 of the 3 windows significant, all the same way (here: ${sigs.length}). The last value is `, num("z", z, `${fmt(Math.abs(z), 2)} wobbles`), ` ${z >= 0 ? "above" : "below"} the expected ${fmt(pred, 4)}; Moria's bar is p below 0.01 and at least 25% off. The halves of the last 36 months slope at ${fmt(early.slope * 12, 3)} then ${fmt(recent.slope * 12, 3)} a year.`),
-      el("p.small.muted", "In Moria, each p-value is also adjusted for the thousands of other series in its family (see Durin's Bane, below), so the real bar is higher than here."));
+      el("p.small.muted", "In Moria, each p-value is also adjusted for the thousands of other series in its family (see multiple testing, below), so the real bar is higher than here."));
   };
   const slider = (key, label, min, max, step, unit = "") => {
     const input = el("input", { type: "range", min, max, step, value: p[key], "aria-label": label });
@@ -94,7 +94,7 @@ function digSeries(d) {
     input.oninput = () => { p[key] = Number(input.value); o.textContent = `${p[key]}${unit}`; draw(); };
     return el("div.slider", el("label", label), o, input);
   };
-  const dig = el("button.btn.btn-gold", { type: "button", onclick: (e) => { p.seed += 1; e.currentTarget.animate([{ transform: "rotate(0)" }, { transform: "rotate(-14deg)" }, { transform: "rotate(8deg)" }, { transform: "rotate(0)" }], { duration: 450 }); draw(); } }, "⛏ Dig again (new noise)");
+  const again = el("button.btn.btn-gold", { type: "button", onclick: (e) => { p.seed += 1; e.currentTarget.animate([{ transform: "rotate(0)" }, { transform: "rotate(-14deg)" }, { transform: "rotate(8deg)" }, { transform: "rotate(0)" }], { duration: 450 }); draw(); } }, "New noise");
   requestAnimationFrame(draw);
   return el("div.playground",
     el("div.card",
@@ -105,7 +105,7 @@ function digSeries(d) {
       slider("jump", "A jump of", -40, 40, 1),
       slider("jumpAt", "… at month", 1, 47, 1),
       slider("spike", "A spike in the last month", -60, 60, 1),
-      dig,
+      again,
       el("p.small.mt", "Try: no trend and lots of noise (rarely a trend); a jump at month 36 (a level change can fake a trend in the short window); a big last-month spike (an anomaly, not a trend).")),
     el("div.card", box, verdicts));
 }
@@ -116,7 +116,7 @@ function median(a) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
-// ----------------------------------------------------------------------------------------------- 2. Durin's Bane
+// --------------------------------------------------------------------------------------------- 2. multiple testing
 
 function bane(d) {
   const mt = d.scan.multiple_testing;
@@ -145,7 +145,7 @@ function bane(d) {
     tally.replaceChildren(...["raw", "bh", "holm"].map((k) => el(`div.card.flat${k === p.method ? ".tint" : ""}`, { style: { cursor: "pointer" }, onclick: () => { p.method = k; draw(); } },
       el("h4", name[k], " ", tip(k === "raw" ? "p_value" : k)),
       el("p", el("strong", n(res[k].tp)), ` of ${n(realN)} real changes found`),
-      el("p", el("strong", { style: { color: css("--s-critical") } }, n(res[k].fp)), " false alarms (Balrogs woken)"),
+      el("p", el("strong", { style: { color: css("--s-critical") } }, n(res[k].fp)), " false alarms"),
       el("p.small.muted", res[k].found ? `${pct(res[k].fp / res[k].found)} of what it found is false` : "Found nothing"))));
     // the dots: a sample when there are many
     const ctx2 = canvas.getContext("2d");
@@ -176,10 +176,10 @@ function bane(d) {
   };
   requestAnimationFrame(draw);
   return el("div",
-    el("p.lede", `The dwarves of Moria delved too greedily and too deep, and woke Durin's Bane. Test enough series and you will wake false alarms: at p < 0.05, about 1 in 20 series with nothing going on looks significant. Moria tested ${n(mt.series)} series this scan.`),
+    el("p.lede", `Test enough series and some will look significant by chance: at p < 0.05, about 1 in 20 series with nothing going on looks significant. Moria tested ${n(mt.series)} series this scan.`),
     el("div.playground",
       el("div.card",
-        el("h3", "Set the dig"),
+        el("h3", "Set the test"),
         slider("tests", "Series tested", 100, 27000, 100, (v) => n(v)),
         slider("real", "Share with a real change (%)", 0, 30, 1, (v) => `${v}%`),
         slider("effect", "How strong the real changes are", 1, 6, 0.5),
@@ -190,13 +190,13 @@ function bane(d) {
         canvas,
         el("div.legend.mt",
           el("span", el("i", { style: { background: css("--s-good"), borderRadius: "50%" } }), "Real change, found"),
-          el("span", el("i", { style: { background: css("--s-critical"), borderRadius: "50%" } }), "False alarm (a Balrog)"),
+          el("span", el("i", { style: { background: css("--s-critical"), borderRadius: "50%" } }), "False alarm"),
           el("span", el("i", { style: { border: `2px solid ${css("--t-trend")}`, borderRadius: "50%" } }), "Real change, missed"),
           el("span", el("i", { style: { background: css("--line-strong"), borderRadius: "50%" } }), "Nothing going on, left alone")),
         note)),
     el("div.callout.info.mt", el("div.c-ico", "✦"), el("div",
       el("h4", "The trade-off"),
-      el("p", "No adjustment finds the most real changes but wakes many Balrogs. Holm keeps the chance of even one false alarm in a family at 5%, at the cost of missing some real changes. Benjamini-Hochberg sits between: about 5% of what it finds is false. Moria uses Holm and also asks for 2 of 3 windows; it shows Benjamini-Hochberg's count for comparison."),
+      el("p", "No adjustment finds the most real changes but raises many false alarms. Holm keeps the chance of even one false alarm in a family at 5%, at the cost of missing some real changes. Benjamini-Hochberg sits between: about 5% of what it finds is false. Moria uses Holm and also asks for 2 of 3 windows; it shows Benjamini-Hochberg's count for comparison."),
       el("p", `In this scan: `, el("strong", n(mt.trends_holm)), " trends under Holm, against ", el("strong", n(mt.trends_bh)), " under Benjamini-Hochberg."))));
 }
 

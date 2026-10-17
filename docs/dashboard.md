@@ -29,16 +29,16 @@ Until this branch is merged into `main`, you can preview it by choosing this bra
 | Mode | What you see | Where its data comes from |
 |---|---|---|
 | **Public** (the default) | Counts only: how many candidates of each kind, where they came from, their flags, the queue's make-up, score distributions, the evaluations, the sources and settings | `dashboard/data/public.json` in the repo: aggregates only, like `reports/` |
-| **Private** ("Open the Doors") | Everything: each candidate's name, chart, numbers, evidence (titles and links), dossier and the decision model's suggestions | Your private file, read by your browser only |
-| **Practice** | Everything, but invented: Middle-earth signals that show how the private views work | `dashboard/data/practice.json` in the repo |
+| **Private** ("Open private file") | Everything: each candidate's name, chart, numbers, evidence (titles and links), dossier and the decision model's suggestions | Your private file, read by your browser only |
+| **Practice** | Everything, but invented: signals from made-up places that show how the private views work | `dashboard/data/practice.json` in the repo |
 
-### Opening the Doors (your private file)
+### Opening your private file
 
 The private file holds labels, titles and links, so it lives only in the private bucket, never in the repo.
 
 1. Sign in to Cloudflare and open **R2**, then the bucket **moria**.
 2. Open `interpretation/dashboard/`, then the newest `as_of=…` folder, and download `dashboard.json.gz`.
-3. On the dashboard, press **Open the Doors** (or drop the file on the page, or type *mellon*).
+3. On the dashboard, press **Open private file** (or drop the file on the page).
 
 Or, from a terminal: `uv run moria dashboard --out ~/moria-dashboard.json.gz --store r2` (the command refuses a path
 inside the repository, except under the git-ignored `data/`).
@@ -49,30 +49,30 @@ scripts, fonts or trackers (everything it uses is in `dashboard/assets/`). The f
 closing the tab forgets it. Text from sources (titles, labels) is shown as text, never run as code, and links open
 only if they are plain web addresses.
 
-## The levels
+## The sections
 
-Each level starts simple and lets you go deeper; every dotted term or small "?" explains itself, and hovering a
+Each section starts simple and lets you go deeper; every dotted term or small "?" explains itself, and hovering a
 number (a p-value, a percentile, a z-score) explains what that particular value means.
 
-1. **Start here** (the West-gate): what Moria is, the journey of a signal from 44 sources down to the queue, the four
-   kinds of candidate, the three rings, the scans so far, and the Doors.
-2. **The review queue** (mithril): the 40 for review; with the Doors open, a card each, and a drawer with everything
+1. **Start here**: what Moria is, how a signal gets from 44 sources to the queue, the four kinds of candidate, the
+   three rings, the scans so far, and opening the private file.
+2. **The review queue**: the 40 for review; with the private file open, a card each, and a drawer with everything
    about it: the evidence drawn, the detectors' numbers, the alternative explanations checked, the documents, why it
    ranked where it did, the decision model's suggestions and its history.
-3. **All candidates** (the deep delvings): where every candidate came from and went, the flags by type, the detectors,
-   the score distributions; with the Doors open, a map of every candidate and a searchable table.
-4. **Change over time** (the Mirrormere): overlay up to eight series; switch on the trend lines and their uncertainty,
+3. **All candidates**: where every candidate came from and went, the flags by type, the detectors,
+   the score distributions; with the private file open, a map of every candidate and a searchable table.
+4. **Change over time**: overlay up to eight series; switch on the trend lines and their uncertainty,
    the expected band, accelerations, change points and surge windows; view them as published, indexed to 100, or as
    Moria tested them.
-5. **How ranking works** (the forge): how a score is built; with the Doors open (or practice data), a what-if that
+5. **How ranking works**: how a score is built; with the private file open (or practice data), a what-if that
    re-runs Moria's ranking in your browser under your own settings and shows which candidates come and go. It first
    checks itself: at Moria's settings it must pick exactly Moria's shortlist and queue, in order.
-6. **Statistics explained** (lore of the delvers): playgrounds with made-up data that run Moria's own tests: a trend
-   playground, why testing thousands of series wakes false alarms (Holm against Benjamini-Hochberg, with the real
+6. **Statistics explained**: playgrounds with made-up data that run Moria's own tests: a trend
+   playground, why testing thousands of series raises false alarms (Holm against Benjamini-Hochberg, with the real
    scan's p-values), and when a small count is a surge.
-7. **Sources and limits** (the Chamber of Mazarbul): what to keep in mind, the sources, why so many weak signals are
+7. **Sources and limits**: what to keep in mind, the sources, why so many weak signals are
    flagged, collection day by day, how Moria has been tested, and the audit trail.
-8. **Glossary** (runes decoded).
+8. **Glossary**.
 
 ## How the data is made
 
@@ -90,7 +90,7 @@ review's outputs once and writes:
 The dashboard never changes anything Moria computed. Values are copied from the stages' outputs. Two things the
 outputs don't store are recomputed with the detectors' own code and checked against the stored numbers: each trend
 line's intercept (so its line can be drawn) and each anomaly's expected band. On the scan of 15 October 2026 all
-6,980 trend lines matched. The forge's what-if is a line-for-line port of `rank.select` and the scoring; the tests run
+6,980 trend lines matched. The ranking what-if is a line-for-line port of `rank.select` and the scoring; the tests run
 it (with Node) and require it to reproduce the queue exactly.
 
 The weekly `prepare` workflow runs `moria dashboard` after the review, so a fresh private bundle is in the bucket each

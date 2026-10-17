@@ -10,7 +10,16 @@ from moria.measures import measure
 
 from .detect_fixtures import AS_OF, abs_series, openalex_series, put_normalise
 
-CFG = load_detect()
+# The detectors' tests use OpenAlex-shaped fixtures dated to the latest month; the lag on OpenAlex's latest months
+# (D-032) has its own test below, so it is left out here.
+_LOADED = load_detect()
+CFG = _LOADED.model_copy(
+    update={
+        "series": _LOADED.series.model_copy(
+            update={"lags": [r for r in _LOADED.series.lags if not (r.pattern or "").startswith("^openalex_counts")]}
+        )
+    }
+)
 
 
 def cfg(sources=("openalex_counts", "abs_headline")):

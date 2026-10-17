@@ -151,7 +151,7 @@ export const TERMS = {
     title: "Holm adjustment (p, Holm)", group: "stats",
     short: "A correction for testing many things at once. Test 20,000 series and hundreds will look significant by luck; Holm raises the bar so that, across a whole family of tests, the chance of even one false alarm stays at 5%.",
     moria: "Moria's rule. Trends, accelerations and surges must have a Holm-adjusted p below 0.05 within their family (one source, one frequency, one taxonomy level, one scope); anomalies below 0.01.",
-    watch: "Holm is strict: some real changes are missed. That is the price of not waking the Balrog (too many false alarms).",
+    watch: "Holm is strict: some real changes are missed. That is the price of keeping false alarms rare.",
     interpret: (v) => `${pval(v)}: ${v < 0.05 ? "passes Moria's bar of 0.05" : "does not pass Moria's bar of 0.05"}. Even allowing for every other series in its family, a pattern this strong would arise by chance ${oneIn(v)}.`,
   },
   bh: {
